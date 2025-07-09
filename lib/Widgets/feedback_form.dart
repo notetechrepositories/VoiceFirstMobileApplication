@@ -7,9 +7,6 @@ import 'package:voicefirst/Views/Dashboard/saved_screen.dart';
 
 import '../Models/feedback_entry.dart';
 
-// ======== Feedback Model + Global List ========
-
-// Global store (mock data layer for prototype)
 List<FeedbackEntry> feedbackList = [];
 
 class FeedbackFormScreen extends StatefulWidget {
