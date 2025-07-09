@@ -257,7 +257,7 @@ class _UserhomescreenState extends State<Userhomescreen> {
 
   Future<void> loadMenu() async {
     final url = Uri.parse(
-      'http://localhost:5132/api/menu/get-menu',
+      'http://10.0.2.2:5132/api/menu/get-menu',
     ); // your real endpoint
     try {
       final res = await http.get(url);
