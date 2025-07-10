@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Models/menu_item_model.dart';
+import 'package:voicefirst/Views/CompanySide/add_business.dart';
 import 'package:voicefirst/Widgets/dynamic_drawer.dart';
 
 class CompanyHome extends StatefulWidget {
@@ -72,7 +73,19 @@ class _CompanyHomeState extends State<CompanyHome> {
     return Scaffold(
       drawer: CustomDrawer(items: menuItems),
       appBar: AppBar(title: Text('Company Home')),
-      body: Center(child: Text('Company Home')),
+      body: Column(
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => AddBusiness()),
+              );
+            },
+            child: Text('add activity'),
+          ),
+        ],
+      ),
     );
   }
 }
