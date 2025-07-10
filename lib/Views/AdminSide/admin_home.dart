@@ -24,7 +24,7 @@ class _AdminHomeState extends State<AdminHome> {
   }
 
   Future<void> loadMenu() async {
-    final url = Uri.parse('http://10.0.2.2:5132/api/menu/get-menu');
+    final url = Uri.parse('http://192.168.0.180:8064/api/menu/get-menu');
     try {
       final res = await http.get(url);
       if (res.statusCode == 200) {
