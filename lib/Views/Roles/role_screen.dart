@@ -69,7 +69,7 @@ class _RoleListScreenState extends State<RoleListScreen> {
 
   Widget _icon(bool val) => Icon(
     val ? Icons.check : Icons.close,
-    color: val ? Colors.green : Colors.red,
+    color: val ? Colors.green : const Color.fromARGB(255, 246, 65, 52),
   );
 
   @override
