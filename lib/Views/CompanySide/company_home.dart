@@ -73,19 +73,6 @@ class _CompanyHomeState extends State<CompanyHome> {
     return Scaffold(
       drawer: CustomDrawer(items: menuItems),
       appBar: AppBar(title: Text('Company Home')),
-      body: Column(
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => AddBusiness()),
-              );
-            },
-            child: Text('add activity'),
-          ),
-        ],
-      ),
     );
   }
 }

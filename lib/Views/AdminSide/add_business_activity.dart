@@ -62,57 +62,56 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
   @override
   void initState() {
     super.initState();
-    loadMenu();
     filteredActivities = List.from(activities);
     _searchController.addListener(_filterActivities);
     // loadActivities();
   }
 
-  Future<void> loadMenu() async {
-    final url = Uri.parse('http://10.0.2.2:5132/api/menu/get-menu');
-    try {
-      final res = await http.get(url);
-      if (res.statusCode == 200) {
-        final jsonData = jsonDecode(res.body);
-        final items = (jsonData['data']['Items'] as List)
-            .map((e) => MenuItem.fromJson(e))
-            .toList();
+  // Future<void> loadMenu() async {
+  //   final url = Uri.parse('http://10.0.2.2:5132/api/menu/get-menu');
+  //   try {
+  //     final res = await http.get(url);
+  //     if (res.statusCode == 200) {
+  //       final jsonData = jsonDecode(res.body);
+  //       final items = (jsonData['data']['Items'] as List)
+  //           .map((e) => MenuItem.fromJson(e))
+  //           .toList();
 
-        setState(() {
-          menuItems = buildMenuTree(items);
-        });
-      } else {
-        print('Menu fetch failed: ${res.statusCode}');
-      }
-    } catch (e) {
-      print('Menu load error: $e');
-    }
-  }
+  //       setState(() {
+  //         menuItems = buildMenuTree(items);
+  //       });
+  //     } else {
+  //       print('Menu fetch failed: ${res.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print('Menu load error: $e');
+  //   }
+  // }
 
-  List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
-    flatList.sort((a, b) => a.position.compareTo(b.position));
-    Map<String, MenuItem> positionMap = {
-      for (var item in flatList) item.position: item,
-    };
+  // List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
+  //   flatList.sort((a, b) => a.position.compareTo(b.position));
+  //   Map<String, MenuItem> positionMap = {
+  //     for (var item in flatList) item.position: item,
+  //   };
 
-    List<MenuItem> roots = [];
+  //   List<MenuItem> roots = [];
 
-    for (var item in flatList) {
-      if (item.position.length == 1) {
-        roots.add(item);
-      } else {
-        final parentPos = item.position.substring(0, item.position.length - 1);
-        if (positionMap.containsKey(parentPos)) {
-          positionMap[parentPos]!.children = [
-            ...positionMap[parentPos]!.children,
-            item,
-          ];
-        }
-      }
-    }
+  //   for (var item in flatList) {
+  //     if (item.position.length == 1) {
+  //       roots.add(item);
+  //     } else {
+  //       final parentPos = item.position.substring(0, item.position.length - 1);
+  //       if (positionMap.containsKey(parentPos)) {
+  //         positionMap[parentPos]!.children = [
+  //           ...positionMap[parentPos]!.children,
+  //           item,
+  //         ];
+  //       }
+  //     }
+  //   }
 
-    return roots;
-  }
+  //   return roots;
+  // }
 
   void _filterActivities() {
     final query = _searchController.text.toLowerCase();
@@ -129,7 +128,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgColor,
-      drawer: CustomDrawer(items: menuItems),
+      // drawer: CustomDrawer(items: menuItems),
       appBar: AppBar(
         backgroundColor: _bgColor,
         iconTheme: IconThemeData(color: _accentColor),

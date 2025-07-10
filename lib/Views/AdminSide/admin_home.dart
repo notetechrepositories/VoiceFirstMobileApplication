@@ -93,19 +93,6 @@ class _AdminHomeState extends State<AdminHome> {
       drawer: CustomDrawer(items: menuItems),
 
       appBar: AppBar(title: const Text('Admin Home')),
-      body: Column(
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => AddBusinessactivity()),
-              );
-            },
-            child: Text('add activity'),
-          ),
-        ],
-      ),
     );
   }
 }
