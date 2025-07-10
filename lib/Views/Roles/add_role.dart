@@ -1,3 +1,4 @@
+// views/add_role.dart
 import 'package:flutter/material.dart';
 import '../../Models/permission_model.dart';
 
@@ -49,7 +50,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Checkbox(value: value, onChanged: (val) => onChanged(val!)),
-        Text(label),
+        Text(label, style: TextStyle(color: Colors.white)),
       ],
     );
   }
@@ -57,31 +58,58 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.role == null ? "Add Role" : "Edit Role"),
+      backgroundColor: Colors.grey[900],
+      title: Text(
+        widget.role == null ? "Add Role" : "Edit Role",
+        style: TextStyle(color: Colors.white),
+      ),
       content: SingleChildScrollView(
         child: Column(
           children: [
             TextField(
               controller: _controller,
-              decoration: InputDecoration(labelText: "Role Name"),
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Role Name",
+                labelStyle: TextStyle(color: Colors.white70),
+                filled: true,
+                fillColor: Colors.grey[850],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
             CheckboxListTile(
-              title: Text("All Location Access"),
+              title: Text(
+                "All Location Access",
+                style: TextStyle(color: Colors.white),
+              ),
               value: allLocationAccess,
               onChanged: (val) => setState(() => allLocationAccess = val!),
+              controlAffinity: ListTileControlAffinity.leading,
             ),
             CheckboxListTile(
-              title: Text("All Issue Access"),
+              title: Text(
+                "All Issue Access",
+                style: TextStyle(color: Colors.white),
+              ),
               value: allIssueAccess,
               onChanged: (val) => setState(() => allIssueAccess = val!),
+              controlAffinity: ListTileControlAffinity.leading,
             ),
-            Divider(),
-            Text("Permissions", style: TextStyle(fontWeight: FontWeight.bold)),
+            Divider(color: Colors.white24),
+            Text(
+              "Permissions",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             ...permissions.map(
               (perm) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(perm.module),
+                  Text(perm.module, style: TextStyle(color: Colors.white)),
                   Wrap(
                     spacing: 8,
                     children: [
@@ -122,7 +150,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       ),
                     ],
                   ),
-                  Divider(),
+                  Divider(color: Colors.white24),
                 ],
               ),
             ),
@@ -132,9 +160,13 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text("Cancel"),
+          child: Text("Cancel", style: TextStyle(color: Colors.white70)),
         ),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFFFCC737),
+            foregroundColor: Colors.black,
+          ),
           onPressed: () {
             final role = RoleModel(
               name: _controller.text.trim(),

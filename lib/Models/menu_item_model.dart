@@ -3,7 +3,7 @@ class MenuItem {
   final String name;
   final String position;
   final String icon;
-  final String? route;
+  final String route;
   List<MenuItem> children;
 
   MenuItem({
@@ -11,7 +11,7 @@ class MenuItem {
     required this.name,
     required this.position,
     required this.icon,
-    this.route,
+    required this.route,
     this.children = const [],
   });
 
@@ -21,7 +21,7 @@ class MenuItem {
       name: json['t7_2_menu_name'],
       position: json['t7_2_position'],
       icon: json['t7_2_icon'],
-      route: json['t7_2_route'],
+      route: json['t7_2_route'] ?? '',
     );
   }
 }
