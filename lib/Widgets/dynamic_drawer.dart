@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
+import 'package:voicefirst/Views/LoginPage/login_page.dart';
 
 class CustomDrawer extends StatelessWidget {
   final List<MenuItem> items;
@@ -79,6 +80,23 @@ class CustomDrawer extends StatelessWidget {
                     .toList(),
               ),
             ),
+            Divider(color: Colors.white24),
+            ListTile(
+              leading: Icon(Icons.logout, color: const Color(0xFFFCC737)),
+              title: Text(
+                'Logout',
+                style: const TextStyle(color: Colors.white),
+              ),
+              onTap: () {
+                // 1. Close the drawer:
+                Navigator.of(context).pop();
+                // 2. Replace the current stack with the login route:
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+              },
+            ),
+
             const Divider(color: Colors.white24),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 10),
