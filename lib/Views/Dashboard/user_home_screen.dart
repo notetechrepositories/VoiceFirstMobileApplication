@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Widgets/dynamic_drawer.dart';
 
+import '../../Core/Services/menu_service.dart';
 import '../../Models/menu_item_model.dart';
 import '../../Widgets/feedback_form.dart';
 
@@ -256,26 +257,10 @@ class _UserhomescreenState extends State<Userhomescreen> {
   }
 
   Future<void> loadMenu() async {
-    final url = Uri.parse(
-      'http://192.168.0.180:8064/api/menu/get-menu',
-    ); // your real endpoint
-    try {
-      final res = await http.get(url);
-      if (res.statusCode == 200) {
-        final jsonData = jsonDecode(res.body);
-        final items = (jsonData['data']['Items'] as List)
-            .map((e) => MenuItem.fromJson(e))
-            .toList();
-
-        setState(() {
-          menuItems = buildMenuTree(items);
-        });
-      } else {
-        print('Menu fetch failed: ${res.statusCode}');
-      }
-    } catch (e) {
-      print('Menu load error: $e');
-    }
+    final result = await fetchMenu();
+    setState(() {
+      menuItems = result;
+    });
   }
 
   List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
