@@ -24,12 +24,16 @@ class _AdminHomeState extends State<AdminHome> {
   }
 
   Future<void> loadMenu() async {
-    final url = Uri.parse('http://10.0.2.2:5132/api/menu/get-menu');
+    final url = Uri.parse('http://192.168.0.202:8022/api/menus/app');
     try {
       final res = await http.get(url);
       if (res.statusCode == 200) {
         final jsonData = jsonDecode(res.body);
-        final items = (jsonData['data']['Items'] as List)
+        // final items = (jsonData['data']['Items'] as List)
+        //     .map((e) => MenuItem.fromJson(e))
+        //     .toList();
+
+        final items = (jsonData['data'] as List)
             .map((e) => MenuItem.fromJson(e))
             .toList();
 
