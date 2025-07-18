@@ -17,11 +17,21 @@ class MenuItem {
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
     return MenuItem(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? '',
+      id: json['id'],
+      name: json['name'],
+      position: json['position'],
+      icon: json['icon'],
       route: json['route'] ?? '',
-      position: json['position'] ?? '',
     );
   }
+
+  // factory MenuItem.fromJson(Map<String, dynamic> json) {
+  //   return MenuItem(
+  //     id: json['id'] ?? '',
+  //     name: json['name'] ?? '',
+  //     icon: json['icon'] ?? '',
+  //     route: json['route'] ?? '',
+  //     position: json['position'] ?? '',
+  //   );
+  // }
 }
