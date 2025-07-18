@@ -66,6 +66,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
         fetchBusinessActivities();
       } else {
         debugPrint('Failed to add activity: ${response.statusCode}');
+        debugPrint('Failed to add activity: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error: $e');
@@ -114,7 +115,6 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
       if (response.statusCode == 200) {
         debugPrint('Status updated to $status');
         return true;
-        // final data = jsonDecode(response.body);
         // return data['isSuccess'] == true;
       } else if (response.statusCode == 409) {
         // Conflict: activity already exists or similar business rule violation
