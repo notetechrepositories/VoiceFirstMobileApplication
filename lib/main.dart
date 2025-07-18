@@ -18,8 +18,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: SplashScreen(),
       routes: {
-        '/admin/system-roles': (context) => RoleListScreen(),
-        "/admin/business-activity": (context) => AddBusinessactivity(),
+        'system-roles': (context) => RoleListScreen(),
+        "system-business-activity": (context) => AddBusinessactivity(),
         "/admin/admin-dashboard": (context) => Userhomescreen(),
       },
     );
