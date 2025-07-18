@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:voicefirst/Views/AdminSide/admin_home.dart';
+import 'package:voicefirst/Views/AdminSide/AdminHome/admin_home.dart';
 import 'package:voicefirst/Views/CompanySide/company_home.dart';
 import 'package:voicefirst/Views/Dashboard/bottom_bar.dart';
 
