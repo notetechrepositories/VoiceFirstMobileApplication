@@ -3,13 +3,13 @@ import 'package:http/http.dart' as http;
 import '../../Models/menu_item_model.dart';
 
 Future<List<MenuItem>> fetchMenu() async {
-  final url = Uri.parse('http://192.168.0.180:8064/api/menu/get-menu');
+  final url = Uri.parse('http://192.168.0.111:8022/api/menus/app');
 
   try {
     final res = await http.get(url);
     if (res.statusCode == 200) {
       final jsonData = jsonDecode(res.body);
-      final items = (jsonData['data']['Items'] as List)
+      final items = (jsonData['data'] as List)
           .map((e) => MenuItem.fromJson(e))
           .toList();
 

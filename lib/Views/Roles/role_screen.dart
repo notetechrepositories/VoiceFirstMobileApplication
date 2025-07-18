@@ -1,6 +1,7 @@
 // views/role_list_screen.dart
 import 'package:flutter/material.dart';
-import '../../Models/permission_model.dart';
+import '../../Core/Services/role service.dart';
+import '../../Models/role_model.dart';
 import 'add_role.dart';
 
 class RoleListScreen extends StatefulWidget {
@@ -9,38 +10,21 @@ class RoleListScreen extends StatefulWidget {
 }
 
 class _RoleListScreenState extends State<RoleListScreen> {
-  List<RoleModel> roles = [
-    RoleModel(
-      name: 'Admin',
-      allLocationAccess: true,
-      allIssueAccess: true,
-      permissions: [],
-    ),
-    RoleModel(
-      name: 'User',
-      allLocationAccess: false,
-      allIssueAccess: false,
-      permissions: [],
-    ),
-    RoleModel(
-      name: 'Manager',
-      allLocationAccess: true,
-      allIssueAccess: true,
-      permissions: [],
-    ),
-    RoleModel(
-      name: 'Supervisor',
-      allLocationAccess: true,
-      allIssueAccess: true,
-      permissions: [],
-    ),
-    RoleModel(
-      name: 'Employee',
-      allLocationAccess: false,
-      allIssueAccess: false,
-      permissions: [],
-    ),
-  ];
+  List<RoleModel> roles = [];
+  String searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    loadRoles();
+  }
+
+  Future<void> loadRoles() async {
+    final fetchedRoles = await fetchRoles();
+    setState(() {
+      roles = fetchedRoles;
+    });
+  }
 
   void _addOrEditRole({RoleModel? existing}) async {
     final newRole = await showDialog<RoleModel>(
@@ -67,11 +51,17 @@ class _RoleListScreenState extends State<RoleListScreen> {
 
   Widget _icon(bool val) => Icon(
     val ? Icons.check : Icons.close,
-    color: val ? Colors.green : const Color.fromARGB(255, 246, 65, 52),
+    color: val ? Colors.green : Colors.red,
   );
 
   @override
   Widget build(BuildContext context) {
+    final filteredRoles = roles
+        .where(
+          (role) => role.name.toLowerCase().contains(searchQuery.toLowerCase()),
+        )
+        .toList();
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -98,22 +88,16 @@ class _RoleListScreenState extends State<RoleListScreen> {
               ),
               onChanged: (query) {
                 setState(() {
-                  roles = roles
-                      .where(
-                        (role) => role.name.toLowerCase().contains(
-                          query.toLowerCase(),
-                        ),
-                      )
-                      .toList();
+                  searchQuery = query;
                 });
               },
             ),
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: roles.length,
+              itemCount: filteredRoles.length,
               itemBuilder: (_, index) {
-                final role = roles[index];
+                final role = filteredRoles[index];
                 return Card(
                   color: Colors.grey[900],
                   margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),

@@ -1,37 +1,75 @@
-// models/permission_model.dart
-class PermissionModel {
-  final String module;
-  bool create,
-      read,
-      update,
-      delete,
-      updateFromExcel,
-      downloadExcel,
-      downloadPdf;
+class ProgramPermissionModel {
+  final String programId;
+  final String? label;
+  bool create;
+  bool update;
+  bool view;
+  bool delete;
+  bool download;
+  bool email;
 
-  PermissionModel({
-    required this.module,
+  // New fields to determine if checkbox is enabled
+  bool canCreate;
+  bool canUpdate;
+  bool canView;
+  bool canDelete;
+  bool canDownload;
+  bool canEmail;
+
+  ProgramPermissionModel({
+    required this.programId,
+    this.label,
     this.create = false,
-    this.read = false,
     this.update = false,
+    this.view = false,
     this.delete = false,
-    this.updateFromExcel = false,
-    this.downloadExcel = false,
-    this.downloadPdf = false,
+    this.download = false,
+    this.email = false,
+    this.canCreate = true,
+    this.canUpdate = true,
+    this.canView = true,
+    this.canDelete = true,
+    this.canDownload = true,
+    this.canEmail = true,
   });
-}
 
-// models/role_model.dart
-class RoleModel {
-  String name;
-  bool allLocationAccess;
-  bool allIssueAccess;
-  List<PermissionModel> permissions;
+  factory ProgramPermissionModel.fromJson(
+    Map<String, dynamic> json,
+    String label, {
+    bool canCreate = true,
+    bool canUpdate = true,
+    bool canView = true,
+    bool canDelete = true,
+    bool canDownload = true,
+    bool canEmail = true,
+  }) {
+    return ProgramPermissionModel(
+      programId: json['programId'],
+      label: label,
+      create: json['create'] ?? false,
+      update: json['update'] ?? false,
+      view: json['view'] ?? false,
+      delete: json['delete'] ?? false,
+      download: json['download'] ?? false,
+      email: json['email'] ?? false,
+      canCreate: canCreate,
+      canUpdate: canUpdate,
+      canView: canView,
+      canDelete: canDelete,
+      canDownload: canDownload,
+      canEmail: canEmail,
+    );
+  }
 
-  RoleModel({
-    required this.name,
-    this.allLocationAccess = false,
-    this.allIssueAccess = false,
-    required this.permissions,
-  });
+  Map<String, dynamic> toJson() {
+    return {
+      'programId': programId,
+      'create': create,
+      'update': update,
+      'view': view,
+      'delete': delete,
+      'download': download,
+      'email': email,
+    };
+  }
 }
