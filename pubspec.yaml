@@ -28,16 +28,22 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  animated_toggle_switch: ^0.8.5
   cupertino_icons: ^1.0.8
   file_picker: ^10.1.2
   flutter:
     sdk: flutter
+  flutter_bloc: ^9.1.1
   flutter_native_splash: ^2.4.0
   google_sign_in: ^6.2.1
   http: ^1.4.0
   introduction_screen: ^3.1.17
+  lite_rolling_switch: ^1.0.1
   mobile_scanner: ^7.0.1
   speech_to_text: ^7.0.0
+ 
+
+
 
 dev_dependencies:
   flutter_lints: ^5.0.0
@@ -64,6 +70,7 @@ flutter:
     - assets/OnBoardingImage/4.png
     - assets/WelcomePage/welcomePage.png
     - assets/google maps.png
+    
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
   # For details regarding adding assets from package dependencies, see

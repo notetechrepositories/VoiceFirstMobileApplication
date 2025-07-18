@@ -73,6 +73,81 @@ class _CompanyHomeState extends State<CompanyHome> {
     return Scaffold(
       drawer: CustomDrawer(items: menuItems),
       appBar: AppBar(title: Text('Company Home')),
+      body: Column(
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => AddBusiness()),
+              );
+            },
+            child: Text('add activity'),
+          ),
+        ],
+      ),
     );
   }
 }
+
+
+
+
+// import 'package:flutter/material.dart';
+// import 'package:voicefirst/Views/CompanySide/add_activity.dart';
+// // import 'add_activity_page.dart'; // Import the AddActivityPage
+
+// class AddBusiness extends StatefulWidget {
+//   const AddBusiness({super.key});
+
+//   @override
+//   State<AddBusiness> createState() => _AddBusinessState();
+// }
+
+// class _AddBusinessState extends State<AddBusiness> {
+//   List<Map<String, dynamic>> activities = [];
+
+//   void _addNewActivities(List<Map<String, dynamic>> newActivities) {
+//     setState(() {
+//       activities.addAll(newActivities); // Add all new activities to the list
+//     });
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: Text("Business Activities")),
+//       body: Column(
+//         children: [
+//           Expanded(
+//             child: activities.isEmpty
+//                 ? Center(child: Text('No activities added.'))
+//                 : ListView.builder(
+//                     itemCount: activities.length,
+//                     itemBuilder: (context, index) {
+//                       final activity = activities[index];
+//                       return ListTile(
+//                         title: Text(activity['business_activity_name']),
+//                         subtitle: Text('Company: ${activity['company']}'),
+//                       );
+//                     },
+//                   ),
+//           ),
+//           FloatingActionButton(
+//             onPressed: () {
+//               // Navigate to AddActivityPage
+//               Navigator.push(
+//                 context,
+//                 MaterialPageRoute(
+//                   builder: (context) =>
+//                       AddActivityPage(onActivitiesAdded: _addNewActivities),
+//                 ),
+//               );
+//             },
+//             child: Icon(Icons.add),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }

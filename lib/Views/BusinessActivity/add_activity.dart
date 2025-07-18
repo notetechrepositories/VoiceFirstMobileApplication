@@ -12,7 +12,7 @@ class _AddActivityState extends State<AddActivity> {
   final List<Map<String, dynamic>> systemactivities = [
     {
       "id": "010110101",
-      "business_activity_name": "jwellary",
+      "business_activity_name": "Jewellary",
       "company": "y",
       "branch": "y",
       "section": "y",

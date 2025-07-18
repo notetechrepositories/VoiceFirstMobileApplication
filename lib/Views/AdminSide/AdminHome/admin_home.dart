@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 // 1. import your model & drawer
 import 'package:voicefirst/Models/menu_item_model.dart';
-import 'package:voicefirst/Views/AdminSide/add_business_activity.dart';
+import 'package:voicefirst/Views/AdminSide/BusinessActivty/business_activity.dart';
 import 'package:voicefirst/Widgets/dynamic_drawer.dart';
 
 class AdminHome extends StatefulWidget {
@@ -24,7 +24,7 @@ class _AdminHomeState extends State<AdminHome> {
   }
 
   Future<void> loadMenu() async {
-    final url = Uri.parse('http://192.168.0.180:8064/api/menu/get-menu');
+    final url = Uri.parse('http://10.0.2.2:5132/api/menu/get-menu');
     try {
       final res = await http.get(url);
       if (res.statusCode == 200) {
@@ -69,23 +69,6 @@ class _AdminHomeState extends State<AdminHome> {
     return roots;
   }
 
-  // List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
-  //   flatList.sort((a, b) => a.position.compareTo(b.position));
-  //   final map = { for (var i in flatList) i.position : i };
-  //   List<MenuItem> roots = [];
-  //   for (var item in flatList) {
-  //     if (item.position.length == 1) {
-  //       roots.add(item);
-  //     } else {
-  //       final parentPos = item.position.substring(0, item.position.length - 1);
-  //       if (map.containsKey(parentPos)) {
-  //         map[parentPos]!.children.add(item);
-  //       }
-  //     }
-  //   }
-  //   return roots;
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,6 +76,7 @@ class _AdminHomeState extends State<AdminHome> {
       drawer: CustomDrawer(items: menuItems),
 
       appBar: AppBar(title: const Text('Admin Home')),
+      // body: Column( ),
     );
   }
 }
