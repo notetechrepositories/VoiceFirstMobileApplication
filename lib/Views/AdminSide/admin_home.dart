@@ -23,16 +23,12 @@ class _AdminHomeState extends State<AdminHome> {
   }
 
   Future<void> loadMenu() async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/menus/app');
+    final url = Uri.parse('http://192.168.0.180:8064/api/menu/get-menu');
     try {
       final res = await http.get(url);
       if (res.statusCode == 200) {
         final jsonData = jsonDecode(res.body);
-        // final items = (jsonData['data']['Items'] as List)
-        //     .map((e) => MenuItem.fromJson(e))
-        //     .toList();
-
-        final items = (jsonData['data'] as List)
+        final items = (jsonData['data']['Items'] as List)
             .map((e) => MenuItem.fromJson(e))
             .toList();
 
@@ -72,6 +68,23 @@ class _AdminHomeState extends State<AdminHome> {
     return roots;
   }
 
+  // List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
+  //   flatList.sort((a, b) => a.position.compareTo(b.position));
+  //   final map = { for (var i in flatList) i.position : i };
+  //   List<MenuItem> roots = [];
+  //   for (var item in flatList) {
+  //     if (item.position.length == 1) {
+  //       roots.add(item);
+  //     } else {
+  //       final parentPos = item.position.substring(0, item.position.length - 1);
+  //       if (map.containsKey(parentPos)) {
+  //         map[parentPos]!.children.add(item);
+  //       }
+  //     }
+  //   }
+  //   return roots;
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,7 +92,6 @@ class _AdminHomeState extends State<AdminHome> {
       drawer: CustomDrawer(items: menuItems),
 
       appBar: AppBar(title: const Text('Admin Home')),
-      // body: Column( ),
     );
   }
 }

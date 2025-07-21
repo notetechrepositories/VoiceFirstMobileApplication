@@ -43,10 +43,42 @@ class _RoleListScreenState extends State<RoleListScreen> {
     }
   }
 
-  void _deleteRole(RoleModel role) {
-    setState(() {
-      roles.remove(role);
-    });
+  void _deleteRole(RoleModel role) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Confirm Delete"),
+        content: Text(
+          "Are you sure you want to delete the role '${role.name}'?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final success = await deleteRoles([role.id ?? ""]);
+    if (success) {
+      setState(() {
+        roles.remove(role);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Role deleted")));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to delete role")));
+    }
   }
 
   Widget _icon(bool val) => Icon(
