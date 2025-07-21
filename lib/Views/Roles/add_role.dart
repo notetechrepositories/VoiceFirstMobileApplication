@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import '../../Core/Constants/api_endpoins.dart';
 import '../../Models/permission_model.dart';
 import '../../Models/program_model.dart';
 import '../../Models/role_model.dart';
@@ -33,7 +34,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
 
   Future<void> _loadPrograms() async {
     try {
-      final url = Uri.parse("http://192.168.0.111:8022/api/programs");
+      final url = Uri.parse("${ApiEndpoints.baseUrl}/programs");
       final res = await http.get(url);
 
       if (res.statusCode == 200) {
@@ -44,49 +45,37 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             .map((e) => ProgramModel.fromJson(e))
             .toList();
 
+        permissions = availablePrograms.map((program) {
+          final existing = widget.role?.permissions.firstWhere(
+            (p) => p.programId == program.id,
+            orElse: () => ProgramPermissionModel(
+              programId: program.id,
+              label: program.label,
+            ),
+          );
+
+          return ProgramPermissionModel(
+            programId: program.id,
+            label: program.label,
+            create: existing?.create ?? false,
+            update: existing?.update ?? false,
+            view: existing?.view ?? false,
+            delete: existing?.delete ?? false,
+            download: existing?.download ?? false,
+            email: existing?.email ?? false,
+            canCreate: program.create,
+            canUpdate: program.update,
+            canView: program.view,
+            canDelete: program.delete,
+            canDownload: program.download,
+            canEmail: program.email,
+          );
+        }).toList();
+
         if (widget.role != null) {
           _controller.text = widget.role!.name;
           allLocationAccess = widget.role!.allLocationAccess;
           allIssueAccess = widget.role!.allIssueAccess;
-
-          permissions = availablePrograms.map((program) {
-            final match = widget.role!.permissions.firstWhere(
-              (p) => p.programId == program.id,
-              orElse: () =>
-                  ProgramPermissionModel(programId: program.id, label: ''),
-            );
-            return ProgramPermissionModel(
-              programId: program.id,
-              label: program.label,
-              create: match.create,
-              update: match.update,
-              view: match.view,
-              delete: match.delete,
-              download: match.download,
-              email: match.email,
-              canCreate: program.create,
-              canUpdate: program.update,
-              canView: program.view,
-              canDelete: program.delete,
-              canDownload: program.download,
-              canEmail: program.email,
-            );
-          }).toList();
-        } else {
-          permissions = availablePrograms
-              .map(
-                (program) => ProgramPermissionModel(
-                  programId: program.id,
-                  label: program.label,
-                  canCreate: program.create,
-                  canUpdate: program.update,
-                  canView: program.view,
-                  canDelete: program.delete,
-                  canDownload: program.download,
-                  canEmail: program.email,
-                ),
-              )
-              .toList();
         }
       }
     } catch (e) {
@@ -115,6 +104,49 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
         ),
       ],
     );
+  }
+
+  Future<void> _submitRole() async {
+    final roleData = {
+      "roleName": _controller.text.trim(),
+      "allLocationAccess": allLocationAccess,
+      "allIssuesAccess": allIssueAccess,
+      "rolePrograms": permissions.map((p) => p.toJson()).toList(),
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse("${ApiEndpoints.baseUrl}/roles"),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(roleData),
+      );
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        Navigator.pop(
+          context,
+          RoleModel(
+            name: _controller.text.trim(),
+            allLocationAccess: allLocationAccess,
+            allIssueAccess: allIssueAccess,
+            status: true,
+            permissions: permissions,
+          ),
+        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Role created")));
+      } else {
+        print("Failed to create role: ${res.body}");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to create role.")));
+      }
+    } catch (e) {
+      print("Error submitting role: $e");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
   }
 
   @override
@@ -228,7 +260,16 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(
+            context,
+            RoleModel(
+              name: _controller.text.trim(),
+              allLocationAccess: allLocationAccess,
+              allIssueAccess: allIssueAccess,
+              status: true,
+              permissions: permissions,
+            ),
+          ),
           child: Text("Cancel", style: TextStyle(color: Colors.white70)),
         ),
         ElevatedButton(
@@ -236,16 +277,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             backgroundColor: Color(0xFFFCC737),
             foregroundColor: Colors.black,
           ),
-          onPressed: () {
-            final role = RoleModel(
-              name: _controller.text.trim(),
-              allLocationAccess: allLocationAccess,
-              allIssueAccess: allIssueAccess,
-              permissions: permissions,
-              status: true,
-            );
-            Navigator.pop(context, role);
-          },
+          onPressed: _submitRole,
           child: Text("Submit"),
         ),
       ],
