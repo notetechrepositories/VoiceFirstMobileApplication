@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
 import 'package:voicefirst/Views/Roles/role_screen.dart';
 import 'package:voicefirst/Views/Splash/splash_screen.dart';
 
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
         'system-roles': (context) => RoleListScreen(),
         "system-business-activity": (context) => AddBusinessactivity(),
         "/admin/admin-dashboard": (context) => Userhomescreen(),
+        "country": (context) => CountryView(),
       },
     );
   }
