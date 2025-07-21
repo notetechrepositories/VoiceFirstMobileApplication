@@ -22,3 +22,26 @@ Future<List<RoleModel>> fetchRoles() async {
   }
   return [];
 }
+
+Future<bool> deleteRoles(List<String> roleIds) async {
+  final url = Uri.parse("http://192.168.0.111:8022/api/roles");
+
+  try {
+    final response = await http.delete(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(roleIds),
+    );
+
+    if (response.statusCode == 200) {
+      print("Role(s) deleted successfully");
+      return true;
+    } else {
+      print("Failed to delete roles: ${response.statusCode}");
+      return false;
+    }
+  } catch (e) {
+    print("Error deleting roles: $e");
+    return false;
+  }
+}
