@@ -213,12 +213,6 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
   List<Map<String, dynamic>> activities = [];
 
   List<MenuItem> menuItems = [];
-  // final TextEditingController _newIdController = TextEditingController();
-  final TextEditingController _newNameController = TextEditingController();
-  bool _newCompany = false;
-  bool _newBranch = false;
-  bool _newSection = false;
-  bool _newSubSection = false;
 
   //for deletion
 
@@ -238,7 +232,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
   }
 
   void _filterActivities() {
-    if (!isdataLoaded) return; // ✅ Don't filter until data is ready
+    if (!isdataLoaded) return; //Don't filter until data is ready
 
     final query = _searchController.text.toLowerCase();
     setState(() {
