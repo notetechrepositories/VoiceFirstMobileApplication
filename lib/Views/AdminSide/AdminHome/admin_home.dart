@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:voicefirst/Models/menu_item_model.dart';
 import 'package:voicefirst/Widgets/dynamic_drawer.dart';
 
+import '../../../Core/Constants/api_endpoins.dart';
+
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
 
@@ -23,7 +25,7 @@ class _AdminHomeState extends State<AdminHome> {
   }
 
   Future<void> loadMenu() async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/menus/app');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/menus/app');
     try {
       final res = await http.get(url);
       if (res.statusCode == 200) {

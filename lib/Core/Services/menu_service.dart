@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../Models/menu_item_model.dart';
+import '../Constants/api_endpoins.dart';
 
 Future<List<MenuItem>> fetchMenu() async {
-  final url = Uri.parse('http://192.168.0.111:8022/api/menus/app');
+  final url = Uri.parse('${ApiEndpoints.baseUrl}/menus/app');
 
   try {
     final res = await http.get(url);
