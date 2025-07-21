@@ -7,6 +7,8 @@ import 'package:voicefirst/Views/AdminSide/BusinessActivty/add_activity_dialog.d
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/edit_activity_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/view_activity_dialog.dart';
 
+import '../../../Core/Constants/api_endpoins.dart';
+
 class AddBusinessactivity extends StatefulWidget {
   const AddBusinessactivity({super.key});
 
@@ -16,7 +18,7 @@ class AddBusinessactivity extends StatefulWidget {
 
 class _AddBusinessactivityState extends State<AddBusinessactivity> {
   Future<bool> deleteactivities(List<String> id) async {
-    final url = Uri.parse('http://192.168.0.111:8022/api/business-activities');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
 
     try {
       final response = await http.delete(
@@ -45,7 +47,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
     required bool section,
     required bool subSection,
   }) async {
-    final url = Uri.parse('http://192.168.0.111:8022/api/business-activities');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
     final body = {
       "activityName": name,
       "company": company,
@@ -76,7 +78,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
   Future<Map<String, dynamic>?> _updateActivityOnServer(
     Map<String, dynamic> body,
   ) async {
-    final url = Uri.parse('http://192.168.0.111:8022/api/business-activities');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
 
     try {
       final response = await http.put(
@@ -101,7 +103,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
 
   //update status
   Future<bool> _updateStatusOnServer(String id, bool status) async {
-    final url = Uri.parse('http://192.168.0.111:8022/api/business-activities');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
 
     final body = {'id': id, 'status': status};
 
@@ -133,9 +135,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
   //get all activities list from db
 
   Future<void> fetchBusinessActivities() async {
-    final url = Uri.parse(
-      'http://192.168.0.111:8022/api/business-activities/all',
-    );
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities/all');
 
     try {
       final response = await http.get(url);
