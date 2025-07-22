@@ -107,45 +107,40 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
   }
 
   Future<void> _submitRole() async {
-    final roleData = {
-      "roleName": _controller.text.trim(),
-      "allLocationAccess": allLocationAccess,
-      "allIssuesAccess": allIssueAccess,
-      "rolePrograms": permissions.map((p) => p.toJson()).toList(),
-    };
+    final role = RoleModel(
+      id: widget.role?.id, // null for POST, non-null for PUT
+      name: _controller.text.trim(),
+      allLocationAccess: allLocationAccess,
+      allIssueAccess: allIssueAccess,
+      permissions: permissions,
+      status: true,
+    );
+
+    final url = Uri.parse("${ApiEndpoints.baseUrl}/roles");
+    final headers = {"Content-Type": "application/json"};
 
     try {
-      final res = await http.post(
-        Uri.parse("${ApiEndpoints.baseUrl}/roles"),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(roleData),
-      );
+      final body = jsonEncode(role.toJson(includeIds: widget.role != null));
+      final response = widget.role == null
+          ? await http.post(url, headers: headers, body: body)
+          : await http.put(url, headers: headers, body: body);
 
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        Navigator.pop(
-          context,
-          RoleModel(
-            name: _controller.text.trim(),
-            allLocationAccess: allLocationAccess,
-            allIssueAccess: allIssueAccess,
-            status: true,
-            permissions: permissions,
-          ),
-        );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        Navigator.pop(context, role); // Pop with success
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Role created")));
+        ).showSnackBar(SnackBar(content: Text("Role saved")));
       } else {
-        print("Failed to create role: ${res.body}");
+        print("Failed to save role: ${response.body}");
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Failed to create role.")));
+        ).showSnackBar(SnackBar(content: Text("Failed to save role")));
       }
     } catch (e) {
       print("Error submitting role: $e");
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ).showSnackBar(SnackBar(content: Text("Error submitting role")));
     }
   }
 
@@ -278,6 +273,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             foregroundColor: Colors.black,
           ),
           onPressed: _submitRole,
+
           child: Text("Submit"),
         ),
       ],

@@ -1,4 +1,5 @@
 class ProgramPermissionModel {
+  final String? id;
   final String programId;
   final String? label;
   bool create;
@@ -17,6 +18,7 @@ class ProgramPermissionModel {
   bool canEmail;
 
   ProgramPermissionModel({
+    this.id,
     required this.programId,
     this.label,
     this.create = false,
@@ -61,8 +63,9 @@ class ProgramPermissionModel {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool includeId = false}) {
     return {
+      if (includeId && id != null) 'id': id,
       'programId': programId,
       'create': create,
       'update': update,
