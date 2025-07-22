@@ -45,13 +45,16 @@ class RoleModel {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool includeIds = false}) {
     return {
+      if (includeIds && id != null) 'id': id,
       'roleName': name,
       'allLocationAccess': allLocationAccess,
       'allIssuesAccess': allIssueAccess,
       'status': status,
-      'rolePrograms': permissions.map((e) => e.toJson()).toList(),
+      'rolePrograms': permissions
+          .map((e) => e.toJson(includeId: includeIds))
+          .toList(),
     };
   }
 }
