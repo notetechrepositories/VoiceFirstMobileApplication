@@ -55,6 +55,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           );
 
           return ProgramPermissionModel(
+            id: existing?.id,
             programId: program.id,
             label: program.label,
             create: existing?.create ?? false,
@@ -107,8 +108,15 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
   }
 
   Future<void> _submitRole() async {
+    if (_controller.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Role name cannot be empty")));
+      return;
+    }
+
     final role = RoleModel(
-      id: widget.role?.id, // null for POST, non-null for PUT
+      id: widget.role?.id,
       name: _controller.text.trim(),
       allLocationAccess: allLocationAccess,
       allIssueAccess: allIssueAccess,
@@ -126,7 +134,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           : await http.put(url, headers: headers, body: body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        Navigator.pop(context, role); // Pop with success
+        Navigator.pop(context, role);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Role saved")));
@@ -255,16 +263,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(
-            context,
-            RoleModel(
-              name: _controller.text.trim(),
-              allLocationAccess: allLocationAccess,
-              allIssueAccess: allIssueAccess,
-              status: true,
-              permissions: permissions,
-            ),
-          ),
+          onPressed: () => Navigator.pop(context),
           child: Text("Cancel", style: TextStyle(color: Colors.white70)),
         ),
         ElevatedButton(
@@ -273,7 +272,6 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             foregroundColor: Colors.black,
           ),
           onPressed: _submitRole,
-
           child: Text("Submit"),
         ),
       ],
