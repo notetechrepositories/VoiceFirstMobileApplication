@@ -2,12 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_add.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_detail_view.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_edit.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/division1_view.dart';
 
 class CountryView extends StatefulWidget {
   const CountryView({super.key});
+
+  // final CountryModel country;
 
   @override
   State<CountryView> createState() => _CountryViewState();
@@ -224,22 +229,51 @@ class _CountryViewState extends State<CountryView> {
     }
   }
 
-  // void _filterCountries() {
-  //   if (!isDataLoaded) return; //Don't filter until data is ready
+  Future<Map<String, dynamic>?> updateCountry({
+    required String id,
+    String? country,
+    String? divisionOneLabel,
+    String? divisionTwoLabel,
+    String? divisionThreeLabel,
+  }) async {
+    final Map<String, dynamic> body = {'id': id};
 
-  //   final query = _searchController.text.toLowerCase();
-  //   setState(() {
-  //     if (query.isEmpty) {
-  //       filteredCountries = List.from(countries);
-  //     } else {
-  //       filteredCountries = countries.where((country) {
-  //         final name = (country.country ?? '').toLowerCase();
-  //         return name.contains(query);
-  //       }).toList();
-  //     }
-  //     debugPrint("Searching in ${countries.length} items");
-  //   });
-  // }
+    if (country != null && country.isNotEmpty) {
+      body['country'] = country;
+    }
+    if (divisionOneLabel != null && divisionOneLabel.isNotEmpty) {
+      body['divisionOneLabel'] = divisionOneLabel;
+    }
+    if (divisionTwoLabel != null && divisionTwoLabel.isNotEmpty) {
+      body['divisionTwoLabel'] = divisionTwoLabel;
+    }
+    if (divisionThreeLabel != null && divisionThreeLabel.isNotEmpty) {
+      body['divisionThreeLabel'] = divisionThreeLabel;
+    }
+
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['data'];
+      } else {
+        debugPrint(
+          ' Failed with status ${response.statusCode}: ${response.body}',
+        );
+        return null;
+      }
+    } catch (e) {
+      debugPrint(' Exception: $e');
+      return null;
+    }
+  }
 
   void _filterCountries() {
     if (!isDataLoaded) return;
@@ -417,34 +451,32 @@ class _CountryViewState extends State<CountryView> {
                                     }
                                   });
                                 } else {
+                                  //   Navigator.push(
+                                  //     context,
+                                  //     MaterialPageRoute(
+                                  //       builder: (_) => CountryDetailPage(
+                                  //         country: c,
+                                  //         onDelete:
+                                  //             _deleteDivision, // ✅ Add this line
+                                  //         bgColor: _bgColor,
+                                  //         cardColor: _cardColor,
+                                  //         textPrimary: _textPrimary,
+                                  //         textSecondary: _textSecondary,
+                                  //         accentColor: _accentColor,
+                                  //       ),
+                                  //     ),
+                                  //   );
+
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => CountryDetailPage(
+                                      builder: (_) => Division1View(
+                                        // countryId: c.id,
                                         country: c,
-                                        onDelete:
-                                            _deleteDivision, // ✅ Add this line
-                                        bgColor: _bgColor,
-                                        cardColor: _cardColor,
-                                        textPrimary: _textPrimary,
-                                        textSecondary: _textSecondary,
-                                        accentColor: _accentColor,
+                                        // divisionLabel: c.divisionOneLabel,
                                       ),
                                     ),
                                   );
-
-                                  // Navigator.push(
-                                  //   context,
-                                  //   MaterialPageRoute(
-                                  //     builder: (_) => CountryDetailPage(
-                                  //       country: c,
-                                  //       bgColor: _bgColor,
-                                  //       cardColor: _cardColor,
-                                  //       textPrimary: _textPrimary,
-                                  //       textSecondary: _textSecondary,
-                                  //     ),
-                                  //   ),
-                                  // );
                                 }
                               },
 
@@ -511,6 +543,65 @@ class _CountryViewState extends State<CountryView> {
                                       if (!isMultiSelectMode) ...[
                                         Row(
                                           children: [
+                                            IconButton(
+                                              icon: Icon(
+                                                Icons.mode_edit_outlined,
+                                                color: _accentColor,
+                                              ),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) => CountryDetailDialog(
+                                                    country:
+                                                        c, // CountryModel object
+                                                    cardColor: _cardColor,
+                                                    textPrimary: _textPrimary,
+                                                    textSecondary:
+                                                        _textSecondary,
+                                                    accentColor: _accentColor,
+                                                    onEdit: () {
+                                                      Navigator.pop(
+                                                        context,
+                                                      ); // Close detail dialog
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (_) => EditCountryDialog(
+                                                          country: c,
+                                                          cardColor: _cardColor,
+                                                          textPrimary:
+                                                              _textPrimary,
+                                                          textSecondary:
+                                                              _textSecondary,
+                                                          accentColor:
+                                                              _accentColor,
+                                                          onUpdate: (updatedData) => updateCountry(
+                                                            id: updatedData['id'],
+                                                            country:
+                                                                updatedData['country'],
+                                                            divisionOneLabel:
+                                                                updatedData['divisionOneLabel'],
+                                                            divisionTwoLabel:
+                                                                updatedData['divisionTwoLabel'],
+                                                            divisionThreeLabel:
+                                                                updatedData['divisionThreeLabel'],
+                                                          ),
+                                                          onUpdated: () {
+                                                            getallCountries();
+                                                          },
+                                                          onCancel: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                              ),
+                                                        ),
+                                                      );
+                                                    },
+                                                    onCancel: () =>
+                                                        Navigator.pop(context),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+
                                             Transform.scale(
                                               scale: 0.7,
                                               child: Switch(
@@ -675,7 +766,7 @@ class _CountryViewState extends State<CountryView> {
                             );
                           },
                         )
-                : Center(child: CircularProgressIndicator()),
+                : Center(child: Text("no Countries Added")),
           ),
         ],
       ),
@@ -725,6 +816,4 @@ class _CountryViewState extends State<CountryView> {
       ),
     );
   }
-
-  Future updateCountryStatus(String id, bool val) async {}
 }
