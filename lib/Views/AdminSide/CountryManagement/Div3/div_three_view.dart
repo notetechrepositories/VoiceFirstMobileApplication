@@ -3,48 +3,49 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/country_model.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_add.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_detail_view.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_edit.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/division1_view.dart';
+import 'package:voicefirst/Models/division_three_model.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/add_divthree_dialog.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/edit_div3_dialog.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
 
-class CountryView extends StatefulWidget {
-  const CountryView({super.key});
+class DivisionThreeView extends StatefulWidget {
+  // const DivisionThreeView({super.key});
 
-  // final CountryModel country;
+  final String divisionTwoId;
+  // final String divisionLabel;
+  final CountryModel country;
+
+  const DivisionThreeView({
+    super.key,
+    required this.divisionTwoId,
+    required this.country,
+  });
 
   @override
-  State<CountryView> createState() => _CountryViewState();
+  State<DivisionThreeView> createState() => _DivisionThreeViewState();
 }
 
-class _CountryViewState extends State<CountryView> {
+class _DivisionThreeViewState extends State<DivisionThreeView> {
+  //to accept data passing from country page
+
+  // Page-specific colour palette
+  final Color _bgColor = Colors.black; // page background
+  final Color _cardColor = Color(0xFF262626); // dark grey card
+  // final Color _chipColor = Color(0xFF212121); // chip background
+  final Color _accentColor = Color(0xFFFCC737); // gold accent
+  final Color _textPrimary = Colors.white; // main text
+  final Color _textSecondary = Colors.white60; // secondary text
+  // ──────────────────────────────────────
+
   bool isMultiSelectMode = false;
   Set<String> selectedIds = {};
+  bool isDataLoaded = false;
 
-  Future<bool> _deleteDivision(String countryId, String divisionLevel) async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country/division');
-
-    final body = {'id': countryId, 'divisionLevel': divisionLevel};
-
-    try {
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 200) {
-        await getallCountries(); // refresh list
-        return true;
-      } else {
-        debugPrint('Failed to delete division: ${response.statusCode}');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('Error deleting division: $e');
-      return false;
-    }
-  }
+  List<DivisionThreeModel> divisionThreeList = [];
+  List<DivisionThreeModel> filteredDivThree = [];
+  final query = "";
+  final TextEditingController _searchController = TextEditingController();
 
   void _enterSelectionMode({bool selectAll = false}) {
     setState(() {
@@ -52,8 +53,7 @@ class _CountryViewState extends State<CountryView> {
       selectedIds.clear();
       if (selectAll) {
         // Select only the currently *visible* (filtered) items.
-        // selectedIds.addAll(filteredCountries.map((e) => e[id] as String));
-        selectedIds.addAll(filteredCountries.map((e) => e.id));
+        selectedIds.addAll(filteredDivThree.map((e) => e.id));
       }
     });
   }
@@ -65,29 +65,28 @@ class _CountryViewState extends State<CountryView> {
     });
   }
 
+  void _filterDivisions() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        filteredDivThree = List.from(divisionThreeList);
+      } else {
+        filteredDivThree = divisionThreeList
+            .where((div) => div.divisionThree.toLowerCase().contains(query))
+            .toList();
+      }
+    });
+  }
+
   /// Are *all visible* items currently selected?
   bool get _allVisibleSelected =>
-      filteredCountries.isNotEmpty &&
-      selectedIds.length == filteredCountries.length;
+      filteredDivThree.isNotEmpty &&
+      selectedIds.length == filteredDivThree.length;
 
-  List<CountryModel> countries = [];
-  List<CountryModel> filteredCountries = [];
-  final query = "";
-  final TextEditingController _searchController = TextEditingController();
-
-  // Page-specific colour palette
-  final Color _bgColor = Colors.black; // page background
-  final Color _cardColor = Color(0xFF262626); // dark grey card
-  final Color _chipColor = Color(0xFF212121); // chip background
-  final Color _accentColor = Color(0xFFFCC737); // gold accent
-  final Color _textPrimary = Colors.white; // main text
-  final Color _textSecondary = Colors.white60; // secondary text
-  // ──────────────────────────────────────
-
-  bool isDataLoaded = false;
-
-  Future<void> getallCountries() async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country/all');
+  Future<void> getAllDivisionThree() async {
+    final url = Uri.parse(
+      '${ApiEndpoints.baseUrl}/division-three/all?divisionTwo=${widget.divisionTwoId}',
+    );
 
     try {
       final response = await http.get(url);
@@ -96,42 +95,27 @@ class _CountryViewState extends State<CountryView> {
         final json = jsonDecode(response.body);
         final List<dynamic> dataList = json['data'];
 
-        //using model
         final fetched = dataList
-            .map((countryJson) => CountryModel.fromJson(countryJson))
+            .map((e) => DivisionThreeModel.fromJson(e))
             .toList();
 
         setState(() {
-          countries = fetched;
-          // filteredCountries = List.from(fetched);
-          filteredCountries = countries
-              .where((c) => c.country.toLowerCase().contains(query))
-              .toList();
-
+          divisionThreeList = fetched;
+          filteredDivThree = List.from(divisionThreeList);
           isDataLoaded = true;
-          print(countries);
         });
       } else {
-        debugPrint('failed to fetch countries: ${response.statusCode}');
+        debugPrint('Failed to fetch Division Three: ${response.statusCode}');
+        print('Response body: ${response.body}');
       }
     } catch (e) {
-      debugPrint('Exception Occured : $e');
+      debugPrint('Error fetching Division Three: $e');
     }
   }
 
-  Future<void> _addCountry({
-    required String country,
-    required String divisionOne,
-    required String divisionTwo,
-    required String divisionThree,
-  }) async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country');
-    final body = {
-      "country": country,
-      "divisionOneLabel": divisionOne,
-      "divisionTwoLabel": divisionTwo,
-      "divisionThreeLabel": divisionThree,
-    };
+  Future<bool> _addDivThree(String name) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-three');
+    final body = {"divisionThree": name, "divisionTwoId": widget.divisionTwoId};
 
     try {
       final response = await http.post(
@@ -141,50 +125,56 @@ class _CountryViewState extends State<CountryView> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('Country added successfully');
-        await getallCountries(); // refresh list
+        await getAllDivisionThree(); // Refresh list
+        return true;
       } else {
-        debugPrint('Failed to add country: ${response.statusCode}');
-        _showConflictDialog();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to add country')));
+        debugPrint('Failed to add division: ${response.statusCode}');
+        return false;
       }
     } catch (e) {
-      debugPrint('Error: $e');
-      _showConflictDialog();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('An error occurred')));
+      debugPrint('Error adding division: $e');
+      return false;
     }
   }
 
-  Future<bool> deleteCountries(List<String> id) async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country');
+  //deletion
+  Future<bool> deleteDivThree(List<String> ids) async {
+    // if (ids.isEmpty) {
+    //   debugPrint("❌ No IDs to delete.");
+    //   return false;
+    // }
+
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-three');
 
     try {
+      final body = jsonEncode(ids); // ✅ array like ["id1","id2"]
+      print('Sending body: $body');
+
       final response = await http.delete(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(id),
+        body: body,
       );
+
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json['isSuccess'] == true;
       } else {
-        debugPrint('delete failed with status:${response.statusCode}');
+        debugPrint('Delete failed with status: ${response.statusCode}');
         return false;
       }
     } catch (e) {
-      debugPrint('Error deleting country: $e');
+      debugPrint('Error deleting division: $e');
       return false;
     }
   }
 
   //update status
-  Future<bool> _updateCountryStatus(String id, bool status) async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country');
+  Future<bool> _updateDivThreeStatus(String id, bool status) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-three');
 
     final body = {'id': id, 'status': status};
 
@@ -198,7 +188,9 @@ class _CountryViewState extends State<CountryView> {
       if (response.statusCode == 200) {
         debugPrint('Status updated to $status');
         return true;
+        // return data['isSuccess'] == true;
       } else if (response.statusCode == 409) {
+        // Conflict: activity already exists or similar business rule violation
         _showConflictDialog(); // <-- Call custom dialog
         return false;
       } else {
@@ -211,29 +203,31 @@ class _CountryViewState extends State<CountryView> {
     }
   }
 
-  Future<Map<String, dynamic>?> updateCountry({
+  void _showConflictDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Conflict'),
+        content: Text(
+          'This activity already exists or conflicts with another entry.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  //update divisionThree
+  Future<bool> updateDivisionThree({
     required String id,
-    String? country,
-    String? divisionOneLabel,
-    String? divisionTwoLabel,
-    String? divisionThreeLabel,
+    required String divisionThree,
   }) async {
-    final Map<String, dynamic> body = {'id': id};
-
-    if (country != null && country.isNotEmpty) {
-      body['country'] = country;
-    }
-    if (divisionOneLabel != null && divisionOneLabel.isNotEmpty) {
-      body['divisionOneLabel'] = divisionOneLabel;
-    }
-    if (divisionTwoLabel != null && divisionTwoLabel.isNotEmpty) {
-      body['divisionTwoLabel'] = divisionTwoLabel;
-    }
-    if (divisionThreeLabel != null && divisionThreeLabel.isNotEmpty) {
-      body['divisionThreeLabel'] = divisionThreeLabel;
-    }
-
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-three');
+    final body = {"id": id, "divisionThree": divisionThree};
 
     try {
       final response = await http.put(
@@ -244,42 +238,22 @@ class _CountryViewState extends State<CountryView> {
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        return json['data'];
+        return json['isSuccess'] == true;
       } else {
-        debugPrint(
-          ' Failed with status ${response.statusCode}: ${response.body}',
-        );
-        return null;
+        debugPrint('Update failed: ${response.body}');
+        return false;
       }
     } catch (e) {
-      debugPrint(' Exception: $e');
-      return null;
+      debugPrint('Exception while updating divisionThree: $e');
+      return false;
     }
-  }
-
-  void _filterCountries() {
-    if (!isDataLoaded) return;
-
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        filteredCountries = List.from(countries);
-      } else {
-        filteredCountries = countries.where((country) {
-          final name = country.country.toLowerCase();
-          return name.contains(query);
-        }).toList();
-      }
-      debugPrint("Searching in ${countries.length} items");
-    });
   }
 
   @override
   void initState() {
     super.initState();
-
-    _searchController.addListener(_filterCountries);
-    getallCountries();
+    _searchController.addListener(_filterDivisions);
+    getAllDivisionThree();
   }
 
   @override
@@ -290,32 +264,96 @@ class _CountryViewState extends State<CountryView> {
         backgroundColor: _bgColor,
         iconTheme: IconThemeData(color: _accentColor),
         elevation: 0,
-
-        // title: Text('Countries', style: TextStyle(color: Colors.white)),
         title: Text(
-          isMultiSelectMode ? '${selectedIds.length} selected' : 'Countries',
+          isMultiSelectMode
+              ? '${selectedIds.length} selected'
+              : widget
+                    .country
+                    .divisionThreeLabel, // ✅ Now shows dynamic label like "State", "District"
           style: TextStyle(color: _textSecondary),
         ),
+
         actions: isMultiSelectMode
             ? [
                 IconButton(
                   icon: Icon(Icons.delete, color: Colors.redAccent),
                   onPressed: () async {
-                    final confirmed = await deleteCountries(
-                      selectedIds.toList(),
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text('Confirm Deletion'),
+                        content: Text(
+                          'Are you sure you want to delete ${selectedIds.length} selected item(s)?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text('Yes'),
+                          ),
+                        ],
+                      ),
                     );
-                    if (confirmed) {
-                      setState(() {
-                        countries.removeWhere(
-                          (x) => selectedIds.contains(x.id),
+
+                    if (confirm == true) {
+                      final success = await deleteDivThree(
+                        selectedIds.toList(),
+                      );
+                      if (success) {
+                        setState(() {
+                          divisionThreeList.removeWhere(
+                            (x) => selectedIds.contains(x.id),
+                          );
+                          filteredDivThree.removeWhere(
+                            (x) => selectedIds.contains(x.id),
+                          );
+                          selectedIds.clear();
+                          isMultiSelectMode = false;
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Selected divisions deleted successfully',
+                            ),
+                          ),
                         );
-                        getallCountries();
-                        selectedIds.clear();
-                        isMultiSelectMode = false;
-                      });
+
+                        await getAllDivisionThree(); // Optional refresh
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Failed to delete selected divisions',
+                            ),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                      }
                     }
                   },
                 ),
+
+                // IconButton(
+                //   icon: Icon(Icons.delete, color: Colors.redAccent),
+                //   onPressed: () async {
+                //     final confirmed = await deleteDivThree(selectedIds.toList());
+                //     if (confirmed) {
+                //       setState(() {
+                //         divisionThreeList.removeWhere(
+                //           (x) => selectedIds.contains(x.id),
+                //         );
+
+                //         getAllDivisionThree();
+                //         selectedIds.clear();
+                //         isMultiSelectMode = false;
+                //       });
+                //     }
+                //   },
+                // ),
               ]
             : [],
       ),
@@ -340,7 +378,6 @@ class _CountryViewState extends State<CountryView> {
               ),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Align(
@@ -377,56 +414,48 @@ class _CountryViewState extends State<CountryView> {
             ),
           ),
 
-          //list
           Expanded(
             child: isDataLoaded
-                ? filteredCountries.isEmpty
+                ? filteredDivThree.isEmpty
                       ? Center(
                           child: Text(
-                            'No countries found',
+                            'No divisions found',
                             style: TextStyle(color: _textSecondary),
                           ),
                         )
                       : ListView.builder(
-                          itemCount: filteredCountries.length,
+                          itemCount: filteredDivThree.length,
                           itemBuilder: (context, index) {
-                            final c = filteredCountries[index];
-                            final isSelected = selectedIds.contains(c.id);
+                            final d = filteredDivThree[index];
+                            final isSelected = selectedIds.contains(d.id);
 
                             return GestureDetector(
                               onLongPress: () {
                                 setState(() {
                                   isMultiSelectMode = true;
-                                  selectedIds.add(c.id);
+                                  selectedIds.add(d.id);
                                 });
                               },
                               onTap: () {
                                 if (isMultiSelectMode) {
                                   setState(() {
                                     if (isSelected) {
-                                      selectedIds.remove(c.id);
+                                      selectedIds.remove(d.id);
                                       if (selectedIds.isEmpty)
                                         isMultiSelectMode = false;
                                     } else {
-                                      selectedIds.add(c.id);
+                                      //add redirection to div2
+                                      //navigator
+
+                                      selectedIds.add(d.id);
                                     }
                                   });
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => Division1View(
-                                        // countryId: c.id,
-                                        country: c,
-                                        // divisionLabel: c.divisionOneLabel,
-                                      ),
-                                    ),
-                                  );
                                 }
                               },
                               child: Card(
-                                color: isMultiSelectMode && isSelected
-                                    ? Colors.grey[700]
+                                elevation: isSelected ? 4 : 1,
+                                color: isSelected
+                                    ? Colors.grey[800]
                                     : _cardColor,
                                 margin: EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -436,103 +465,95 @@ class _CountryViewState extends State<CountryView> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Padding(
-                                  padding: EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(16),
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      // ─ Left: Country Info ─
+                                      Icon(
+                                        Icons.location_city,
+                                        color: _accentColor,
+                                      ),
+                                      const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              c.country,
+                                              d.divisionThree,
                                               style: TextStyle(
                                                 color: _textPrimary,
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              '${c.divisionOneLabel} > ${c.divisionTwoLabel} > ${c.divisionThreeLabel}',
-                                              style: TextStyle(
-                                                color: _textSecondary,
-                                              ),
-                                            ),
+                                            const SizedBox(height: 4),
                                           ],
                                         ),
                                       ),
-
                                       // ─ Right: Status or Delete/Select ─
                                       if (!isMultiSelectMode) ...[
                                         Row(
                                           children: [
                                             IconButton(
                                               icon: Icon(
-                                                Icons.mode_edit_outlined,
+                                                Icons.edit,
                                                 color: _accentColor,
                                               ),
+                                              // onPressed: () {
+                                              //   showDialog(
+                                              //     context: context,
+                                              //     builder: (_) =>
+                                              //         EditDivisionThreeDialog(
+                                              //           initialValue:
+                                              //               d.divisionThree ??
+                                              //               '',
+                                              //           id: d.id,
+                                              //           cardColor: _cardColor,
+                                              //           textPrimary:
+                                              //               _textPrimary,
+                                              //           textSecondary:
+                                              //               _textSecondary,
+                                              //           accentColor:
+                                              //               _accentColor,
+                                              //           onSuccess: () {
+                                              //             getAllDivisionThree(); // refresh after update
+                                              //           },
+                                              //         ),
+                                              //   );
+                                              // },
                                               onPressed: () {
                                                 showDialog(
                                                   context: context,
-                                                  builder: (_) => CountryDetailDialog(
-                                                    country:
-                                                        c, // CountryModel object
+                                                  builder: (_) => EditDivisionDialog(
+                                                    title:
+                                                        'Edit ${widget.country.divisionOneLabel}',
+                                                    initialValue:
+                                                        d.divisionThree,
                                                     cardColor: _cardColor,
                                                     textPrimary: _textPrimary,
                                                     textSecondary:
                                                         _textSecondary,
                                                     accentColor: _accentColor,
-                                                    onEdit: () {
-                                                      Navigator.pop(
-                                                        context,
-                                                      ); // Close detail dialog
-                                                      showDialog(
-                                                        context: context,
-                                                        builder: (_) => EditCountryDialog(
-                                                          country: c,
-                                                          cardColor: _cardColor,
-                                                          textPrimary:
-                                                              _textPrimary,
-                                                          textSecondary:
-                                                              _textSecondary,
-                                                          accentColor:
-                                                              _accentColor,
-                                                          onUpdate: (updatedData) => updateCountry(
-                                                            id: updatedData['id'],
-                                                            country:
-                                                                updatedData['country'],
-                                                            divisionOneLabel:
-                                                                updatedData['divisionOneLabel'],
-                                                            divisionTwoLabel:
-                                                                updatedData['divisionTwoLabel'],
-                                                            divisionThreeLabel:
-                                                                updatedData['divisionThreeLabel'],
-                                                          ),
-                                                          onUpdated: () {
-                                                            getallCountries();
-                                                          },
-                                                          onCancel: () =>
-                                                              Navigator.pop(
-                                                                context,
-                                                              ),
-                                                        ),
-                                                      );
+                                                    onSubmit: (newName) async {
+                                                      final success =
+                                                          await updateDivisionThree(
+                                                            id: d.id,
+                                                            divisionThree:
+                                                                newName,
+                                                          );
+                                                      if (success) {
+                                                        await getAllDivisionThree();
+                                                      }
+                                                      return success;
                                                     },
-                                                    onCancel: () =>
-                                                        Navigator.pop(context),
                                                   ),
                                                 );
                                               },
                                             ),
-
                                             Transform.scale(
                                               scale: 0.7,
                                               child: Switch(
-                                                value: c.status,
+                                                value: d.status,
                                                 activeColor: Colors.green,
                                                 onChanged: (val) async {
                                                   final confirm =
@@ -543,7 +564,7 @@ class _CountryViewState extends State<CountryView> {
                                                             'Confirm',
                                                           ),
                                                           content: Text(
-                                                            'Are you sure you want to ${val ? 'activate' : 'deactivate'} this country?',
+                                                            'Are you sure you want to ${val ? 'activate' : 'deactivate'} this division?',
                                                           ),
                                                           actions: [
                                                             TextButton(
@@ -572,15 +593,24 @@ class _CountryViewState extends State<CountryView> {
 
                                                   if (confirm == true) {
                                                     final success =
-                                                        await _updateCountryStatus(
-                                                          c.id,
+                                                        await _updateDivThreeStatus(
+                                                          d.id,
                                                           val,
                                                         );
 
                                                     if (success) {
                                                       setState(() {
-                                                        c.status = val;
+                                                        d.status = val;
                                                       });
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Status Updated',
+                                                          ),
+                                                        ),
+                                                      );
                                                     } else {
                                                       ScaffoldMessenger.of(
                                                         context,
@@ -611,7 +641,7 @@ class _CountryViewState extends State<CountryView> {
                                                               'Confirm',
                                                             ),
                                                             content: Text(
-                                                              'Are you sure you want to delete the country "${c.country}"?',
+                                                              'Are you sure you want to delete the division "${d.divisionThree}"?',
                                                             ),
                                                             actions: [
                                                               TextButton(
@@ -640,47 +670,56 @@ class _CountryViewState extends State<CountryView> {
 
                                                 if (confirm == true) {
                                                   final success =
-                                                      await deleteCountries([
-                                                        c.id,
+                                                      await deleteDivThree([
+                                                        d.id,
                                                       ]);
                                                   if (success) {
                                                     setState(() {
-                                                      countries.removeWhere(
-                                                        (x) => x.id == c.id,
-                                                      );
-                                                      filteredCountries
+                                                      divisionThreeList
                                                           .removeWhere(
-                                                            (x) => x.id == c.id,
+                                                            (x) => x.id == d.id,
+                                                          );
+                                                      filteredDivThree
+                                                          .removeWhere(
+                                                            (x) => x.id == d.id,
                                                           );
                                                     });
-                                                  } else {
                                                     ScaffoldMessenger.of(
                                                       context,
                                                     ).showSnackBar(
                                                       SnackBar(
                                                         content: Text(
-                                                          'Failed to delete country',
+                                                          'Division deleted',
                                                         ),
                                                       ),
                                                     );
                                                   }
+                                                } else {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Failed to delete division',
+                                                      ),
+                                                    ),
+                                                  );
                                                 }
                                               },
                                             ),
                                           ],
                                         ),
-                                      ] else
+                                      ] else if (isMultiSelectMode)
                                         Checkbox(
                                           value: isSelected,
                                           onChanged: (val) {
                                             setState(() {
                                               if (val == true) {
-                                                selectedIds.add(c.id);
+                                                selectedIds.add(d.id);
                                               } else {
-                                                selectedIds.remove(c.id);
-                                                if (selectedIds.isEmpty) {
+                                                selectedIds.remove(d.id);
+                                                if (selectedIds.isEmpty)
                                                   isMultiSelectMode = false;
-                                                }
                                               }
                                             });
                                           },
@@ -693,7 +732,11 @@ class _CountryViewState extends State<CountryView> {
                             );
                           },
                         )
-                : Center(child: Text("no Countries Added")),
+                : Center(
+                    child: Text(
+                      'No ${widget.country.divisionThreeLabel} to show',
+                    ),
+                  ),
           ),
         ],
       ),
@@ -704,42 +747,16 @@ class _CountryViewState extends State<CountryView> {
         onPressed: () {
           showDialog(
             context: context,
-            builder: (_) => AddCountryDialog(
-              onSubmit:
-                  ({
-                    required String country,
-                    required String divisionOne,
-                    required String divisionTwo,
-                    required String divisionThree,
-                  }) async {
-                    await _addCountry(
-                      country: country,
-                      divisionOne: divisionOne,
-                      divisionTwo: divisionTwo,
-                      divisionThree: divisionThree,
-                    );
-                  },
+            builder: (_) => AddDivisionDialog(
+              label: widget.country.divisionOneLabel,
+              cardColor: _cardColor,
+              textPrimary: _textPrimary,
+              textSecondary: _textSecondary,
+              accentColor: _accentColor,
+              onSubmit: _addDivThree,
             ),
           );
         },
-      ),
-    );
-  }
-
-  void _showConflictDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Conflict'),
-        content: Text(
-          'This activity already exists or conflicts with another entry.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('OK'),
-          ),
-        ],
       ),
     );
   }
