@@ -6,7 +6,7 @@ import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_add.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_detail_view.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_edit.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/division1_view.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/div_one_view.dart';
 
 class CountryView extends StatefulWidget {
   const CountryView({super.key});
@@ -20,31 +20,6 @@ class CountryView extends StatefulWidget {
 class _CountryViewState extends State<CountryView> {
   bool isMultiSelectMode = false;
   Set<String> selectedIds = {};
-
-  Future<bool> _deleteDivision(String countryId, String divisionLevel) async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country/division');
-
-    final body = {'id': countryId, 'divisionLevel': divisionLevel};
-
-    try {
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 200) {
-        await getallCountries(); // refresh list
-        return true;
-      } else {
-        debugPrint('Failed to delete division: ${response.statusCode}');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('Error deleting division: $e');
-      return false;
-    }
-  }
 
   void _enterSelectionMode({bool selectAll = false}) {
     setState(() {
@@ -78,7 +53,7 @@ class _CountryViewState extends State<CountryView> {
   // Page-specific colour palette
   final Color _bgColor = Colors.black; // page background
   final Color _cardColor = Color(0xFF262626); // dark grey card
-  final Color _chipColor = Color(0xFF212121); // chip background
+  // final Color _chipColor = Color(0xFF212121); // chip background
   final Color _accentColor = Color(0xFFFCC737); // gold accent
   final Color _textPrimary = Colors.white; // main text
   final Color _textSecondary = Colors.white60; // secondary text

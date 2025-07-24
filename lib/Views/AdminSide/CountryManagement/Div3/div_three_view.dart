@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_three_model.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/add_divthree_dialog.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/edit_div3_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
 
@@ -106,7 +104,7 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
         });
       } else {
         debugPrint('Failed to fetch Division Three: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        debugPrint('Response body: ${response.body}');
       }
     } catch (e) {
       debugPrint('Error fetching Division Three: $e');
@@ -139,16 +137,11 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
 
   //deletion
   Future<bool> deleteDivThree(List<String> ids) async {
-    // if (ids.isEmpty) {
-    //   debugPrint("❌ No IDs to delete.");
-    //   return false;
-    // }
-
     final url = Uri.parse('${ApiEndpoints.baseUrl}/division-three');
 
     try {
-      final body = jsonEncode(ids); // ✅ array like ["id1","id2"]
-      print('Sending body: $body');
+      final body = jsonEncode(ids);
+      debugPrint('Sending body: $body');
 
       final response = await http.delete(
         url,
@@ -156,8 +149,8 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
         body: body,
       );
 
-      print('Status: ${response.statusCode}');
-      print('Body: ${response.body}');
+      debugPrint('Status: ${response.statusCode}');
+      debugPrint('Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -267,9 +260,7 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
         title: Text(
           isMultiSelectMode
               ? '${selectedIds.length} selected'
-              : widget
-                    .country
-                    .divisionThreeLabel, // ✅ Now shows dynamic label like "State", "District"
+              : widget.country.divisionThreeLabel,
           style: TextStyle(color: _textSecondary),
         ),
 
@@ -302,6 +293,7 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                       final success = await deleteDivThree(
                         selectedIds.toList(),
                       );
+                      if (!mounted) return;
                       if (success) {
                         setState(() {
                           divisionThreeList.removeWhere(
@@ -322,10 +314,11 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                           ),
                         );
 
-                        await getAllDivisionThree(); // Optional refresh
+                        await getAllDivisionThree();
+                        if (!mounted) return;
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                          const SnackBar(
                             content: Text(
                               'Failed to delete selected divisions',
                             ),
@@ -336,24 +329,6 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                     }
                   },
                 ),
-
-                // IconButton(
-                //   icon: Icon(Icons.delete, color: Colors.redAccent),
-                //   onPressed: () async {
-                //     final confirmed = await deleteDivThree(selectedIds.toList());
-                //     if (confirmed) {
-                //       setState(() {
-                //         divisionThreeList.removeWhere(
-                //           (x) => selectedIds.contains(x.id),
-                //         );
-
-                //         getAllDivisionThree();
-                //         selectedIds.clear();
-                //         isMultiSelectMode = false;
-                //       });
-                //     }
-                //   },
-                // ),
               ]
             : [],
       ),
@@ -441,12 +416,10 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                                   setState(() {
                                     if (isSelected) {
                                       selectedIds.remove(d.id);
-                                      if (selectedIds.isEmpty)
+                                      if (selectedIds.isEmpty) {
                                         isMultiSelectMode = false;
+                                      }
                                     } else {
-                                      //add redirection to div2
-                                      //navigator
-
                                       selectedIds.add(d.id);
                                     }
                                   });
@@ -468,10 +441,10 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                                   padding: const EdgeInsets.all(16),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.location_city,
-                                        color: _accentColor,
-                                      ),
+                                      // Icon(
+                                      //   Icons.location_city,
+                                      //   color: _accentColor,
+                                      // ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
@@ -499,28 +472,6 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                                                 Icons.edit,
                                                 color: _accentColor,
                                               ),
-                                              // onPressed: () {
-                                              //   showDialog(
-                                              //     context: context,
-                                              //     builder: (_) =>
-                                              //         EditDivisionThreeDialog(
-                                              //           initialValue:
-                                              //               d.divisionThree ??
-                                              //               '',
-                                              //           id: d.id,
-                                              //           cardColor: _cardColor,
-                                              //           textPrimary:
-                                              //               _textPrimary,
-                                              //           textSecondary:
-                                              //               _textSecondary,
-                                              //           accentColor:
-                                              //               _accentColor,
-                                              //           onSuccess: () {
-                                              //             getAllDivisionThree(); // refresh after update
-                                              //           },
-                                              //         ),
-                                              //   );
-                                              // },
                                               onPressed: () {
                                                 showDialog(
                                                   context: context,
