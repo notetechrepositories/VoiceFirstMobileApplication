@@ -3,32 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/country_model.dart';
-import 'package:voicefirst/Models/division_one_model.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/add_divisionOne.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/update_division_one.dart';
-import 'package:voicefirst/Views/AdminSide/CountryManagement/Div2/divtwo_view.dart';
+import 'package:voicefirst/Models/division_two_model.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/div_three_view.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
 
-class Division1View extends StatefulWidget {
-  // const Division1View({super.key});
+class DivisionTwoView extends StatefulWidget {
+  // const DivisionTwoView({super.key});
 
-  // final String countryId;
-  // final String divisionLabel;
-
+  final String divisionOneId;
   final CountryModel country;
 
-  const Division1View({
+  const DivisionTwoView({
     super.key,
+    required this.divisionOneId,
     required this.country,
-    // required this.divisionLabel,
   });
 
   @override
-  State<Division1View> createState() => _Division1ViewState();
+  State<DivisionTwoView> createState() => _DivisionTwoViewState();
 }
 
-class _Division1ViewState extends State<Division1View> {
+class _DivisionTwoViewState extends State<DivisionTwoView> {
   //to accept data passing from country page
 
   // Page-specific colour palette
@@ -44,8 +40,8 @@ class _Division1ViewState extends State<Division1View> {
   Set<String> selectedIds = {};
   bool isDataLoaded = false;
 
-  List<DivisionOneModel> divisionOneList = [];
-  List<DivisionOneModel> filteredDivOne = [];
+  List<DivisionTwoModel> divisionTwoList = [];
+  List<DivisionTwoModel> filteredDivTwo = [];
   final query = "";
   final TextEditingController _searchController = TextEditingController();
 
@@ -55,7 +51,7 @@ class _Division1ViewState extends State<Division1View> {
       selectedIds.clear();
       if (selectAll) {
         // Select only the currently *visible* (filtered) items.
-        selectedIds.addAll(filteredDivOne.map((e) => e.id));
+        selectedIds.addAll(filteredDivTwo.map((e) => e.id));
       }
     });
   }
@@ -71,10 +67,10 @@ class _Division1ViewState extends State<Division1View> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        filteredDivOne = List.from(divisionOneList);
+        filteredDivTwo = List.from(divisionTwoList);
       } else {
-        filteredDivOne = divisionOneList
-            .where((div) => div.divisionOne.toLowerCase().contains(query))
+        filteredDivTwo = divisionTwoList
+            .where((div) => div.divisionTwo.toLowerCase().contains(query))
             .toList();
       }
     });
@@ -82,11 +78,11 @@ class _Division1ViewState extends State<Division1View> {
 
   /// Are *all visible* items currently selected?
   bool get _allVisibleSelected =>
-      filteredDivOne.isNotEmpty && selectedIds.length == filteredDivOne.length;
+      filteredDivTwo.isNotEmpty && selectedIds.length == filteredDivTwo.length;
 
-  Future<void> getAllDivisionOnes() async {
+  Future<void> getAllDivisionTwos() async {
     final url = Uri.parse(
-      '${ApiEndpoints.baseUrl}/division-one/all?country=${widget.country.id}',
+      '${ApiEndpoints.baseUrl}/division-two/all?divisionOne=${widget.divisionOneId}',
     );
 
     try {
@@ -97,26 +93,26 @@ class _Division1ViewState extends State<Division1View> {
         final List<dynamic> dataList = json['data'];
 
         final fetched = dataList
-            .map((e) => DivisionOneModel.fromJson(e))
+            .map((e) => DivisionTwoModel.fromJson(e))
             .toList();
 
         setState(() {
-          divisionOneList = fetched;
-          filteredDivOne = List.from(divisionOneList);
+          divisionTwoList = fetched;
+          filteredDivTwo = List.from(divisionTwoList);
           isDataLoaded = true;
         });
       } else {
-        debugPrint('Failed to fetch Division One: ${response.statusCode}');
+        debugPrint('Failed to fetch Division Two: ${response.statusCode}');
         print('Response body: ${response.body}');
       }
     } catch (e) {
-      debugPrint('Error fetching Division One: $e');
+      debugPrint('Error fetching Division Two: $e');
     }
   }
 
-  Future<bool> _addDivisionOne(String name) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-one');
-    final body = {"divisionOne": name, "countryId": widget.country.id};
+  Future<bool> _addDivisionTwo(String name) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-two');
+    final body = {"divisionTwo": name, "divisionOneId": widget.divisionOneId};
 
     try {
       final response = await http.post(
@@ -126,7 +122,7 @@ class _Division1ViewState extends State<Division1View> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        await getAllDivisionOnes(); // Refresh list
+        await getAllDivisionTwos(); // Refresh list
         return true;
       } else {
         debugPrint('Failed to add division: ${response.statusCode}');
@@ -139,13 +135,13 @@ class _Division1ViewState extends State<Division1View> {
   }
 
   //deletion
-  Future<bool> deleteDivOne(List<String> ids) async {
+  Future<bool> deleteDivTwo(List<String> ids) async {
     // if (ids.isEmpty) {
     //   debugPrint("❌ No IDs to delete.");
     //   return false;
     // }
 
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-one');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-two');
 
     try {
       final body = jsonEncode(ids); // ✅ array like ["id1","id2"]
@@ -174,8 +170,8 @@ class _Division1ViewState extends State<Division1View> {
   }
 
   //update status
-  Future<bool> _updateDivOneStatus(String id, bool status) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-one');
+  Future<bool> _updateDivTwoStatus(String id, bool status) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-two');
 
     final body = {'id': id, 'status': status};
 
@@ -204,34 +200,6 @@ class _Division1ViewState extends State<Division1View> {
     }
   }
 
-  //update divisonone
-  Future<bool> updateDivisionOne({
-    required String id,
-    required String divisionOne,
-  }) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-one');
-    final body = {"id": id, "divisionOne": divisionOne};
-
-    try {
-      final response = await http.put(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['isSuccess'] == true;
-      } else {
-        debugPrint('Update failed: ${response.body}');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('Exception while updating divisionOne: $e');
-      return false;
-    }
-  }
-
   void _showConflictDialog() {
     showDialog(
       context: context,
@@ -250,11 +218,39 @@ class _Division1ViewState extends State<Division1View> {
     );
   }
 
+  //update divisonone
+  Future<bool> updateDivisionTwo({
+    required String id,
+    required String divisionTwo,
+  }) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-two');
+    final body = {"id": id, "divisionTwo": divisionTwo};
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['isSuccess'] == true;
+      } else {
+        debugPrint('Update failed: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Exception while updating divisionTwo: $e');
+      return false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_filterDivisions);
-    getAllDivisionOnes();
+    getAllDivisionTwos();
   }
 
   @override
@@ -270,7 +266,7 @@ class _Division1ViewState extends State<Division1View> {
               ? '${selectedIds.length} selected'
               : widget
                     .country
-                    .divisionOneLabel, // ✅ Now shows dynamic label like "State", "District"
+                    .divisionTwoLabel, // ✅ Now shows dynamic label like "State", "District"
           style: TextStyle(color: _textSecondary),
         ),
 
@@ -300,13 +296,13 @@ class _Division1ViewState extends State<Division1View> {
                     );
 
                     if (confirm == true) {
-                      final success = await deleteDivOne(selectedIds.toList());
+                      final success = await deleteDivTwo(selectedIds.toList());
                       if (success) {
                         setState(() {
-                          divisionOneList.removeWhere(
+                          divisionTwoList.removeWhere(
                             (x) => selectedIds.contains(x.id),
                           );
-                          filteredDivOne.removeWhere(
+                          filteredDivTwo.removeWhere(
                             (x) => selectedIds.contains(x.id),
                           );
                           selectedIds.clear();
@@ -321,7 +317,7 @@ class _Division1ViewState extends State<Division1View> {
                           ),
                         );
 
-                        await getAllDivisionOnes(); // Optional refresh
+                        await getAllDivisionTwos(); // Optional refresh
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -335,24 +331,6 @@ class _Division1ViewState extends State<Division1View> {
                     }
                   },
                 ),
-
-                // IconButton(
-                //   icon: Icon(Icons.delete, color: Colors.redAccent),
-                //   onPressed: () async {
-                //     final confirmed = await deleteDivOne(selectedIds.toList());
-                //     if (confirmed) {
-                //       setState(() {
-                //         divisionOneList.removeWhere(
-                //           (x) => selectedIds.contains(x.id),
-                //         );
-
-                //         getAllDivisionOnes();
-                //         selectedIds.clear();
-                //         isMultiSelectMode = false;
-                //       });
-                //     }
-                //   },
-                // ),
               ]
             : [],
       ),
@@ -415,7 +393,7 @@ class _Division1ViewState extends State<Division1View> {
 
           Expanded(
             child: isDataLoaded
-                ? filteredDivOne.isEmpty
+                ? filteredDivTwo.isEmpty
                       ? Center(
                           child: Text(
                             'No divisions found',
@@ -423,9 +401,9 @@ class _Division1ViewState extends State<Division1View> {
                           ),
                         )
                       : ListView.builder(
-                          itemCount: filteredDivOne.length,
+                          itemCount: filteredDivTwo.length,
                           itemBuilder: (context, index) {
-                            final d = filteredDivOne[index];
+                            final d = filteredDivTwo[index];
                             final isSelected = selectedIds.contains(d.id);
 
                             return GestureDetector(
@@ -447,19 +425,15 @@ class _Division1ViewState extends State<Division1View> {
                                     }
                                   });
                                 } else {
-                                  //add redirection to div2
-                                  //navigator
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => DivisionTwoView(
-                                        divisionOneId: d.id,
+                                      builder: (_) => DivisionThreeView(
+                                        divisionTwoId: d.id,
                                         country: widget.country,
                                       ),
                                     ),
                                   );
-
-                                  // selectedIds.add(d.id);
                                 }
                               },
                               child: Card(
@@ -478,10 +452,10 @@ class _Division1ViewState extends State<Division1View> {
                                   padding: const EdgeInsets.all(16),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.location_city,
-                                        color: _accentColor,
-                                      ),
+                                      // Icon(
+                                      //   Icons.location_city,
+                                      //   color: _accentColor,
+                                      // ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
@@ -489,7 +463,7 @@ class _Division1ViewState extends State<Division1View> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              d.divisionOne,
+                                              d.divisionTwo,
                                               style: TextStyle(
                                                 color: _textPrimary,
                                                 fontSize: 16,
@@ -515,7 +489,7 @@ class _Division1ViewState extends State<Division1View> {
                                                   builder: (_) => EditDivisionDialog(
                                                     title:
                                                         'Edit ${widget.country.divisionOneLabel}',
-                                                    initialValue: d.divisionOne,
+                                                    initialValue: d.divisionTwo,
                                                     cardColor: _cardColor,
                                                     textPrimary: _textPrimary,
                                                     textSecondary:
@@ -523,20 +497,19 @@ class _Division1ViewState extends State<Division1View> {
                                                     accentColor: _accentColor,
                                                     onSubmit: (newName) async {
                                                       final success =
-                                                          await updateDivisionOne(
+                                                          await updateDivisionTwo(
                                                             id: d.id,
-                                                            divisionOne:
+                                                            divisionTwo:
                                                                 newName,
                                                           );
                                                       if (success)
-                                                        await getAllDivisionOnes(); // ✅ Ensures latest list
+                                                        await getAllDivisionTwos(); // ✅ Ensures latest list
                                                       return success;
                                                     },
                                                   ),
                                                 );
                                               },
                                             ),
-
                                             Transform.scale(
                                               scale: 0.7,
                                               child: Switch(
@@ -580,7 +553,7 @@ class _Division1ViewState extends State<Division1View> {
 
                                                   if (confirm == true) {
                                                     final success =
-                                                        await _updateDivOneStatus(
+                                                        await _updateDivTwoStatus(
                                                           d.id,
                                                           val,
                                                         );
@@ -589,6 +562,15 @@ class _Division1ViewState extends State<Division1View> {
                                                       setState(() {
                                                         d.status = val;
                                                       });
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            'Status Updated',
+                                                          ),
+                                                        ),
+                                                      );
                                                     } else {
                                                       ScaffoldMessenger.of(
                                                         context,
@@ -619,7 +601,7 @@ class _Division1ViewState extends State<Division1View> {
                                                               'Confirm',
                                                             ),
                                                             content: Text(
-                                                              'Are you sure you want to delete the division "${d.divisionOne}"?',
+                                                              'Are you sure you want to delete the division "${d.divisionTwo}"?',
                                                             ),
                                                             actions: [
                                                               TextButton(
@@ -648,16 +630,16 @@ class _Division1ViewState extends State<Division1View> {
 
                                                 if (confirm == true) {
                                                   final success =
-                                                      await deleteDivOne([
+                                                      await deleteDivTwo([
                                                         d.id,
                                                       ]);
                                                   if (success) {
                                                     setState(() {
-                                                      divisionOneList
+                                                      divisionTwoList
                                                           .removeWhere(
                                                             (x) => x.id == d.id,
                                                           );
-                                                      filteredDivOne
+                                                      filteredDivTwo
                                                           .removeWhere(
                                                             (x) => x.id == d.id,
                                                           );
@@ -711,12 +693,9 @@ class _Division1ViewState extends State<Division1View> {
                           },
                         )
                 : Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 0, bottom: 250),
-                      child: Text(
-                        'No ${widget.country.divisionOneLabel} to show',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                    child: Text(
+                      'No ${widget.country.divisionTwoLabel} to show',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
           ),
@@ -734,7 +713,7 @@ class _Division1ViewState extends State<Division1View> {
               textPrimary: _textPrimary,
               textSecondary: _textSecondary,
               accentColor: _accentColor,
-              onSubmit: _addDivisionOne, // <-- your function in the view
+              onSubmit: _addDivisionTwo,
             ),
           );
         },
