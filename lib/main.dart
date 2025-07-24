@@ -4,6 +4,7 @@ import 'package:voicefirst/Views/Roles/role_screen.dart';
 import 'package:voicefirst/Views/Splash/splash_screen.dart';
 
 import 'Views/AdminSide/BusinessActivty/business_activity.dart';
+import 'Views/AnswerType/answer_type.dart';
 import 'Views/Dashboard/user_home_screen.dart';
 
 void main() {
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
         "system-business-activity": (context) => AddBusinessactivity(),
         "/admin/admin-dashboard": (context) => Userhomescreen(),
         "country": (context) => CountryView(),
+        "system-answer-type": (context) => ManageAnswerTypePage(),
       },
     );
   }
