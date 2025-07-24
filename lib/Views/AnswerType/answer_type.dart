@@ -11,7 +11,7 @@ class ManageAnswerTypePage extends StatefulWidget {
 class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
   List<AnswerTypeModel> _answerTypes = [];
   List<AnswerTypeModel> _filtered = [];
-  Set<String> _selectedIds = {};
+  final Set<String> _selectedIds = {};
 
   final _searchController = TextEditingController();
   String _statusFilter = "All";
@@ -101,7 +101,7 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
                         url,
                         headers: {'Content-Type': 'application/json'},
                         body: jsonEncode({
-                          'id': existing!.id,
+                          'id': existing.id,
                           'answerTypeName': name,
                           'status': existing.status,
                         }),
