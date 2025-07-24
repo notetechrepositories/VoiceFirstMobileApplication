@@ -10,6 +10,7 @@ class EditCountryDialog extends StatefulWidget {
   final Future<Map<String, dynamic>?> Function(Map<String, dynamic>) onUpdate;
   final VoidCallback onUpdated;
   final VoidCallback onCancel;
+  // final VoidCallback onCancelAndShowDetail;
 
   const EditCountryDialog({
     super.key,
@@ -21,6 +22,7 @@ class EditCountryDialog extends StatefulWidget {
     required this.onUpdate,
     required this.onUpdated,
     required this.onCancel,
+    // required this.onCancelAndShowDetail,
   });
 
   @override
@@ -120,9 +122,10 @@ class _EditCountryDialogState extends State<EditCountryDialog> {
       actions: [
         TextButton(
           onPressed: () {
-            widget.onCancel();
-            Navigator.of(context).pop();
+            Navigator.of(context).pop(); // close Edit
+            // widget.onCancelAndShowDetail(); // reopen Detail
           },
+
           child: Text('Cancel', style: TextStyle(color: widget.textSecondary)),
         ),
         TextButton(

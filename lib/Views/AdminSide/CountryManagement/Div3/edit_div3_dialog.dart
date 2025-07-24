@@ -1,12 +1,10 @@
-// //to be done
-
 // import 'package:flutter/material.dart';
 // import 'package:http/http.dart' as http;
 // import 'dart:convert';
 
 // import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 
-// class EditDivisionOneDialog extends StatefulWidget {
+// class EditDivisionThreeDialog extends StatefulWidget {
 //   final String initialValue;
 //   final String id;
 //   final Color cardColor;
@@ -15,7 +13,7 @@
 //   final Color accentColor;
 //   final VoidCallback onSuccess;
 
-//   const EditDivisionOneDialog({
+//   const EditDivisionThreeDialog({
 //     super.key,
 //     required this.initialValue,
 //     required this.id,
@@ -27,10 +25,11 @@
 //   });
 
 //   @override
-//   State<EditDivisionOneDialog> createState() => _EditDivisionOneDialogState();
+//   State<EditDivisionThreeDialog> createState() =>
+//       _EditDivisionThreeDialogState();
 // }
 
-// class _EditDivisionOneDialogState extends State<EditDivisionOneDialog> {
+// class _EditDivisionThreeDialogState extends State<EditDivisionThreeDialog> {
 //   late TextEditingController _controller;
 //   bool _isLoading = false;
 
@@ -49,7 +48,7 @@
 
 //     setState(() => _isLoading = true);
 
-//     final success = await _updateDivisionOne(widget.id, newValue);
+//     final success = await _updateDivisionThree(widget.id, newValue);
 //     setState(() => _isLoading = false);
 
 //     Navigator.pop(context);
@@ -57,22 +56,22 @@
 //       widget.onSuccess();
 //       ScaffoldMessenger.of(
 //         context,
-//       ).showSnackBar(const SnackBar(content: Text('Division One updated')));
+//       ).showSnackBar(const SnackBar(content: Text('Division Three updated')));
 //     } else {
 //       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text('Failed to update Division One')),
+//         const SnackBar(content: Text('Failed to update Division Three')),
 //       );
 //     }
 //   }
 
-//   Future<bool> _updateDivisionOne(String id, String value) async {
-//     final url = Uri.parse('${ApiEndpoints.baseUrl}/division-one');
+//   Future<bool> _updateDivisionThree(String id, String value) async {
+//     final url = Uri.parse('${ApiEndpoints.baseUrl}/division-three');
 
 //     try {
 //       final response = await http.put(
 //         url,
 //         headers: {'Content-Type': 'application/json'},
-//         body: jsonEncode({"id": id, "divisionOne": value}),
+//         body: jsonEncode({"id": id, "divisionThree": value}),
 //       );
 
 //       if (response.statusCode == 200) {
@@ -93,14 +92,14 @@
 //     return AlertDialog(
 //       backgroundColor: widget.cardColor,
 //       title: Text(
-//         'Edit Division One',
+//         'Edit Division Three',
 //         style: TextStyle(color: widget.accentColor),
 //       ),
 //       content: TextField(
 //         controller: _controller,
 //         style: TextStyle(color: widget.textPrimary),
 //         decoration: InputDecoration(
-//           labelText: 'Division One',
+//           labelText: 'Division Three',
 //           labelStyle: TextStyle(color: widget.textSecondary),
 //         ),
 //       ),

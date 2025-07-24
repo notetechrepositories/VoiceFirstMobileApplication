@@ -6,7 +6,10 @@ import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_two_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/add_divisionOne.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div2/add_divtwo_dialog.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div2/edit_div2_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/div_three_view.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
 
 class DivisionTwoView extends StatefulWidget {
   // const DivisionTwoView({super.key});
@@ -218,6 +221,34 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
     );
   }
 
+  //update divisonone
+  Future<bool> updateDivisionTwo({
+    required String id,
+    required String divisionTwo,
+  }) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-two');
+    final body = {"id": id, "divisionTwo": divisionTwo};
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['isSuccess'] == true;
+      } else {
+        debugPrint('Update failed: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Exception while updating divisionTwo: $e');
+      return false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -303,24 +334,6 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                     }
                   },
                 ),
-
-                // IconButton(
-                //   icon: Icon(Icons.delete, color: Colors.redAccent),
-                //   onPressed: () async {
-                //     final confirmed = await deleteDivTwo(selectedIds.toList());
-                //     if (confirmed) {
-                //       setState(() {
-                //         divisionTwoList.removeWhere(
-                //           (x) => selectedIds.contains(x.id),
-                //         );
-
-                //         getAllDivisionTwos();
-                //         selectedIds.clear();
-                //         isMultiSelectMode = false;
-                //       });
-                //     }
-                //   },
-                // ),
               ]
             : [],
       ),
@@ -468,6 +481,38 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                       if (!isMultiSelectMode) ...[
                                         Row(
                                           children: [
+                                            IconButton(
+                                              icon: Icon(
+                                                Icons.edit,
+                                                color: _accentColor,
+                                              ),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) => EditDivisionDialog(
+                                                    title:
+                                                        'Edit ${widget.country.divisionOneLabel}',
+                                                    initialValue: d.divisionTwo,
+                                                    cardColor: _cardColor,
+                                                    textPrimary: _textPrimary,
+                                                    textSecondary:
+                                                        _textSecondary,
+                                                    accentColor: _accentColor,
+                                                    onSubmit: (newName) async {
+                                                      final success =
+                                                          await updateDivisionTwo(
+                                                            id: d.id,
+                                                            divisionTwo:
+                                                                newName,
+                                                          );
+                                                      if (success)
+                                                        await getAllDivisionTwos(); // ✅ Ensures latest list
+                                                      return success;
+                                                    },
+                                                  ),
+                                                );
+                                              },
+                                            ),
                                             Transform.scale(
                                               scale: 0.7,
                                               child: Switch(
@@ -611,29 +656,6 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                                         ),
                                                       ),
                                                     );
-
-                                                    // selectedIds.clear();
-                                                    // isMultiSelectMode = false;
-                                                    // await getAllDivisionTwos();
-                                                    // ScaffoldMessenger.of(
-                                                    //   context,
-                                                    // ).showSnackBar(
-                                                    //   SnackBar(
-                                                    //     content: Text(
-                                                    //       'Division deleted',
-                                                    //     ),
-                                                    //   ),
-                                                    // );
-                                                    // setState(() {
-                                                    // divisionTwoList
-                                                    //     .removeWhere(
-                                                    //       (x) => x.id == d.id,
-                                                    //     );
-                                                    // filteredDivTwo
-                                                    //     .removeWhere(
-                                                    //       (x) => x.id == d.id,
-                                                    //     );
-                                                    // );
                                                   }
                                                 } else {
                                                   ScaffoldMessenger.of(
@@ -682,31 +704,19 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton(
         backgroundColor: _accentColor,
         child: Icon(Icons.add, color: _bgColor),
         onPressed: () {
           showDialog(
             context: context,
-            builder: (_) => AddDivtwoDialog(
-              label: widget.country.divisionTwoLabel,
-              onSubmit: (divisionName) async {
-                final success = await _addDivisionTwo(divisionName);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'Division added successfully'
-                          : 'Failed to add division',
-                    ),
-                  ),
-                );
-              },
-              backgroundColor: _cardColor,
+            builder: (_) => AddDivisionDialog(
+              label: widget.country.divisionOneLabel,
+              cardColor: _cardColor,
               textPrimary: _textPrimary,
               textSecondary: _textSecondary,
               accentColor: _accentColor,
+              onSubmit: _addDivisionTwo,
             ),
           );
         },

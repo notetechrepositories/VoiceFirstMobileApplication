@@ -6,7 +6,7 @@
 
 // import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 
-// class EditDivisionOneDialog extends StatefulWidget {
+// class EditDivisionTwoDialog extends StatefulWidget {
 //   final String initialValue;
 //   final String id;
 //   final Color cardColor;
@@ -15,7 +15,7 @@
 //   final Color accentColor;
 //   final VoidCallback onSuccess;
 
-//   const EditDivisionOneDialog({
+//   const EditDivisionTwoDialog({
 //     super.key,
 //     required this.initialValue,
 //     required this.id,
@@ -27,10 +27,10 @@
 //   });
 
 //   @override
-//   State<EditDivisionOneDialog> createState() => _EditDivisionOneDialogState();
+//   State<EditDivisionTwoDialog> createState() => _EditDivisionTwoDialogState();
 // }
 
-// class _EditDivisionOneDialogState extends State<EditDivisionOneDialog> {
+// class _EditDivisionTwoDialogState extends State<EditDivisionTwoDialog> {
 //   late TextEditingController _controller;
 //   bool _isLoading = false;
 
@@ -49,7 +49,7 @@
 
 //     setState(() => _isLoading = true);
 
-//     final success = await _updateDivisionOne(widget.id, newValue);
+//     final success = await _updateDivisionTwo(widget.id, newValue);
 //     setState(() => _isLoading = false);
 
 //     Navigator.pop(context);
@@ -65,14 +65,14 @@
 //     }
 //   }
 
-//   Future<bool> _updateDivisionOne(String id, String value) async {
-//     final url = Uri.parse('${ApiEndpoints.baseUrl}/division-one');
+//   Future<bool> _updateDivisionTwo(String id, String value) async {
+//     final url = Uri.parse('${ApiEndpoints.baseUrl}/division-two');
 
 //     try {
 //       final response = await http.put(
 //         url,
 //         headers: {'Content-Type': 'application/json'},
-//         body: jsonEncode({"id": id, "divisionOne": value}),
+//         body: jsonEncode({"id": id, "divisionTwo": value}),
 //       );
 
 //       if (response.statusCode == 200) {
@@ -93,14 +93,14 @@
 //     return AlertDialog(
 //       backgroundColor: widget.cardColor,
 //       title: Text(
-//         'Edit Division One',
+//         'Edit Division Two',
 //         style: TextStyle(color: widget.accentColor),
 //       ),
 //       content: TextField(
 //         controller: _controller,
 //         style: TextStyle(color: widget.textPrimary),
 //         decoration: InputDecoration(
-//           labelText: 'Division One',
+//           labelText: 'Division two',
 //           labelStyle: TextStyle(color: widget.textSecondary),
 //         ),
 //       ),
