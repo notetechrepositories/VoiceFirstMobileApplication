@@ -5,7 +5,10 @@ import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_one_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/add_divisionOne.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/update_division_one.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div2/divtwo_view.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
 
 class Division1View extends StatefulWidget {
   // const Division1View({super.key});
@@ -197,6 +200,34 @@ class _Division1ViewState extends State<Division1View> {
       }
     } catch (e) {
       debugPrint('Error updating status: $e');
+      return false;
+    }
+  }
+
+  //update divisonone
+  Future<bool> updateDivisionOne({
+    required String id,
+    required String divisionOne,
+  }) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-one');
+    final body = {"id": id, "divisionOne": divisionOne};
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['isSuccess'] == true;
+      } else {
+        debugPrint('Update failed: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Exception while updating divisionOne: $e');
       return false;
     }
   }
@@ -473,6 +504,39 @@ class _Division1ViewState extends State<Division1View> {
                                       if (!isMultiSelectMode) ...[
                                         Row(
                                           children: [
+                                            IconButton(
+                                              icon: Icon(
+                                                Icons.edit,
+                                                color: _accentColor,
+                                              ),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) => EditDivisionDialog(
+                                                    title:
+                                                        'Edit ${widget.country.divisionOneLabel}',
+                                                    initialValue: d.divisionOne,
+                                                    cardColor: _cardColor,
+                                                    textPrimary: _textPrimary,
+                                                    textSecondary:
+                                                        _textSecondary,
+                                                    accentColor: _accentColor,
+                                                    onSubmit: (newName) async {
+                                                      final success =
+                                                          await updateDivisionOne(
+                                                            id: d.id,
+                                                            divisionOne:
+                                                                newName,
+                                                          );
+                                                      if (success)
+                                                        await getAllDivisionOnes(); // ✅ Ensures latest list
+                                                      return success;
+                                                    },
+                                                  ),
+                                                );
+                                              },
+                                            ),
+
                                             Transform.scale(
                                               scale: 0.7,
                                               child: Switch(
@@ -607,29 +671,6 @@ class _Division1ViewState extends State<Division1View> {
                                                         ),
                                                       ),
                                                     );
-
-                                                    // selectedIds.clear();
-                                                    // isMultiSelectMode = false;
-                                                    // await getAllDivisionOnes();
-                                                    // ScaffoldMessenger.of(
-                                                    //   context,
-                                                    // ).showSnackBar(
-                                                    //   SnackBar(
-                                                    //     content: Text(
-                                                    //       'Division deleted',
-                                                    //     ),
-                                                    //   ),
-                                                    // );
-                                                    // setState(() {
-                                                    // divisionOneList
-                                                    //     .removeWhere(
-                                                    //       (x) => x.id == d.id,
-                                                    //     );
-                                                    // filteredDivOne
-                                                    //     .removeWhere(
-                                                    //       (x) => x.id == d.id,
-                                                    //     );
-                                                    // );
                                                   }
                                                 } else {
                                                   ScaffoldMessenger.of(
@@ -681,31 +722,19 @@ class _Division1ViewState extends State<Division1View> {
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton(
         backgroundColor: _accentColor,
         child: Icon(Icons.add, color: _bgColor),
         onPressed: () {
           showDialog(
             context: context,
-            builder: (_) => AddDivisionOneDialog(
+            builder: (_) => AddDivisionDialog(
               label: widget.country.divisionOneLabel,
-              onSubmit: (divisionName) async {
-                final success = await _addDivisionOne(divisionName);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'Division added successfully'
-                          : 'Failed to add division',
-                    ),
-                  ),
-                );
-              },
-              backgroundColor: _cardColor,
+              cardColor: _cardColor,
               textPrimary: _textPrimary,
               textSecondary: _textSecondary,
               accentColor: _accentColor,
+              onSubmit: _addDivisionOne, // <-- your function in the view
             ),
           );
         },

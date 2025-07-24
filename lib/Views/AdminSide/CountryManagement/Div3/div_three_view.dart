@@ -5,6 +5,9 @@ import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_three_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/add_divthree_dialog.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/edit_div3_dialog.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
 
 class DivisionThreeView extends StatefulWidget {
   // const DivisionThreeView({super.key});
@@ -216,6 +219,34 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
         ],
       ),
     );
+  }
+
+  //update divisionThree
+  Future<bool> updateDivisionThree({
+    required String id,
+    required String divisionThree,
+  }) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/division-three');
+    final body = {"id": id, "divisionThree": divisionThree};
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['isSuccess'] == true;
+      } else {
+        debugPrint('Update failed: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Exception while updating divisionThree: $e');
+      return false;
+    }
   }
 
   @override
@@ -463,6 +494,62 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                                       if (!isMultiSelectMode) ...[
                                         Row(
                                           children: [
+                                            IconButton(
+                                              icon: Icon(
+                                                Icons.edit,
+                                                color: _accentColor,
+                                              ),
+                                              // onPressed: () {
+                                              //   showDialog(
+                                              //     context: context,
+                                              //     builder: (_) =>
+                                              //         EditDivisionThreeDialog(
+                                              //           initialValue:
+                                              //               d.divisionThree ??
+                                              //               '',
+                                              //           id: d.id,
+                                              //           cardColor: _cardColor,
+                                              //           textPrimary:
+                                              //               _textPrimary,
+                                              //           textSecondary:
+                                              //               _textSecondary,
+                                              //           accentColor:
+                                              //               _accentColor,
+                                              //           onSuccess: () {
+                                              //             getAllDivisionThree(); // refresh after update
+                                              //           },
+                                              //         ),
+                                              //   );
+                                              // },
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) => EditDivisionDialog(
+                                                    title:
+                                                        'Edit ${widget.country.divisionOneLabel}',
+                                                    initialValue:
+                                                        d.divisionThree,
+                                                    cardColor: _cardColor,
+                                                    textPrimary: _textPrimary,
+                                                    textSecondary:
+                                                        _textSecondary,
+                                                    accentColor: _accentColor,
+                                                    onSubmit: (newName) async {
+                                                      final success =
+                                                          await updateDivisionThree(
+                                                            id: d.id,
+                                                            divisionThree:
+                                                                newName,
+                                                          );
+                                                      if (success) {
+                                                        await getAllDivisionThree();
+                                                      }
+                                                      return success;
+                                                    },
+                                                  ),
+                                                );
+                                              },
+                                            ),
                                             Transform.scale(
                                               scale: 0.7,
                                               child: Switch(
@@ -606,29 +693,6 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                                                         ),
                                                       ),
                                                     );
-
-                                                    // selectedIds.clear();
-                                                    // isMultiSelectMode = false;
-                                                    // await getAllDivisionThree();
-                                                    // ScaffoldMessenger.of(
-                                                    //   context,
-                                                    // ).showSnackBar(
-                                                    //   SnackBar(
-                                                    //     content: Text(
-                                                    //       'Division deleted',
-                                                    //     ),
-                                                    //   ),
-                                                    // );
-                                                    // setState(() {
-                                                    // divisionThreeList
-                                                    //     .removeWhere(
-                                                    //       (x) => x.id == d.id,
-                                                    //     );
-                                                    // filteredDivThree
-                                                    //     .removeWhere(
-                                                    //       (x) => x.id == d.id,
-                                                    //     );
-                                                    // );
                                                   }
                                                 } else {
                                                   ScaffoldMessenger.of(
@@ -683,24 +747,13 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
         onPressed: () {
           showDialog(
             context: context,
-            builder: (_) => AddDivThreeDialog(
-              label: widget.country.divisionThreeLabel,
-              onSubmit: (divisionName) async {
-                final success = await _addDivThree(divisionName);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'Division added successfully'
-                          : 'Failed to add division',
-                    ),
-                  ),
-                );
-              },
-              backgroundColor: _cardColor,
+            builder: (_) => AddDivisionDialog(
+              label: widget.country.divisionOneLabel,
+              cardColor: _cardColor,
               textPrimary: _textPrimary,
               textSecondary: _textSecondary,
               accentColor: _accentColor,
+              onSubmit: _addDivThree,
             ),
           );
         },

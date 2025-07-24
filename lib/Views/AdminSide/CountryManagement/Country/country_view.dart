@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
@@ -85,8 +84,6 @@ class _CountryViewState extends State<CountryView> {
   final Color _textSecondary = Colors.white60; // secondary text
   // ──────────────────────────────────────
 
-  // List<Map<String, dynamic>> countries = [];
-  // List<Map<String, dynamic>> filteredCountries = [];
   bool isDataLoaded = false;
 
   Future<void> getallCountries() async {
@@ -98,19 +95,6 @@ class _CountryViewState extends State<CountryView> {
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final List<dynamic> dataList = json['data'];
-
-        //without using model
-        // final fetched = dataList.map((country){
-        //   return{
-        //     'id':country['id'],
-        //     'country': country['country'],
-        // 'divisionOneLabel': country['divisionOneLabel'],
-        // 'divisionTwoLabel': country['divisionTwoLabel'],
-        // 'divisionThreeLabel': country['divisionThreeLabel'],
-        // 'status': country['status'] == true ? 'active' : 'inactive',
-
-        //   };
-        // }).toList();
 
         //using model
         final fetched = dataList
@@ -214,9 +198,7 @@ class _CountryViewState extends State<CountryView> {
       if (response.statusCode == 200) {
         debugPrint('Status updated to $status');
         return true;
-        // return data['isSuccess'] == true;
       } else if (response.statusCode == 409) {
-        // Conflict: activity already exists or similar business rule violation
         _showConflictDialog(); // <-- Call custom dialog
         return false;
       } else {
@@ -284,7 +266,7 @@ class _CountryViewState extends State<CountryView> {
         filteredCountries = List.from(countries);
       } else {
         filteredCountries = countries.where((country) {
-          final name = country.country.toLowerCase(); // ✅ Fix here
+          final name = country.country.toLowerCase();
           return name.contains(query);
         }).toList();
       }
@@ -297,7 +279,7 @@ class _CountryViewState extends State<CountryView> {
     super.initState();
 
     _searchController.addListener(_filterCountries);
-    getallCountries(); // ✅ call it here to fetch data
+    getallCountries();
   }
 
   @override
@@ -318,36 +300,15 @@ class _CountryViewState extends State<CountryView> {
             ? [
                 IconButton(
                   icon: Icon(Icons.delete, color: Colors.redAccent),
-                  // onPressed: () async {
-                  //   final confirmed = await deleteCountries(
-                  //     selectedIds.toList(),
-                  //   );
-                  //   if (confirmed) {
-                  //     setState(() {
-                  //       countries.removeWhere(
-                  //         (x) => selectedIds.contains(x['id']),
-                  //       );
-                  //       // _filterActivities();
-                  //       getallCountries();
-                  //       selectedIds.clear();
-                  //       isMultiSelectMode = false;
-                  //     });
-                  //   }
-                  // },
                   onPressed: () async {
                     final confirmed = await deleteCountries(
                       selectedIds.toList(),
                     );
                     if (confirmed) {
-                      // await getallCountries(); // Reload full list
                       setState(() {
-                        // countries.removeWhere(
-                        //   (x) => selectedIds.contains(x['id']),
-                        // );
                         countries.removeWhere(
                           (x) => selectedIds.contains(x.id),
                         );
-
                         getallCountries();
                         selectedIds.clear();
                         isMultiSelectMode = false;
@@ -451,22 +412,6 @@ class _CountryViewState extends State<CountryView> {
                                     }
                                   });
                                 } else {
-                                  //   Navigator.push(
-                                  //     context,
-                                  //     MaterialPageRoute(
-                                  //       builder: (_) => CountryDetailPage(
-                                  //         country: c,
-                                  //         onDelete:
-                                  //             _deleteDivision, // ✅ Add this line
-                                  //         bgColor: _bgColor,
-                                  //         cardColor: _cardColor,
-                                  //         textPrimary: _textPrimary,
-                                  //         textSecondary: _textSecondary,
-                                  //         accentColor: _accentColor,
-                                  //       ),
-                                  //     ),
-                                  //   );
-
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -479,24 +424,6 @@ class _CountryViewState extends State<CountryView> {
                                   );
                                 }
                               },
-
-                              // onTap: () {
-                              //   if (isMultiSelectMode) {
-                              //     setState(() {
-                              //       if (isSelected) {
-                              //         selectedIds.remove(c.id);
-                              //         if (selectedIds.isEmpty) {
-                              //           isMultiSelectMode = false;
-                              //         }
-                              //       } else {
-                              //         selectedIds.add(c.id);
-                              //       }
-                              //     }
-
-                              //     );
-                              //   }
-                              //   // else open view/edit if needed
-                              // },
                               child: Card(
                                 color: isMultiSelectMode && isSelected
                                     ? Colors.grey[700]
