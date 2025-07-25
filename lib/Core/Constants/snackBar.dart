@@ -5,11 +5,19 @@ class SnackbarHelper {
       GlobalKey<NavigatorState>();
 
   static void showSuccess(String message) {
-    _show(message, backgroundColor: Colors.green, icon: Icons.check_circle);
+    _show(
+      message,
+      backgroundColor: Colors.green.withAlpha(200),
+      icon: Icons.check_circle,
+    );
   }
 
   static void showError(String message) {
-    _show(message, backgroundColor: Colors.redAccent, icon: Icons.error);
+    _show(
+      message,
+      backgroundColor: Colors.redAccent.withAlpha(200),
+      icon: Icons.error,
+    );
   }
 
   static void _show(
@@ -23,11 +31,12 @@ class SnackbarHelper {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
         backgroundColor: backgroundColor,
         content: Row(
           children: [
             Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
+            const SizedBox(width: 18),
             Expanded(child: Text(message)),
           ],
         ),

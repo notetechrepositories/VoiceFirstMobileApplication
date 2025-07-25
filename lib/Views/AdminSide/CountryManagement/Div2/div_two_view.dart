@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
+import 'package:voicefirst/Core/Constants/snackBar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_two_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/div_three_view.dart';
@@ -30,7 +31,6 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
   // Page-specific colour palette
   final Color _bgColor = Colors.black; // page background
   final Color _cardColor = Color(0xFF262626); // dark grey card
-  // final Color _chipColor = Color(0xFF212121); // chip background
   final Color _accentColor = Color(0xFFFCC737); // gold accent
   final Color _textPrimary = Colors.white; // main text
   final Color _textSecondary = Colors.white60; // secondary text
@@ -136,15 +136,10 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
 
   //deletion
   Future<bool> deleteDivTwo(List<String> ids) async {
-    // if (ids.isEmpty) {
-    //   debugPrint("❌ No IDs to delete.");
-    //   return false;
-    // }
-
     final url = Uri.parse('${ApiEndpoints.baseUrl}/division-two');
 
     try {
-      final body = jsonEncode(ids); // ✅ array like ["id1","id2"]
+      final body = jsonEncode(ids);
       print('Sending body: $body');
 
       final response = await http.delete(
@@ -174,7 +169,6 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/division-two');
 
     final body = {'id': id, 'status': status};
-
     try {
       final response = await http.patch(
         url,
@@ -218,7 +212,7 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
     );
   }
 
-  //update divisonone
+  //update divisionone
   Future<bool> updateDivisionTwo({
     required String id,
     required String divisionTwo,
@@ -264,9 +258,7 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
         title: Text(
           isMultiSelectMode
               ? '${selectedIds.length} selected'
-              : widget
-                    .country
-                    .divisionTwoLabel, // ✅ Now shows dynamic label like "State", "District"
+              : widget.country.divisionTwoLabel, // dynamic label"
           style: TextStyle(color: _textSecondary),
         ),
 
@@ -309,23 +301,14 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                           isMultiSelectMode = false;
                         });
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Selected divisions deleted successfully',
-                            ),
-                          ),
+                        SnackbarHelper.showSuccess(
+                          'Selected items deleted successfully',
                         );
 
                         await getAllDivisionTwos(); // Optional refresh
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Failed to delete selected divisions',
-                            ),
-                            backgroundColor: Colors.redAccent,
-                          ),
+                        SnackbarHelper.showError(
+                          'Failed to delete selected items',
                         );
                       }
                     }
@@ -452,10 +435,6 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                   padding: const EdgeInsets.all(16),
                                   child: Row(
                                     children: [
-                                      // Icon(
-                                      //   Icons.location_city,
-                                      //   color: _accentColor,
-                                      // ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
@@ -503,7 +482,7 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                                                 newName,
                                                           );
                                                       if (success)
-                                                        await getAllDivisionTwos(); // ✅ Ensures latest list
+                                                        await getAllDivisionTwos();
                                                       return success;
                                                     },
                                                   ),
@@ -562,24 +541,12 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                                       setState(() {
                                                         d.status = val;
                                                       });
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            'Status Updated',
-                                                          ),
-                                                        ),
+                                                      SnackbarHelper.showSuccess(
+                                                        'Status Updated',
                                                       );
                                                     } else {
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            'Failed to update status',
-                                                          ),
-                                                        ),
+                                                      SnackbarHelper.showError(
+                                                        'Failed to update status',
                                                       );
                                                     }
                                                   }
@@ -644,25 +611,13 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                                             (x) => x.id == d.id,
                                                           );
                                                     });
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          'Division deleted',
-                                                        ),
-                                                      ),
+                                                    SnackbarHelper.showSuccess(
+                                                      'Division deleted',
                                                     );
                                                   }
                                                 } else {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        'Failed to delete division',
-                                                      ),
-                                                    ),
+                                                  SnackbarHelper.showError(
+                                                    'Failed to delete division',
                                                   );
                                                 }
                                               },

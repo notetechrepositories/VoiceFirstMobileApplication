@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
+import 'package:voicefirst/Core/Constants/snackBar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_three_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
@@ -306,24 +307,14 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                           isMultiSelectMode = false;
                         });
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Selected divisions deleted successfully',
-                            ),
-                          ),
+                        SnackbarHelper.showSuccess(
+                          'Selected items deleted successfully',
                         );
-
                         await getAllDivisionThree();
                         if (!mounted) return;
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Failed to delete selected divisions',
-                            ),
-                            backgroundColor: Colors.redAccent,
-                          ),
+                        SnackbarHelper.showError(
+                          'Failed to delete selected divisions',
                         );
                       }
                     }
@@ -553,24 +544,12 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                                                       setState(() {
                                                         d.status = val;
                                                       });
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            'Status Updated',
-                                                          ),
-                                                        ),
+                                                      SnackbarHelper.showSuccess(
+                                                        'Status Updated',
                                                       );
                                                     } else {
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            'Failed to update status',
-                                                          ),
-                                                        ),
+                                                      SnackbarHelper.showError(
+                                                        'Failed to update status',
                                                       );
                                                     }
                                                   }
@@ -635,25 +614,13 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                                                             (x) => x.id == d.id,
                                                           );
                                                     });
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          'Division deleted',
-                                                        ),
-                                                      ),
+                                                    SnackbarHelper.showError(
+                                                      'Division deleted',
                                                     );
                                                   }
                                                 } else {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        'Failed to delete division',
-                                                      ),
-                                                    ),
+                                                  SnackbarHelper.showError(
+                                                    'Failed to delete division',
                                                   );
                                                 }
                                               },
