@@ -1,150 +1,5 @@
-// import 'package:flutter/material.dart';
-
-// class EditActivityDialog extends StatelessWidget {
-//   const EditActivityDialog({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container();
-//   }
-// }
-
-// void _showEditDialog(BuildContext ctx, Map<String, dynamic> activity) {
-//   // Prefill the controllers & flags
-//   _newNameController.text = activity['business_activity_name'];
-//   _newCompany = activity['company'] == 'y';
-//   _newBranch = activity['branch'] == 'y';
-//   _newSection = activity['section'] == 'y';
-//   _newSubSection = activity['sub_section'] == 'y';
-
-//   showDialog(
-//     context: ctx,
-//     builder: (_) => StatefulBuilder(
-//       builder: (context, setState) => AlertDialog(
-//         backgroundColor: _cardColor,
-//         title: Text('Edit Activity', style: TextStyle(color: _accentColor)),
-//         content: SingleChildScrollView(
-//           child: Column(
-//             mainAxisSize: MainAxisSize.min,
-//             children: [
-//               // Name field
-//               TextField(
-//                 controller: _newNameController,
-//                 style: TextStyle(color: _textPrimary),
-//                 decoration: InputDecoration(
-//                   labelText: 'Activity Name',
-//                   labelStyle: TextStyle(color: _textSecondary),
-//                 ),
-//               ),
-//               SizedBox(height: 16),
-
-//               // Checkboxes
-//               CheckboxListTile(
-//                 value: _newCompany,
-//                 onChanged: (v) => setState(() => _newCompany = v!),
-//                 title: Text('Company', style: TextStyle(color: Colors.white)),
-//                 controlAffinity: ListTileControlAffinity.leading,
-//               ),
-//               CheckboxListTile(
-//                 value: _newBranch,
-//                 onChanged: (v) => setState(() => _newBranch = v!),
-//                 title: Text('Branch', style: TextStyle(color: _textSecondary)),
-//                 controlAffinity: ListTileControlAffinity.leading,
-//               ),
-//               CheckboxListTile(
-//                 value: _newSection,
-//                 onChanged: (v) => setState(() => _newSection = v!),
-//                 title: Text('Section', style: TextStyle(color: _textSecondary)),
-//                 controlAffinity: ListTileControlAffinity.leading,
-//               ),
-//               CheckboxListTile(
-//                 value: _newSubSection,
-//                 onChanged: (v) => setState(() => _newSubSection = v!),
-//                 title: Text(
-//                   'Sub-section',
-//                   style: TextStyle(color: _textSecondary),
-//                 ),
-//                 controlAffinity: ListTileControlAffinity.leading,
-//               ),
-//             ],
-//           ),
-//         ),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.of(ctx).pop(),
-//             child: Text('Cancel', style: TextStyle(color: _textSecondary)),
-//           ),
-
-//           TextButton(
-//             onPressed: () async {
-//               final newName = _newNameController.text.trim();
-//               if (newName.isEmpty) return;
-
-//               final updatedData = {"id": activity['id']};
-
-//               if (activity['business_activity_name'] != newName) {
-//                 updatedData['activityName'] = newName;
-//               }
-//               if ((_newCompany ? 'y' : 'n') != activity['company']) {
-//                 updatedData['company'] = _newCompany;
-//               }
-//               if ((_newBranch ? 'y' : 'n') != activity['branch']) {
-//                 updatedData['branch'] = _newBranch;
-//               }
-//               if ((_newSection ? 'y' : 'n') != activity['section']) {
-//                 updatedData['section'] = _newSection;
-//               }
-//               if ((_newSubSection ? 'y' : 'n') != activity['sub_section']) {
-//                 updatedData['subSection'] = _newSubSection;
-//               }
-
-//               if (updatedData.length == 1) {
-//                 Navigator.of(ctx).pop();
-//                 ScaffoldMessenger.of(
-//                   context,
-//                 ).showSnackBar(SnackBar(content: Text('No changes to update')));
-//                 return;
-//               }
-
-//               final updatedActivity = await _updateActivityOnServer(
-//                 updatedData,
-//               );
-
-//               if (updatedActivity != null) {
-//                 setState(() {
-//                   activity['business_activity_name'] =
-//                       updatedActivity['activityName'];
-//                   activity['company'] = updatedActivity['company'] ? 'y' : 'n';
-//                   activity['branch'] = updatedActivity['branch'] ? 'y' : 'n';
-//                   activity['section'] = updatedActivity['section'] ? 'y' : 'n';
-//                   activity['sub_section'] = updatedActivity['subSection']
-//                       ? 'y'
-//                       : 'n';
-//                   activity['status'] = updatedActivity['status']
-//                       ? 'active'
-//                       : 'inactive';
-//                   _filterActivities();
-//                 });
-
-//                 Navigator.of(ctx).pop();
-//                 ScaffoldMessenger.of(
-//                   context,
-//                 ).showSnackBar(SnackBar(content: Text('Activity updated')));
-//               } else {
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   SnackBar(content: Text('Failed to update activity')),
-//                 );
-//               }
-//             },
-//             child: Text('Save', style: TextStyle(color: _accentColor)),
-//           ),
-//         ],
-//       ),
-//     ),
-//   );
-// }
-
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Core/Constants/snackBar.dart';
 
 class EditActivityDialog extends StatefulWidget {
   final Map<String, dynamic> activity;
@@ -218,9 +73,7 @@ class _EditActivityDialogState extends State<EditActivityDialog> {
 
     if (updatedData.length == 1) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No changes to update')));
+      SnackbarHelper.showSuccess('No changes to update');
       return;
     }
 
@@ -242,13 +95,10 @@ class _EditActivityDialogState extends State<EditActivityDialog> {
       widget.onUpdated();
       Navigator.of(context).pop();
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Activity updated')));
+      SnackbarHelper.showSuccess('Activity updated');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update activity')));
+      Navigator.of(context).pop();
+      SnackbarHelper.showError('Failed to update activity');
     }
   }
 
