@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
+import 'package:voicefirst/Core/Constants/snackBar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_add.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_detail_view.dart';
@@ -62,7 +63,7 @@ class _CountryViewState extends State<CountryView> {
   bool isDataLoaded = false;
 
   Future<void> getallCountries() async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country/all');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/country/all');
 
     try {
       final response = await http.get(url);
@@ -100,7 +101,7 @@ class _CountryViewState extends State<CountryView> {
     required String divisionTwo,
     required String divisionThree,
   }) async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
     final body = {
       "country": country,
       "divisionOneLabel": divisionOne,
@@ -117,25 +118,22 @@ class _CountryViewState extends State<CountryView> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('Country added successfully');
+        SnackbarHelper.showError('Country added successfully');
         await getallCountries(); // refresh list
       } else {
         debugPrint('Failed to add country: ${response.statusCode}');
         _showConflictDialog();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to add country')));
+        SnackbarHelper.showError('Failed to add country');
       }
     } catch (e) {
       debugPrint('Error: $e');
       _showConflictDialog();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('An error occurred')));
+      SnackbarHelper.showError('Something Went Wrong');
     }
   }
 
   Future<bool> deleteCountries(List<String> id) async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
 
     try {
       final response = await http.delete(
@@ -159,7 +157,7 @@ class _CountryViewState extends State<CountryView> {
 
   //update status
   Future<bool> _updateCountryStatus(String id, bool status) async {
-    final url = Uri.parse('http://192.168.0.202:8022/api/country');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
 
     final body = {'id': id, 'status': status};
 
@@ -556,15 +554,12 @@ class _CountryViewState extends State<CountryView> {
                                                       setState(() {
                                                         c.status = val;
                                                       });
+                                                      SnackbarHelper.showError(
+                                                        'Status Updated',
+                                                      );
                                                     } else {
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            'Failed to update status',
-                                                          ),
-                                                        ),
+                                                      SnackbarHelper.showError(
+                                                        'Failed to update status',
                                                       );
                                                     }
                                                   }
@@ -628,15 +623,12 @@ class _CountryViewState extends State<CountryView> {
                                                             (x) => x.id == c.id,
                                                           );
                                                     });
+                                                    SnackbarHelper.showError(
+                                                      'Country Deleted Successfully',
+                                                    );
                                                   } else {
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          'Failed to delete country',
-                                                        ),
-                                                      ),
+                                                    SnackbarHelper.showError(
+                                                      'Failed to delete country',
                                                     );
                                                   }
                                                 }

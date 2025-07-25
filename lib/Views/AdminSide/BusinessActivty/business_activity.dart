@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voicefirst/Core/Constants/snackBar.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
 import 'package:voicefirst/Models/business_activity_model.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/add_activity_dialog.dart';
@@ -64,14 +65,17 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final json = jsonDecode(response.body);
+      if (json['isSuccess'] == true) {
         fetchBusinessActivities();
+        SnackbarHelper.showSuccess('Activity added successfully');
       } else {
-        debugPrint('Failed to add activity: ${response.statusCode}');
-        debugPrint('Failed to add activity: ${response.statusCode}');
+        final errorMessage = json['message'] ?? 'Failed to add activity';
+        SnackbarHelper.showError(errorMessage);
       }
     } catch (e) {
       debugPrint('Error: $e');
+      SnackbarHelper.showError('Something went wrong. Please try again.');
     }
   }
 
@@ -87,16 +91,25 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
         body: jsonEncode(body),
       );
 
+      final json = jsonDecode(response.body);
+
       if (response.statusCode == 200) {
         debugPrint('Activity updated successfully.');
-        final json = jsonDecode(response.body);
+        SnackbarHelper.showSuccess('Activity updated successfully.');
         return json['data'];
+      } else if (response.statusCode == 409) {
+        // Handle "already exists" conflict
+        SnackbarHelper.showError('Activity already exists.');
       } else {
+        // Handle other API errors
+        SnackbarHelper.showError('Failed to update activity.');
         debugPrint('Failed to update activity: ${response.statusCode}');
-        return null;
       }
+
+      return null;
     } catch (e) {
       debugPrint('Error updating activity: $e');
+      SnackbarHelper.showError('An unexpected error occurred.');
       return null;
     }
   }
@@ -413,14 +426,6 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                               ),
                             );
                           }
-
-                          // onTap: () {
-                          //   if (isSelected) {
-                          //     selectedIds.remove(a['id']);
-                          //     if (selectedIds.isEmpty) isMultiSelectMode = false;
-                          //   } else {
-                          //     _showDetailDialog(ctx, a);
-                          //   }
                         },
                         child: Card(
                           color: isMultiSelectMode && isSelected
@@ -461,10 +466,6 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                 if (!isMultiSelectMode) ...[
                                   Row(
                                     children: [
-                                      // Text(
-                                      //   a['status'],
-                                      //   style: TextStyle(color: Colors.white70),
-                                      // ),
                                       Transform.scale(
                                         scale: 0.60,
                                         child: Switch(
@@ -509,15 +510,12 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                                       ? 'active'
                                                       : 'inactive';
                                                 });
+                                                SnackbarHelper.showSuccess(
+                                                  'Status Updated',
+                                                );
                                               } else {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      'Failed to update status',
-                                                    ),
-                                                  ),
+                                                SnackbarHelper.showError(
+                                                  'Failed to update Status',
                                                 );
                                               }
                                             }
@@ -568,15 +566,12 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                             );
                                             fetchBusinessActivities(); // optional
                                           });
+                                          SnackbarHelper.showSuccess(
+                                            'Activity Deleted',
+                                          );
                                         } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Failed to delete activity',
-                                              ),
-                                            ),
+                                          SnackbarHelper.showError(
+                                            'Failed to delete activity',
                                           );
                                         }
                                       }

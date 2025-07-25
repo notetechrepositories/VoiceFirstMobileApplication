@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Core/Constants/snackBar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 
 class EditCountryDialog extends StatefulWidget {
@@ -82,9 +83,7 @@ class _EditCountryDialogState extends State<EditCountryDialog> {
 
     if (updatedData.length == 1) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No changes to update')));
+      SnackbarHelper.showSuccess('No changes to update');
       return;
     }
 
@@ -93,13 +92,9 @@ class _EditCountryDialogState extends State<EditCountryDialog> {
     if (updatedCountry != null) {
       widget.onUpdated();
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Country updated')));
+      SnackbarHelper.showSuccess('Country updated');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update country')));
+      SnackbarHelper.showError('Failed to update country');
     }
   }
 

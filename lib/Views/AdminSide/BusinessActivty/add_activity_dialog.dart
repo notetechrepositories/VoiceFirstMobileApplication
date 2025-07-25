@@ -25,12 +25,6 @@ class _AddBusinessActivityDialogState extends State<AddBusinessActivityDialog> {
   bool _section = false;
   bool _subSection = false;
 
-  final Color _bgColor = Colors.black;
-  final Color _accentColor = Color(0xFFFCC737);
-  final Color _textPrimary = Colors.white;
-  final Color _textSecondary = Colors.white60;
-  final Color _cardColor = Color(0xFF262626);
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
