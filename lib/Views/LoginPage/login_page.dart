@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:voicefirst/Views/AdminSide/AdminHome/admin_home.dart';
 import 'package:voicefirst/Views/CompanySide/company_home.dart';
 import 'package:voicefirst/Views/Dashboard/bottom_bar.dart';
+import 'package:voicefirst/Views/Registration/user_register_page1.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -257,6 +258,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const Spacer(),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RegistrationPage(),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              'Dont have an account? Register Here',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: screenWidth * 0.045,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
