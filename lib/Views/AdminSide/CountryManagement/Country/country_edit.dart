@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicefirst/Core/Constants/snack_bar.dart';
+import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 
 class EditCountryDialog extends StatefulWidget {

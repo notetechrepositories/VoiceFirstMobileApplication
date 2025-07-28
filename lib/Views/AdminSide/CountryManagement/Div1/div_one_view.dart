@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Core/Constants/snack_bar.dart';
+import 'package:voicefirst/Widgets/bread_crumb.dart';
+import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_one_model.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div2/div_two_view.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
@@ -322,6 +324,21 @@ class _Division1ViewState extends State<Division1View> {
       ),
       body: Column(
         children: [
+          //breadcrumb
+          ArrowBreadcrumb(
+            steps: ["Country", widget.country.divisionOneLabel],
+            currentIndex: 1,
+            onTap: (index) {
+              // Handle navigation based on index
+              if (index == 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => CountryView()),
+                );
+              }
+            },
+          ),
+
           // ----searchbar----
           Padding(
             padding: const EdgeInsets.all(16.0),

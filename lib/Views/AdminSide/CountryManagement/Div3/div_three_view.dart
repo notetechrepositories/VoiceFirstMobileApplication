@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Core/Constants/snack_bar.dart';
+import 'package:voicefirst/Widgets/bread_crumb.dart';
+import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_three_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
@@ -17,11 +18,13 @@ class DivisionThreeView extends StatefulWidget {
   final String divisionTwoId;
   // final String divisionLabel;
   final CountryModel country;
+  final String divisionOneId;
 
   const DivisionThreeView({
     super.key,
     required this.divisionTwoId,
     required this.country,
+    required this.divisionOneId,
   });
 
   @override
@@ -328,6 +331,42 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
       ),
       body: Column(
         children: [
+          //breadcrumb
+          ArrowBreadcrumb(
+            steps: [
+              "Country",
+              widget.country.divisionOneLabel,
+              widget.country.divisionTwoLabel,
+              widget.country.divisionThreeLabel,
+            ],
+            currentIndex: 3,
+            onTap: (index) {
+              if (index == 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => CountryView()),
+                );
+              } else if (index == 1) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => Division1View(country: widget.country),
+                  ),
+                );
+              } else if (index == 2) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DivisionTwoView(
+                      country: widget.country,
+                      divisionOneId: widget.divisionOneId,
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+
           // ----searchbar----
           Padding(
             padding: const EdgeInsets.all(16.0),
