@@ -41,6 +41,7 @@ dependencies:
   lite_rolling_switch: ^1.0.1
   mobile_scanner: ^7.0.1
   speech_to_text: ^7.0.0
+  shared_preferences: ^2.5.3
  
 
 
