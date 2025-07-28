@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:voicefirst/Core/Constants/snackBar.dart';
+import 'package:voicefirst/Core/Constants/snack_bar.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
 import 'package:voicefirst/Models/business_activity_model.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/add_activity_dialog.dart';

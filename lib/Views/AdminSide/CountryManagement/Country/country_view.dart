@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Core/Constants/snackBar.dart';
+import 'package:voicefirst/Core/Constants/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_add.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_detail_view.dart';
@@ -267,7 +267,7 @@ class _CountryViewState extends State<CountryView> {
         // title: Text('Countries', style: TextStyle(color: Colors.white)),
         title: Text(
           isMultiSelectMode ? '${selectedIds.length} selected' : 'Countries',
-          style: TextStyle(color: _textSecondary),
+          style: TextStyle(color: _textPrimary),
         ),
         actions: isMultiSelectMode
             ? [

@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Core/Constants/snackBar.dart';
+import 'package:voicefirst/Core/Constants/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_three_model.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/div_one_view.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div2/div_two_view.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
 
@@ -262,7 +265,7 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
           isMultiSelectMode
               ? '${selectedIds.length} selected'
               : widget.country.divisionThreeLabel,
-          style: TextStyle(color: _textSecondary),
+          style: TextStyle(color: _textPrimary),
         ),
 
         actions: isMultiSelectMode
@@ -636,8 +639,9 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
                                                 selectedIds.add(d.id);
                                               } else {
                                                 selectedIds.remove(d.id);
-                                                if (selectedIds.isEmpty)
+                                                if (selectedIds.isEmpty) {
                                                   isMultiSelectMode = false;
+                                                }
                                               }
                                             });
                                           },

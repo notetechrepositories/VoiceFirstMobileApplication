@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Core/Constants/snackBar.dart';
+import 'package:voicefirst/Core/Constants/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_two_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/div_three_view.dart';
@@ -103,7 +103,7 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
         });
       } else {
         debugPrint('Failed to fetch Division Two: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        debugPrint('Response body: ${response.body}');
       }
     } catch (e) {
       debugPrint('Error fetching Division Two: $e');
@@ -140,7 +140,7 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
 
     try {
       final body = jsonEncode(ids);
-      print('Sending body: $body');
+      debugPrint('Sending body: $body');
 
       final response = await http.delete(
         url,
@@ -148,8 +148,8 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
         body: body,
       );
 
-      print('Status: ${response.statusCode}');
-      print('Body: ${response.body}');
+      debugPrint('Status: ${response.statusCode}');
+      debugPrint('Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -259,7 +259,7 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
           isMultiSelectMode
               ? '${selectedIds.length} selected'
               : widget.country.divisionTwoLabel, // dynamic label"
-          style: TextStyle(color: _textSecondary),
+          style: TextStyle(color: _textPrimary),
         ),
 
         actions: isMultiSelectMode
@@ -401,8 +401,9 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                   setState(() {
                                     if (isSelected) {
                                       selectedIds.remove(d.id);
-                                      if (selectedIds.isEmpty)
+                                      if (selectedIds.isEmpty) {
                                         isMultiSelectMode = false;
+                                      }
                                     } else {
                                       selectedIds.add(d.id);
                                     }
@@ -481,8 +482,9 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                                             divisionTwo:
                                                                 newName,
                                                           );
-                                                      if (success)
+                                                      if (success) {
                                                         await getAllDivisionTwos();
+                                                      }
                                                       return success;
                                                     },
                                                   ),
@@ -633,8 +635,9 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                                 selectedIds.add(d.id);
                                               } else {
                                                 selectedIds.remove(d.id);
-                                                if (selectedIds.isEmpty)
+                                                if (selectedIds.isEmpty) {
                                                   isMultiSelectMode = false;
+                                                }
                                               }
                                             });
                                           },
