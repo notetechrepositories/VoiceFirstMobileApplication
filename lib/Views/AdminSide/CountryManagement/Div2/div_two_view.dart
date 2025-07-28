@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Core/Constants/snack_bar.dart';
+import 'package:voicefirst/Widgets/bread_crumb.dart';
+import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_two_model.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
+import 'package:voicefirst/Views/AdminSide/CountryManagement/Div1/div_one_view.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div3/div_three_view.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/add_division.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Widgets/update_division.dart';
@@ -319,6 +322,32 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
       ),
       body: Column(
         children: [
+          //breadcrumb
+          ArrowBreadcrumb(
+            steps: [
+              "Country",
+              widget.country.divisionOneLabel,
+              widget.country.divisionTwoLabel,
+            ],
+            currentIndex: 2,
+            onTap: (index) {
+              // Handle navigation based on index
+              if (index == 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => CountryView()),
+                );
+              } else if (index == 1) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => Division1View(country: widget.country),
+                  ),
+                );
+              }
+            },
+          ),
+
           // ----searchbar----
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -409,11 +438,22 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
                                     }
                                   });
                                 } else {
+                                  // Navigator.push(
+                                  //   context,
+                                  //   MaterialPageRoute(
+                                  //     builder: (_) => DivisionThreeView(
+                                  //       divisionTwoId: d.id,
+                                  //       country: widget.country,
+                                  //     ),
+                                  //   ),
+                                  // );
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => DivisionThreeView(
                                         divisionTwoId: d.id,
+                                        divisionOneId:
+                                            widget.divisionOneId, // ✅ pass here
                                         country: widget.country,
                                       ),
                                     ),
