@@ -30,6 +30,9 @@ class SnackbarHelper {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadiusGeometry.circular(27),
+        ),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
         backgroundColor: backgroundColor,

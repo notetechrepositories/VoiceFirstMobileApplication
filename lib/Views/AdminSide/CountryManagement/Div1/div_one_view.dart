@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Core/Constants/snackBar.dart';
+import 'package:voicefirst/Core/Constants/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/division_one_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Div2/div_two_view.dart';
@@ -106,7 +106,7 @@ class _Division1ViewState extends State<Division1View> {
         });
       } else {
         debugPrint('Failed to fetch Division One: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        debugPrint('Response body: ${response.body}');
       }
     } catch (e) {
       debugPrint('Error fetching Division One: $e');
@@ -139,16 +139,10 @@ class _Division1ViewState extends State<Division1View> {
 
   //deletion
   Future<bool> deleteDivOne(List<String> ids) async {
-    // if (ids.isEmpty) {
-    //   debugPrint("❌ No IDs to delete.");
-    //   return false;
-    // }
-
     final url = Uri.parse('${ApiEndpoints.baseUrl}/division-one');
-
     try {
       final body = jsonEncode(ids); // ✅ array like ["id1","id2"]
-      print('Sending body: $body');
+      debugPrint('Sending body: $body');
 
       final response = await http.delete(
         url,
@@ -156,8 +150,8 @@ class _Division1ViewState extends State<Division1View> {
         body: body,
       );
 
-      print('Status: ${response.statusCode}');
-      print('Body: ${response.body}');
+      debugPrint('Status: ${response.statusCode}');
+      debugPrint('Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -267,10 +261,8 @@ class _Division1ViewState extends State<Division1View> {
         title: Text(
           isMultiSelectMode
               ? '${selectedIds.length} selected'
-              : widget
-                    .country
-                    .divisionOneLabel, // ✅ Now shows dynamic label like "State", "District"
-          style: TextStyle(color: _textSecondary),
+              : widget.country.divisionOneLabel,
+          style: TextStyle(color: _textPrimary),
         ),
 
         actions: isMultiSelectMode
@@ -325,24 +317,6 @@ class _Division1ViewState extends State<Division1View> {
                     }
                   },
                 ),
-
-                // IconButton(
-                //   icon: Icon(Icons.delete, color: Colors.redAccent),
-                //   onPressed: () async {
-                //     final confirmed = await deleteDivOne(selectedIds.toList());
-                //     if (confirmed) {
-                //       setState(() {
-                //         divisionOneList.removeWhere(
-                //           (x) => selectedIds.contains(x.id),
-                //         );
-
-                //         getAllDivisionOnes();
-                //         selectedIds.clear();
-                //         isMultiSelectMode = false;
-                //       });
-                //     }
-                //   },
-                // ),
               ]
             : [],
       ),
@@ -430,8 +404,9 @@ class _Division1ViewState extends State<Division1View> {
                                   setState(() {
                                     if (isSelected) {
                                       selectedIds.remove(d.id);
-                                      if (selectedIds.isEmpty)
+                                      if (selectedIds.isEmpty) {
                                         isMultiSelectMode = false;
+                                      }
                                     } else {
                                       selectedIds.add(d.id);
                                     }
@@ -518,8 +493,9 @@ class _Division1ViewState extends State<Division1View> {
                                                             divisionOne:
                                                                 newName,
                                                           );
-                                                      if (success)
-                                                        await getAllDivisionOnes(); // ✅ Ensures latest list
+                                                      if (success) {
+                                                        await getAllDivisionOnes();
+                                                      }
                                                       return success;
                                                     },
                                                   ),
@@ -579,7 +555,7 @@ class _Division1ViewState extends State<Division1View> {
                                                       setState(() {
                                                         d.status = val;
                                                       });
-                                                      SnackbarHelper.showError(
+                                                      SnackbarHelper.showSuccess(
                                                         'Status Updated',
                                                       );
                                                     } else {
@@ -671,8 +647,9 @@ class _Division1ViewState extends State<Division1View> {
                                                 selectedIds.add(d.id);
                                               } else {
                                                 selectedIds.remove(d.id);
-                                                if (selectedIds.isEmpty)
+                                                if (selectedIds.isEmpty) {
                                                   isMultiSelectMode = false;
+                                                }
                                               }
                                             });
                                           },
