@@ -258,26 +258,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const Spacer(),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => RegistrationPage(),
-                              ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              'Dont have an account? Register Here',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: screenWidth * 0.045,
-                              ),
-                            ),
-                          ),
-                        ),
+                        // TextButton(
+                        //   onPressed: () {
+                        //     Navigator.pushReplacement(
+                        //       context,
+                        //       MaterialPageRoute(
+                        //         builder: (context) => RegistrationPage(),
+                        //       ),
+                        //     );
+                        //   },
+                        //   child: Padding(
+                        //     padding: const EdgeInsets.all(8.0),
+                        //     child: Text(
+                        //       'Dont have an account? Register Here',
+                        //       style: TextStyle(
+                        //         color: Colors.black,
+                        //         fontSize: screenWidth * 0.045,
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
