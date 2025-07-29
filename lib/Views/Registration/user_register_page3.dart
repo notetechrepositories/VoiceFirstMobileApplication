@@ -1,73 +1,34 @@
+import 'dart:core';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voicefirst/Views/LoginPage/login_page.dart';
-import 'package:voicefirst/Views/Registration/user_register_page2.dart';
+import 'package:voicefirst/Views/Registration/user_register_page1.dart';
 import 'package:voicefirst/Widgets/bread_crumb.dart';
 import 'package:voicefirst/Widgets/registerform.dart';
+// import 'package:voicefirst/Views/RegistrationPage/registration_page.dart';
 
-class RegistrationPage extends StatefulWidget {
-  const RegistrationPage({super.key});
+class PasswordPage extends StatefulWidget {
+  const PasswordPage({Key? key}) : super(key: key);
 
   @override
-  _RegistrationPageState createState() => _RegistrationPageState();
+  _PasswordPageState createState() => _PasswordPageState();
 }
 
-class _RegistrationPageState extends State<RegistrationPage> {
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _mobileController = TextEditingController();
-  final TextEditingController _birthYearController = TextEditingController();
-  // final TextEditingController _passwordController = TextEditingController();
+class _PasswordPageState extends State<PasswordPage> {
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
-  String _selectedGender = "Male"; // Default gender
-  final bool _isLoading = false;
-  final String _errorMessage = '';
+  bool _isLoading = false;
+  String _errorMessage = '';
 
-  // Date Picker Function
-  Future<void> _selectDateOfBirth(BuildContext context) async {
-    DateTime initialDate = DateTime.now();
-    DateTime firstDate = DateTime(1900);
-    DateTime lastDate = DateTime.now();
-
-    final DateTime? selectedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            primaryColor: Color.fromARGB(255, 245, 198, 57), // Accent color
-            colorScheme: ColorScheme.light(
-              primary: Color.fromARGB(255, 245, 198, 57), // Header color
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-              secondary: Color.fromARGB(
-                255,
-                252,
-                237,
-                155,
-              ), // Selected date color
-            ),
-            dialogBackgroundColor: Colors.white,
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selectedDate != null) {
-      setState(() {
-        _birthYearController.text = "${selectedDate.toLocal()}".split(
-          ' ',
-        )[0]; // Format: YYYY-MM-DD
-      });
-    }
-  }
+  // Register function
 
   @override
+  void initState() {
+    super.initState();
+    // fetchCountries(); // Fetch countries when the page loads
+  }
+
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -96,14 +57,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   child: IntrinsicHeight(
                     child: Column(
                       children: [
-                        SizedBox(height: screenHeight * 0.08),
+                        // SizedBox(height: screenHeight * 0.02),
                         Center(
                           child: Column(
                             children: [
                               Text(
                                 'Create Account',
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.10,
+                                  fontSize: screenWidth * 0.05,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
@@ -135,144 +96,36 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                     ),
                                   ),
                                   SizedBox(height: 5),
-                                  ArrowBreadcrumb(
-                                    steps: ["Basic", "Address", "Password"],
-                                    currentIndex:
-                                        0, // or 1 or 2 depending on the page
-                                    onTap: (index) {},
-                                  ),
-
                                   Text(
                                     'Enter your Details below.',
                                     style: TextStyle(color: Colors.grey[600]),
                                   ),
                                   SizedBox(height: 20),
+                                  ArrowBreadcrumb(
+                                    steps: ["Basic", "Address", "Password"],
+                                    currentIndex:
+                                        2, // or 1 or 2 depending on the page
+                                    onTap: (index) {},
+                                  ),
+                                  SizedBox(height: 20),
+
                                   // First Name
                                   TextField(
-                                    controller: _firstNameController,
+                                    controller: _passwordController,
                                     decoration: buildInputDecoration(
-                                      'First Name',
-                                      Icon(Icons.person),
+                                      'Password',
+                                      Icon(Icons.home),
                                     ),
                                   ),
-
                                   SizedBox(height: 15),
                                   // Last Name
                                   TextField(
-                                    controller: _lastNameController,
+                                    controller: _confirmPasswordController,
                                     decoration: buildInputDecoration(
-                                      'Last Name',
-                                      Icon(Icons.person),
+                                      'Confirm Password',
+                                      Icon(Icons.maps_home_work_outlined),
                                     ),
                                   ),
-
-                                  SizedBox(height: 15),
-                                  // Email
-                                  TextField(
-                                    controller: _emailController,
-                                    decoration: buildInputDecoration(
-                                      'Email',
-                                      Icon(Icons.email_outlined),
-                                    ),
-                                  ),
-
-                                  SizedBox(height: 15),
-                                  // Mobile Number
-                                  TextField(
-                                    controller: _mobileController,
-                                    decoration: buildInputDecoration(
-                                      'Mobile No',
-                                      Icon(Icons.phone_iphone_sharp),
-                                    ),
-                                  ),
-
-                                  SizedBox(height: 15),
-                                  // Date of Birth
-                                  GestureDetector(
-                                    onTap: () => _selectDateOfBirth(context),
-                                    child: AbsorbPointer(
-                                      child: TextField(
-                                        controller: _birthYearController,
-                                        decoration: InputDecoration(
-                                          labelText: 'Date of Birth',
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                          ),
-                                          prefixIcon: Icon(
-                                            Icons.calendar_today,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 15),
-                                  // Gender Selection (Radio buttons)
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Gender : ",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      SizedBox(width: screenWidth * 0.05),
-                                      Row(
-                                        children: [
-                                          Radio<String>(
-                                            value: "Male",
-                                            groupValue: _selectedGender,
-                                            onChanged: (String? value) {
-                                              setState(() {
-                                                _selectedGender = value!;
-                                              });
-                                            },
-                                            activeColor: Color.fromARGB(
-                                              255,
-                                              245,
-                                              198,
-                                              57,
-                                            ),
-                                          ),
-                                          Text(
-                                            "Male",
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          SizedBox(width: screenWidth * 0.05),
-                                          Radio<String>(
-                                            value: "Female",
-                                            groupValue: _selectedGender,
-                                            onChanged: (String? value) {
-                                              setState(() {
-                                                _selectedGender = value!;
-                                              });
-                                            },
-                                            activeColor: Color.fromARGB(
-                                              255,
-                                              245,
-                                              198,
-                                              57,
-                                            ),
-                                          ),
-                                          Text(
-                                            "Female",
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-
                                   SizedBox(height: 15),
 
                                   if (_errorMessage.isNotEmpty) ...[
@@ -284,8 +137,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                       ),
                                     ),
                                   ],
+
                                   SizedBox(height: 15),
-                                  // Register Button
+
+                                  // Buttons
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -296,9 +151,68 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                             Navigator.pushReplacement(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => RegPage(),
+                                                builder: (context) =>
+                                                    RegistrationPage(),
                                               ),
                                             );
+                                          },
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 15,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Color.fromARGB(
+                                                    255,
+                                                    53,
+                                                    122,
+                                                    233,
+                                                  ),
+                                                  Color.fromARGB(
+                                                    255,
+                                                    113,
+                                                    195,
+                                                    230,
+                                                  ),
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: _isLoading
+                                                ? CircularProgressIndicator(
+                                                    color: Colors.white,
+                                                  )
+                                                : Text(
+                                                    'Back',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 55),
+                                      SizedBox(
+                                        width: 80,
+                                        child: InkWell(
+                                          onTap: () {
+                                            // Navigator.pushReplacement(
+                                            //   context,
+                                            //   MaterialPageRoute(
+                                            //     builder: (context) => RegPage(),
+                                            //   ),
+                                            // );
                                           },
                                           borderRadius: BorderRadius.circular(
                                             10,

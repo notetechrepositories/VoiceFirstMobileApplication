@@ -48,6 +48,7 @@ class _CountryViewState extends State<CountryView> {
 
   List<CountryModel> countries = [];
   List<CountryModel> filteredCountries = [];
+
   final query = "";
   final TextEditingController _searchController = TextEditingController();
 
