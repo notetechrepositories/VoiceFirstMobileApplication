@@ -1,8 +1,16 @@
 import 'dart:convert';
+import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:voicefirst/Core/Constants/api_endpoins.dart';
+import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Views/LoginPage/login_page.dart';
+import 'package:voicefirst/Views/Registration/test.dart';
+import 'package:voicefirst/Views/Registration/user_register_page1.dart';
+import 'package:voicefirst/Views/Registration/user_register_page3.dart';
+import 'package:voicefirst/Widgets/bread_crumb.dart';
+import 'package:voicefirst/Widgets/registerform.dart';
 // import 'package:voicefirst/Views/RegistrationPage/registration_page.dart';
 
 class RegPage extends StatefulWidget {
@@ -26,101 +34,50 @@ class _RegPageState extends State<RegPage> {
   String _errorMessage = '';
   // String? _selectedValue;
   String? _selectedCountry;
-  String? _selectedDiv1;
 
-  List<Map<String, dynamic>> countries = [];
+  // List<Map<String, dynamic>> countries = [];
   List<Map<String, dynamic>> divisions = [];
   List<Map<String, dynamic>> filteredDivisions = [];
 
-  bool _isLoadingCountries = false;
-  bool _isLoadingDivisions = false;
+  List<CountryModel> countries = [];
+  List<CountryModel> filteredCountries = [];
+  bool isDataLoaded = false;
+  String query = '';
 
   // fetch from api
-
-  Future<void> fetchCountries() async {
-    setState(() {
-      _isLoadingCountries = true;
-    });
-
-    final url = 'http://10.0.2.2:5132/api/country/get-all';
-    final filter = {};
+  // getallcountries
+  Future<void> getallCountries() async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(filter),
-      );
+      final response = await http.get(url);
 
-      // final response = await http.post(Uri.parse(url),);
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final List<dynamic> dataList = json['data'];
 
-      // Print the raw response to check what you're receiving
-      // print('Response body: ${response.body}'); // Debugging line
+        //using model
+        final fetched = dataList
+            .map((countryJson) => CountryModel.fromJson(countryJson))
+            .toList();
 
-      final responseData = jsonDecode(response.body);
-      if (responseData['data'] != null &&
-          responseData['data']['Items'] != null) {
-        final List<Map<String, dynamic>> fetchedCountries = [];
-        for (var country in responseData['data']['Items']) {
-          fetchedCountries.add(country);
-        }
         setState(() {
-          countries = fetchedCountries; // storing countries
-          _selectedCountry = countries.isNotEmpty
-              ? countries[0]['t2_1_country_name']
-              : null; // Default to first country if available
+          countries = fetched;
+          // filteredCountries = List.from(fetched);
+          filteredCountries = countries
+              .where((c) => c.country.toLowerCase().contains(query))
+              .toList();
+
+          isDataLoaded = true;
+          print(countries);
         });
+      } else {
+        debugPrint('failed to fetch countries: ${response.statusCode}');
       }
-    } catch (error) {
-      print('Failed to load countries : $error');
-      setState(() {
-        _isLoadingCountries = false;
-        _errorMessage = 'failed toload countries';
-      });
-    }
-  }
-
-  //fetchinng division1 for selected country
-  Future<void> _fetchDivisions(String countryId) async {
-    setState(() {
-      _isLoadingDivisions = true;
-      divisions.clear(); // to clear previous divisions
-      filteredDivisions.clear();
-    });
-
-    final url = 'http://localhost:5132/api/division/get-all-division-one';
-    try {
-      //   final response = await http.post(Uri.parse(url));
-
-      //   final responseData = jsonDecode(response.body);
-
-      // }
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "filters": {"t2_1_country_id": countryId},
-        }),
-      );
-      final responseData = jsonDecode(response.body);
-
-      final List<Map<String, dynamic>> fetchedDivisions = [];
-
-      for (var division in responseData['data']['Items']) {
-        fetchedDivisions.add(division);
-      }
-
-      setState(() {
-        divisions = fetchedDivisions;
-
-        // filteredDivisions = divisions.where((division)=> division['t2_1_'])
-      });
     } catch (e) {
-      return;
+      debugPrint('Exception Occured : $e');
     }
   }
-  // Date Picker Function
 
   // Register function
   Future<void> _register() async {
@@ -185,7 +142,8 @@ class _RegPageState extends State<RegPage> {
   @override
   void initState() {
     super.initState();
-    fetchCountries(); // Fetch countries when the page loads
+    // fetchCountries(); // Fetch countries when the page loads
+    getallCountries();
   }
 
   Widget build(BuildContext context) {
@@ -216,14 +174,14 @@ class _RegPageState extends State<RegPage> {
                   child: IntrinsicHeight(
                     child: Column(
                       children: [
-                        SizedBox(height: screenHeight * 0.08),
+                        // SizedBox(height: screenHeight * 0.02),
                         Center(
                           child: Column(
                             children: [
                               Text(
                                 'Create Account',
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.10,
+                                  fontSize: screenWidth * 0.05,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
@@ -260,133 +218,85 @@ class _RegPageState extends State<RegPage> {
                                     style: TextStyle(color: Colors.grey[600]),
                                   ),
                                   SizedBox(height: 20),
+                                  ArrowBreadcrumb(
+                                    steps: ["Basic", "Address", "Password"],
+                                    currentIndex:
+                                        1, // or 1 or 2 depending on the page
+                                    onTap: (index) {},
+                                  ),
+
                                   // First Name
                                   TextField(
                                     controller: _address1Controller,
-                                    decoration: InputDecoration(
-                                      labelText: 'AddressLine 1',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.home),
+                                    decoration: buildInputDecoration(
+                                      "AddressLine 1",
+                                      Icon(Icons.home),
                                     ),
                                   ),
                                   SizedBox(height: 15),
                                   // Last Name
                                   TextField(
                                     controller: _address2Controller,
-                                    decoration: InputDecoration(
-                                      labelText: 'AddressLine 2',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(
-                                        Icons.maps_home_work_outlined,
-                                      ),
+                                    decoration: buildInputDecoration(
+                                      "AddressLine 2",
+                                      Icon(Icons.maps_home_work_outlined),
+                                    ),
+                                  ),
+                                  SizedBox(height: 15),
+                                  //COUNTRY DIV1,DIV2,DIV3
+                                  // Country
+                                  TextField(
+                                    controller: _address1Controller,
+                                    decoration: buildInputDecoration(
+                                      'Country',
+                                      Icon(Icons.home),
+                                    ),
+                                  ),
+                                  SizedBox(height: 15),
+                                  // Division1
+                                  TextField(
+                                    controller: _address1Controller,
+                                    decoration: buildInputDecoration(
+                                      'Division 1',
+                                      Icon(Icons.home),
+                                    ),
+                                  ),
+                                  SizedBox(height: 15),
+                                  // Division2
+                                  TextField(
+                                    controller: _address1Controller,
+                                    decoration: buildInputDecoration(
+                                      'Division2',
+                                      Icon(Icons.home),
+                                    ),
+                                  ),
+                                  SizedBox(height: 15),
+                                  // Division3
+                                  TextField(
+                                    controller: _address1Controller,
+                                    decoration: buildInputDecoration(
+                                      'Division3',
+                                      Icon(Icons.home),
+                                    ),
+                                  ),
+                                  SizedBox(height: 15),
+                                  // Place
+                                  TextField(
+                                    controller: _address1Controller,
+                                    decoration: buildInputDecoration(
+                                      'Place',
+                                      Icon(Icons.home),
                                     ),
                                   ),
                                   SizedBox(height: 15),
                                   // zipCode
                                   TextField(
                                     controller: _zipCodeController,
-                                    decoration: InputDecoration(
-                                      labelText: 'ZipCode',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.mail_rounded),
+                                    decoration: buildInputDecoration(
+                                      'ZipCode',
+                                      Icon(Icons.mail_rounded),
                                     ),
                                   ),
-                                  SizedBox(height: 15),
-
-                                  // country Number
-                                  // TextField(
-                                  //   controller: _countryController,
-                                  //   decoration: InputDecoration(
-                                  //     labelText: 'Country',
-                                  //     border: OutlineInputBorder(),
-                                  //     prefixIcon: Icon(
-                                  //       Icons.location_on_outlined,
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                  // SizedBox(height: 15),
-
-                                  // DropdownButton<String>(
-                                  //   value: _selectedCountry,
-                                  //   hint: Text(
-                                  //     "Select country",
-                                  //     isExpanded:true,
-
-                                  //   onChanged: (String? newValue) {
-                                  //     setState(() {
-                                  //       _selectedCountry = newValue;
-                                  //     });
-                                  //   },
-                                  //   items:
-                                  //       <String>[
-                                  //         'Option 1',
-                                  //         'Option 2',
-                                  //         'Option 3',
-                                  //         'Option 4',
-                                  //       ].map<DropdownMenuItem<String>>((
-                                  //         String value,
-                                  //       ) {
-                                  //         return DropdownMenuItem<String>(
-                                  //           value: value,
-                                  //           child: Row(
-                                  //             children: [
-                                  //               Icon(
-                                  //                 Icons.check,
-                                  //                 color: Colors.green,
-                                  //               ), // Custom icon for each item
-                                  //               SizedBox(width: 8),
-                                  //               Text(value),
-                                  //             ],
-                                  //           ),
-                                  //         );
-                                  //       }).toList(),
-                                  //   // Makes the dropdown take up all available width
-                                  //   // underline:       Container(), // Removes the default underline
-                                  //   style: TextStyle(
-                                  //     color: Colors.black,
-                                  //     fontSize: 18,
-                                  //   ),
-                                  // ),
-                                  // Country Dropdown
-                                  DropdownButton<String>(
-                                    value: _selectedCountry,
-                                    hint: Text("--Select Country--"),
-                                    isExpanded:
-                                        true, // Makes dropdown occupy full width
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        _selectedCountry = newValue;
-                                      });
-                                    },
-                                    items: countries
-                                        .map<DropdownMenuItem<String>>((
-                                          country,
-                                        ) {
-                                          return DropdownMenuItem<String>(
-                                            value: country['t2_1_country_name'],
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 10,
-                                                  ),
-                                              child: Text(
-                                                country['t2_1_country_name'],
-                                              ),
-                                            ),
-                                          );
-                                        })
-                                        .toList(),
-                                    icon: Icon(Icons.arrow_drop_down),
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                    ),
-                                    underline: Container(),
-                                    dropdownColor: Colors.white,
-                                    elevation: 5,
-                                  ),
-
-                                  // dropdownMaxHeight :300,
                                   SizedBox(height: 15),
 
                                   if (_errorMessage.isNotEmpty) ...[
@@ -398,15 +308,25 @@ class _RegPageState extends State<RegPage> {
                                       ),
                                     ),
                                   ],
+
                                   SizedBox(height: 15),
-                                  // Register Button
+
+                                  // Buttons
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       SizedBox(
                                         width: 80,
                                         child: InkWell(
-                                          onTap: () {},
+                                          onTap: () {
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    RegistrationPage(),
+                                              ),
+                                            );
+                                          },
                                           borderRadius: BorderRadius.circular(
                                             10,
                                           ),
@@ -443,6 +363,65 @@ class _RegPageState extends State<RegPage> {
                                                   )
                                                 : Text(
                                                     'Back',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 55),
+                                      SizedBox(
+                                        width: 80,
+                                        child: InkWell(
+                                          onTap: () {
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    PasswordPage(),
+                                              ),
+                                            );
+                                          },
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 15,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Color.fromARGB(
+                                                    255,
+                                                    53,
+                                                    122,
+                                                    233,
+                                                  ),
+                                                  Color.fromARGB(
+                                                    255,
+                                                    113,
+                                                    195,
+                                                    230,
+                                                  ),
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: _isLoading
+                                                ? CircularProgressIndicator(
+                                                    color: Colors.white,
+                                                  )
+                                                : Text(
+                                                    'Next',
                                                     style: TextStyle(
                                                       fontSize: 16,
                                                       color: Colors.white,
