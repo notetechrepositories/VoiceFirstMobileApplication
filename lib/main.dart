@@ -18,6 +18,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.black,
         inputDecorationTheme: InputDecorationTheme(
@@ -42,6 +43,9 @@ class MyApp extends StatelessWidget {
           foregroundColor: Colors.black,
         ),
       ),
+
+      debugShowCheckedModeBanner: false,
+      navigatorKey: SnackbarHelper.navigatorKey,
       home: SplashScreen(),
       routes: {
         'system-roles': (context) => RoleListScreen(),
