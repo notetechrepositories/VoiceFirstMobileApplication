@@ -8,11 +8,16 @@ const kInputBorder = OutlineInputBorder(
 
 const kYellow = Color.fromARGB(255, 245, 198, 57);
 
-InputDecoration buildInputDecoration(String label, Icon icon) {
+InputDecoration buildInputDecoration(
+  String label,
+  Icon icon, {
+  Widget? suffixIcon,
+}) {
   return InputDecoration(
     labelText: label,
     border: kInputBorder,
     prefixIcon: icon,
+    suffixIcon: suffixIcon, // only shown when passed
   );
 }
 
