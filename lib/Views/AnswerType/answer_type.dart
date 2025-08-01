@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../Core/Constants/api_endpoins.dart';
 import '../../Models/answer_model.dart';
 
 class ManageAnswerTypePage extends StatefulWidget {
@@ -92,9 +93,7 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
                 if (name.isEmpty) return;
 
                 final body = jsonEncode({'answerTypeName': name});
-                final url = Uri.parse(
-                  'http://192.168.0.202:8022/api/answer-type',
-                );
+                final url = Uri.parse('${ApiEndpoints.baseUrl}/answer-type');
 
                 final res = isEditing
                     ? await http.put(
@@ -127,7 +126,7 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
 
   Future<void> _toggleAnswerStatus(AnswerTypeModel answer) async {
     final newStatus = !answer.status;
-    final url = Uri.parse('http://192.168.0.202:8022/api/answer-type');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/answer-type');
     final body = jsonEncode({"id": answer.id, "status": newStatus});
 
     final response = await http.patch(
