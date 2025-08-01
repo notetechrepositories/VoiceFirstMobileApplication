@@ -1,13 +1,22 @@
+import 'dart:convert';
 import 'dart:core';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:voicefirst/Models/registration_model.dart';
 import 'package:voicefirst/Views/LoginPage/login_page.dart';
-import 'package:voicefirst/Views/Registration/user_register_page1.dart';
+import 'package:voicefirst/Views/Registration/preview_page.dart';
+import 'package:voicefirst/Views/Registration/user_register_page2.dart';
 import 'package:voicefirst/Widgets/bread_crumb.dart';
+import 'package:voicefirst/Widgets/number_breadcrumb.dart';
 import 'package:voicefirst/Widgets/registerform.dart';
 // import 'package:voicefirst/Views/RegistrationPage/registration_page.dart';
 
 class PasswordPage extends StatefulWidget {
-  const PasswordPage({Key? key}) : super(key: key);
+  // const PasswordPage({Key? key}) : super(key: key);
+
+  final RegistrationData registrationData;
+
+  PasswordPage({required this.registrationData});
 
   @override
   _PasswordPageState createState() => _PasswordPageState();
@@ -21,16 +30,61 @@ class _PasswordPageState extends State<PasswordPage> {
   bool _isLoading = false;
   String _errorMessage = '';
 
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
   // Register function
+
+  Future<bool> registerUser(RegistrationData data) async {
+    final url = Uri.parse('http://your-api-endpoint/api/auth/register');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(data.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        final responseBody = jsonDecode(response.body);
+        if (responseBody['status'] == 200) {
+          // Registration successful
+          return true;
+        } else {
+          // Handle server error
+          print(responseBody['message']);
+          return false;
+        }
+      } else {
+        // Handle HTTP error
+        print('HTTP Error: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Error during registration: $e');
+      return false;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    // fetchCountries(); // Fetch countries when the page loads
+    _passwordController.text = widget.registrationData.password;
+    _confirmPasswordController.text = widget.registrationData.confirmPassword;
   }
 
+  //   final success = await registerUser(registrationData);
+  // if (success) {
+  //   // Navigate or show success
+  //   Navigator.pushReplacementNamed(context, '/login');
+  // } else {
+  //   // Show error
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(content: Text('Registration failed')),
+  //   );
+  // }
+
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -101,33 +155,64 @@ class _PasswordPageState extends State<PasswordPage> {
                                     style: TextStyle(color: Colors.grey[600]),
                                   ),
                                   SizedBox(height: 20),
-                                  ArrowBreadcrumb(
-                                    steps: ["Basic", "Address", "Password"],
-                                    currentIndex:
-                                        2, // or 1 or 2 depending on the page
-                                    onTap: (index) {},
+                                  
+                                  StepBreadcrumb(
+                                    currentStep: 2,
+                                    steps: [
+                                      'Basic',
+                                      'Address',
+                                      'Password',
+                                      'Confirm',
+                                    ],
                                   ),
                                   SizedBox(height: 20),
-
-                                  // First Name
+                                  // Password Field
                                   TextField(
                                     controller: _passwordController,
+                                    obscureText: !_isPasswordVisible,
+                                    
                                     decoration: buildInputDecoration(
                                       'Password',
-                                      Icon(Icons.home),
-                                    ),
-                                  ),
-                                  SizedBox(height: 15),
-                                  // Last Name
-                                  TextField(
-                                    controller: _confirmPasswordController,
-                                    decoration: buildInputDecoration(
-                                      'Confirm Password',
-                                      Icon(Icons.maps_home_work_outlined),
+                                      const Icon(Icons.lock),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _isPasswordVisible
+                                              ? Icons.visibility
+                                              : Icons.visibility_off,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isPasswordVisible =
+                                                !_isPasswordVisible;
+                                          });
+                                        },
+                                      ),
                                     ),
                                   ),
                                   SizedBox(height: 15),
 
+                                  // Confirm Password Field
+                                  TextField(
+                                    controller: _confirmPasswordController,
+                                    obscureText: !_isConfirmPasswordVisible,
+                                    decoration: buildInputDecoration(
+                                      'Confirm Password',
+                                      const Icon(Icons.lock_outline),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _isConfirmPasswordVisible
+                                              ? Icons.visibility
+                                              : Icons.visibility_off,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isConfirmPasswordVisible =
+                                                !_isConfirmPasswordVisible;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ),
                                   if (_errorMessage.isNotEmpty) ...[
                                     SizedBox(height: 10),
                                     Center(
@@ -137,9 +222,7 @@ class _PasswordPageState extends State<PasswordPage> {
                                       ),
                                     ),
                                   ],
-
                                   SizedBox(height: 15),
-
                                   // Buttons
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -148,13 +231,16 @@ class _PasswordPageState extends State<PasswordPage> {
                                         width: 80,
                                         child: InkWell(
                                           onTap: () {
-                                            Navigator.pushReplacement(
+                                            Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) =>
-                                                    RegistrationPage(),
+                                                builder: (context) => RegPage(
+                                                  registrationData:
+                                                      widget.registrationData,
+                                                ),
                                               ),
                                             );
+                                            
                                           },
                                           borderRadius: BorderRadius.circular(
                                             10,
@@ -202,18 +288,43 @@ class _PasswordPageState extends State<PasswordPage> {
                                           ),
                                         ),
                                       ),
-                                      SizedBox(width: 55),
+                                      SizedBox(width: 35),
+
                                       SizedBox(
                                         width: 80,
                                         child: InkWell(
                                           onTap: () {
-                                            // Navigator.pushReplacement(
-                                            //   context,
-                                            //   MaterialPageRoute(
-                                            //     builder: (context) => RegPage(),
-                                            //   ),
-                                            // );
+                                            if (_passwordController.text !=
+                                                _confirmPasswordController
+                                                    .text) {
+                                              setState(() {
+                                                _errorMessage =
+                                                    "Passwords do not match";
+                                              });
+                                              return;
+                                            }
+
+                                            final updatedData = widget
+                                                .registrationData
+                                                .copyWith(
+                                                  password:
+                                                      _passwordController.text,
+                                                  confirmPassword:
+                                                      _confirmPasswordController
+                                                          .text,
+                                                );
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    PreviewPage(
+                                                      registrationData:
+                                                          updatedData,
+                                                    ),
+                                              ),
+                                            );
                                           },
+
                                           borderRadius: BorderRadius.circular(
                                             10,
                                           ),

@@ -1,75 +1,136 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:voicefirst/Models/registration_model.dart';
 import 'package:voicefirst/Views/LoginPage/login_page.dart';
 import 'package:voicefirst/Views/Registration/user_register_page2.dart';
-import 'package:voicefirst/Widgets/bread_crumb.dart';
+import 'package:voicefirst/Widgets/number_breadcrumb.dart';
 import 'package:voicefirst/Widgets/registerform.dart';
+import 'package:voicefirst/Widgets/snack_bar.dart';
 
 class RegistrationPage extends StatefulWidget {
-  const RegistrationPage({super.key});
+  final RegistrationData? registrationData;
+
+  const RegistrationPage({super.key, this.registrationData});
 
   @override
   _RegistrationPageState createState() => _RegistrationPageState();
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _birthYearController = TextEditingController();
-  // final TextEditingController _passwordController = TextEditingController();
+
+  final List<Map<String, String>> _countryCodes = [
+    {'name': 'India', 'code': '+91'},
+    {'name': 'USA', 'code': '+1'},
+    {'name': 'UK', 'code': '+44'},
+    {'name': 'UAE', 'code': '+971'},
+  ];
+
+  String _selectedCountryCode = '+91'; // default
+
+  RegistrationData registrationData = RegistrationData(
+    firstName: '',
+    lastName: '',
+    addressOne: '',
+    addressTwo: '',
+    mobile: '',
+    zipCode: '',
+    email: '',
+    birthYear: 0,
+    gender: '',
+    country: '',
+    divisionOne: '',
+    divisionTwo: '',
+    divisionThree: '',
+    place: '',
+    password: '',
+    confirmPassword: '',
+  );
 
   String _selectedGender = "Male"; // Default gender
   final bool _isLoading = false;
   final String _errorMessage = '';
 
-  // Date Picker Function
-  Future<void> _selectDateOfBirth(BuildContext context) async {
-    DateTime initialDate = DateTime.now();
-    DateTime firstDate = DateTime(1900);
-    DateTime lastDate = DateTime.now();
+  Future<void> _selectBirthYear(BuildContext context) async {
+    final currentYear = DateTime.now().year;
+    final firstYear = 1900;
 
-    final DateTime? selectedDate = await showDatePicker(
+    int selectedYear = currentYear;
+
+    await showDialog(
       context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            primaryColor: Color.fromARGB(255, 245, 198, 57), // Accent color
-            colorScheme: ColorScheme.light(
-              primary: Color.fromARGB(255, 245, 198, 57), // Header color
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-              secondary: Color.fromARGB(
-                255,
-                252,
-                237,
-                155,
-              ), // Selected date color
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Birth Year'),
+          content: Container(
+            height: 300,
+            width: 100,
+            child: YearPicker(
+              firstDate: DateTime(firstYear),
+              lastDate: DateTime(currentYear),
+              initialDate: DateTime(selectedYear),
+              selectedDate:
+                  DateTime.tryParse(_birthYearController.text) ??
+                  DateTime(currentYear),
+              onChanged: (DateTime dateTime) {
+                setState(() {
+                  _birthYearController.text = dateTime.year.toString();
+                });
+                Navigator.of(context).pop();
+              },
             ),
-            dialogBackgroundColor: Colors.white,
           ),
-          child: child!,
         );
       },
     );
+  }
 
-    if (selectedDate != null) {
-      setState(() {
-        _birthYearController.text = "${selectedDate.toLocal()}".split(
-          ' ',
-        )[0]; // Format: YYYY-MM-DD
-      });
+  @override
+  void initState() {
+    super.initState();
+
+    registrationData =
+        widget.registrationData ??
+        RegistrationData(
+          firstName: '',
+          lastName: null,
+          addressOne: '',
+          addressTwo: null,
+          mobile: '',
+          zipCode: '',
+          email: '',
+          birthYear: 0, // 0 means not selected
+          gender: '',
+          country: '',
+          divisionOne: '',
+          divisionTwo: '',
+          divisionThree: '',
+          place: '',
+          password: '',
+          confirmPassword: '',
+        );
+
+    _firstNameController.text = registrationData.firstName;
+    _lastNameController.text = registrationData.lastName ?? '';
+    _emailController.text = registrationData.email;
+    _mobileController.text = registrationData.mobile;
+
+    // ✅ Only show birth year if it's not 0
+    if (registrationData.birthYear != 0) {
+      _birthYearController.text = registrationData.birthYear.toString();
+    } else {
+      _birthYearController.text = '';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    // final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -78,10 +139,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 246, 202, 71),
-              Color.fromARGB(255, 246, 208, 97),
-              Color.fromARGB(255, 252, 238, 158),
-              Color.fromARGB(255, 241, 235, 204),
+              Color.fromARGB(255, 245, 198, 57),
+              Color.fromARGB(255, 252, 237, 155),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -96,30 +155,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   child: IntrinsicHeight(
                     child: Column(
                       children: [
-                        SizedBox(height: screenHeight * 0.08),
-                        Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                'Create Account',
-                                style: TextStyle(
-                                  fontSize: screenWidth * 0.10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                            ],
-                          ),
-                        ),
+                        Expanded(child: SizedBox()), // top spacer
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 25,
+                            horizontal: 20,
                             vertical: 10,
                           ),
+
                           child: Card(
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 8,
                             child: Padding(
@@ -127,20 +172,26 @@ class _RegistrationPageState extends State<RegistrationPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Register Account',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
+                                  Center(
+                                    child: Text(
+                                      'Register Account',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   SizedBox(height: 5),
-                                  ArrowBreadcrumb(
-                                    steps: ["Basic", "Address", "Password"],
-                                    currentIndex:
-                                        0, // or 1 or 2 depending on the page
-                                    onTap: (index) {},
+                                  StepBreadcrumb(
+                                    currentStep: 0,
+                                    steps: [
+                                      'Basic',
+                                      'Address',
+                                      'Password',
+                                      'Confirm',
+                                    ],
                                   ),
+                                  SizedBox(height: 10),
 
                                   Text(
                                     'Enter your Details below.',
@@ -148,132 +199,195 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                   ),
                                   SizedBox(height: 20),
                                   // First Name
-                                  TextField(
-                                    controller: _firstNameController,
-                                    decoration: buildInputDecoration(
-                                      'First Name',
-                                      Icon(Icons.person),
-                                    ),
-                                  ),
-
-                                  SizedBox(height: 15),
-                                  // Last Name
-                                  TextField(
-                                    controller: _lastNameController,
-                                    decoration: buildInputDecoration(
-                                      'Last Name',
-                                      Icon(Icons.person),
-                                    ),
-                                  ),
-
-                                  SizedBox(height: 15),
-                                  // Email
-                                  TextField(
-                                    controller: _emailController,
-                                    decoration: buildInputDecoration(
-                                      'Email',
-                                      Icon(Icons.email_outlined),
-                                    ),
-                                  ),
-
-                                  SizedBox(height: 15),
-                                  // Mobile Number
-                                  TextField(
-                                    controller: _mobileController,
-                                    decoration: buildInputDecoration(
-                                      'Mobile No',
-                                      Icon(Icons.phone_iphone_sharp),
-                                    ),
-                                  ),
-
-                                  SizedBox(height: 15),
-                                  // Date of Birth
-                                  GestureDetector(
-                                    onTap: () => _selectDateOfBirth(context),
-                                    child: AbsorbPointer(
-                                      child: TextField(
-                                        controller: _birthYearController,
-                                        decoration: InputDecoration(
-                                          labelText: 'Date of Birth',
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
+                                  Form(
+                                    key: _formKey,
+                                    child: Column(
+                                      children: [
+                                        TextFormField(
+                                          controller: _firstNameController,
+                                          decoration: buildInputDecoration(
+                                            'First Name',
+                                            Icon(Icons.person),
                                           ),
-                                          prefixIcon: Icon(
-                                            Icons.calendar_today,
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.trim().isEmpty) {
+                                              return 'first name is required';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+
+                                        SizedBox(height: 10),
+                                        // Last Name
+                                        TextFormField(
+                                          controller: _lastNameController,
+                                          decoration: buildInputDecoration(
+                                            'Last Name',
+                                            Icon(Icons.person),
                                           ),
                                         ),
-                                      ),
+
+                                        SizedBox(height: 10),
+
+                                        TextFormField(
+                                          controller: _emailController,
+                                          decoration: buildInputDecoration(
+                                            'Email',
+                                            Icon(Icons.email),
+                                          ),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.trim().isEmpty) {
+                                              return 'Email is required';
+                                            }
+                                            if (!RegExp(
+                                              r'^[^@]+@[^@]+\.[^@]+',
+                                            ).hasMatch(value)) {
+                                              return 'Enter a valid email';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+
+                                        SizedBox(height: 10),
+                                        //mibile num
+                                        Row(
+                                          children: [
+                                            // Dropdown for country code
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: Colors.grey,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: DropdownButtonHideUnderline(
+                                                child: DropdownButton<String>(
+                                                  value: _selectedCountryCode,
+                                                  items: _countryCodes.map((
+                                                    country,
+                                                  ) {
+                                                    return DropdownMenuItem<
+                                                      String
+                                                    >(
+                                                      value: country['code'],
+                                                      child: Text(
+                                                        '${country['code']}',
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      _selectedCountryCode =
+                                                          value!;
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+
+                                            // TextFormField for mobile number
+                                            Expanded(
+                                              child: TextFormField(
+                                                controller: _mobileController,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                decoration: InputDecoration(
+                                                  labelText: 'Mobile Number',
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
+                                                  ),
+                                                ),
+                                                validator: (value) {
+                                                  if (value == null ||
+                                                      value.trim().isEmpty) {
+                                                    return 'Mobile number is required';
+                                                  }
+                                                  if (!RegExp(
+                                                    r'^[0-9]+$',
+                                                  ).hasMatch(value)) {
+                                                    return 'Only digits allowed';
+                                                  }
+                                                  return null;
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        SizedBox(height: 10),
+
+                                        // Date of Birth
+                                        GestureDetector(
+                                          onTap: () =>
+                                              _selectBirthYear(context),
+                                          child: AbsorbPointer(
+                                            child: TextFormField(
+                                              controller: _birthYearController,
+                                              decoration: InputDecoration(
+                                                labelText: 'Date of Birth',
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                prefixIcon: Icon(
+                                                  Icons.calendar_today,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(height: 10),
+
+                                        // Gender Selection (Radio buttons)
+                                        DropdownButtonHideUnderline(
+                                          child: DropdownButtonFormField<String>(
+                                            value: _selectedGender.isNotEmpty
+                                                ? _selectedGender
+                                                : null,
+                                            decoration: buildInputDecoration(
+                                              'Gender',
+
+                                              Icon(Icons.person_outline),
+                                            ),
+                                            items: ['Male', 'Female', 'Other']
+                                                .map((gender) {
+                                                  return DropdownMenuItem<
+                                                    String
+                                                  >(
+                                                    value: gender,
+                                                    child: Text(gender),
+                                                  );
+                                                })
+                                                .toList(),
+                                            onChanged: (String? newValue) {
+                                              setState(() {
+                                                _selectedGender = newValue!;
+                                              });
+                                            },
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.isEmpty) {
+                                                return 'Please select your gender';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                        ),
+
+                                        SizedBox(height: 10),
+                                      ],
                                     ),
                                   ),
-                                  SizedBox(height: 15),
-                                  // Gender Selection (Radio buttons)
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Gender : ",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      SizedBox(width: screenWidth * 0.05),
-                                      Row(
-                                        children: [
-                                          Radio<String>(
-                                            value: "Male",
-                                            groupValue: _selectedGender,
-                                            onChanged: (String? value) {
-                                              setState(() {
-                                                _selectedGender = value!;
-                                              });
-                                            },
-                                            activeColor: Color.fromARGB(
-                                              255,
-                                              245,
-                                              198,
-                                              57,
-                                            ),
-                                          ),
-                                          Text(
-                                            "Male",
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          SizedBox(width: screenWidth * 0.05),
-                                          Radio<String>(
-                                            value: "Female",
-                                            groupValue: _selectedGender,
-                                            onChanged: (String? value) {
-                                              setState(() {
-                                                _selectedGender = value!;
-                                              });
-                                            },
-                                            activeColor: Color.fromARGB(
-                                              255,
-                                              245,
-                                              198,
-                                              57,
-                                            ),
-                                          ),
-                                          Text(
-                                            "Female",
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-
-                                  SizedBox(height: 15),
 
                                   if (_errorMessage.isNotEmpty) ...[
                                     SizedBox(height: 10),
@@ -292,13 +406,76 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                       SizedBox(
                                         width: 80,
                                         child: InkWell(
-                                          onTap: () {
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => RegPage(),
-                                              ),
-                                            );
+                                          onTap: () async {
+                                            if (_formKey.currentState!
+                                                .validate()) {
+                                              final updatedData =
+                                                  registrationData.copyWith(
+                                                    firstName:
+                                                        _firstNameController
+                                                            .text
+                                                            .trim(),
+                                                    lastName:
+                                                        _lastNameController.text
+                                                            .trim(),
+                                                    email: _emailController.text
+                                                        .trim(),
+                                                    mobile: _mobileController
+                                                        .text
+                                                        .trim(),
+                                                    birthYear:
+                                                        int.tryParse(
+                                                          _birthYearController
+                                                              .text
+                                                              .trim(),
+                                                        ) ??
+                                                        0,
+
+                                                    gender: _selectedGender,
+                                                  );
+                                              if (_selectedGender.isEmpty) {
+                                                SnackbarHelper.showError(
+                                                  'select a gender',
+                                                );
+                                                return; // Prevent navigation
+                                              }
+
+                                              final result =
+                                                  await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          RegPage(
+                                                            registrationData:
+                                                                updatedData,
+                                                          ),
+                                                    ),
+                                                  );
+
+                                              if (result is RegistrationData) {
+                                                setState(() {
+                                                  registrationData = result;
+
+                                                  // Optional: Update controllers to reflect returned data
+                                                  _firstNameController.text =
+                                                      result.firstName;
+                                                  _lastNameController.text =
+                                                      result.lastName ?? '';
+                                                  _emailController.text =
+                                                      result.email;
+                                                  _mobileController.text =
+                                                      result.mobile;
+                                                  _birthYearController.text =
+                                                      result.birthYear != 0
+                                                      ? result.birthYear
+                                                            .toString()
+                                                      : '';
+
+                                                  _selectedGender =
+                                                      result.gender;
+                                                });
+                                              }
+                                            }
                                           },
                                           borderRadius: BorderRadius.circular(
                                             10,
@@ -348,36 +525,34 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                       ),
                                     ],
                                   ),
-
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => LoginScreen(),
-                                        ),
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: 10,
-                                        right: 10,
-                                      ),
-                                      child: Text(
-                                        'Already have an account? Login',
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: screenWidth * 0.045,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
                           ),
+                          //card
                         ),
-                        Spacer(),
+                        Expanded(child: SizedBox()), // bottom spacer
+
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LoginScreen(),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 10, right: 10),
+                            child: Text(
+                              'Already have an account? Login',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: screenWidth * 0.045,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
