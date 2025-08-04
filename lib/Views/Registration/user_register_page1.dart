@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:voicefirst/Core/Constants/api_endpoins.dart';
+import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/registration_model.dart';
 import 'package:voicefirst/Views/LoginPage/login_page.dart';
 import 'package:voicefirst/Views/Registration/user_register_page2.dart';
@@ -24,6 +29,30 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _birthYearController = TextEditingController();
 
+   Future<void> getallCountries({required bool prefill}) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final List<dynamic> dataList = json['data'];
+
+        final fetched = dataList
+            .map((countryJson) => CountryModel.fromJson(countryJson))
+            .toList();
+
+        
+      } else {
+        debugPrint('failed to fetch countries: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Exception Occured : $e');
+    }
+  }
+
+
   final List<Map<String, String>> _countryCodes = [
     {'name': 'India', 'code': '+91'},
     {'name': 'USA', 'code': '+1'},
@@ -43,10 +72,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
     email: '',
     birthYear: 0,
     gender: '',
-    country: '',
-    divisionOne: '',
-    divisionTwo: '',
-    divisionThree: '',
+    countryId: '',
+    countryLabel: '',
+    countryCode : '',
+    divisionOneId: '',
+    divisionOneLabel: '',
+    divisionTwoId: '',
+    divisionTwoLabel: '',
+    divisionThreeId: '',
+    divisionThreeLabel: '',
     place: '',
     password: '',
     confirmPassword: '',
@@ -106,10 +140,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
           email: '',
           birthYear: 0, // 0 means not selected
           gender: '',
-          country: '',
-          divisionOne: '',
-          divisionTwo: '',
-          divisionThree: '',
+          countryId: '',
+          countryLabel: '',
+          countryCode:'',
+          divisionOneId: '',
+          divisionOneLabel: '',
+          divisionTwoId: '',
+          divisionTwoLabel: '',
+          divisionThreeId: '',
+          divisionThreeLabel: '',
           place: '',
           password: '',
           confirmPassword: '',

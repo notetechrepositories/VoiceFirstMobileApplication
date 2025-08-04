@@ -32,7 +32,7 @@ class StepBreadcrumb extends StatelessWidget {
                         color: isActive
                             ? const Color(0xFFE9A91E)
                             : isCompleted
-                            ? const Color(0xFF35ABE1)
+                            ? const Color.fromARGB(255, 85, 156, 82)
                             : Colors.grey[300],
                         shape: BoxShape.circle,
                       ),

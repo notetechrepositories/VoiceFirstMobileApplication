@@ -98,6 +98,7 @@ class _CountryViewState extends State<CountryView> {
 
   Future<void> _addCountry({
     required String country,
+    required String countryCode,
     required String divisionOne,
     required String divisionTwo,
     required String divisionThree,
@@ -105,6 +106,7 @@ class _CountryViewState extends State<CountryView> {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
     final body = {
       "country": country,
+      "countryCode": countryCode,
       "divisionOneLabel": divisionOne,
       "divisionTwoLabel": divisionTwo,
       "divisionThreeLabel": divisionThree,
@@ -119,7 +121,7 @@ class _CountryViewState extends State<CountryView> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('Country added successfully');
-        SnackbarHelper.showError('Country added successfully');
+        SnackbarHelper.showSuccess('Country added successfully');
         await getallCountries(); // refresh list
       } else {
         debugPrint('Failed to add country: ${response.statusCode}');
@@ -188,6 +190,7 @@ class _CountryViewState extends State<CountryView> {
   Future<Map<String, dynamic>?> updateCountry({
     required String id,
     String? country,
+    String? countryCode,
     String? divisionOneLabel,
     String? divisionTwoLabel,
     String? divisionThreeLabel,
@@ -196,6 +199,9 @@ class _CountryViewState extends State<CountryView> {
 
     if (country != null && country.isNotEmpty) {
       body['country'] = country;
+    }
+    if (countryCode != null && countryCode.isEmpty) {
+      body['countryCode'] = countryCode;
     }
     if (divisionOneLabel != null && divisionOneLabel.isNotEmpty) {
       body['divisionOneLabel'] = divisionOneLabel;
@@ -379,8 +385,9 @@ class _CountryViewState extends State<CountryView> {
                                   setState(() {
                                     if (isSelected) {
                                       selectedIds.remove(c.id);
-                                      if (selectedIds.isEmpty)
+                                      if (selectedIds.isEmpty) {
                                         isMultiSelectMode = false;
+                                      }
                                     } else {
                                       selectedIds.add(c.id);
                                     }
@@ -479,6 +486,8 @@ class _CountryViewState extends State<CountryView> {
                                                             id: updatedData['id'],
                                                             country:
                                                                 updatedData['country'],
+                                                            countryCode:
+                                                                updatedData['countryCode'],
                                                             divisionOneLabel:
                                                                 updatedData['divisionOneLabel'],
                                                             divisionTwoLabel:
@@ -555,7 +564,7 @@ class _CountryViewState extends State<CountryView> {
                                                       setState(() {
                                                         c.status = val;
                                                       });
-                                                      SnackbarHelper.showError(
+                                                      SnackbarHelper.showSuccess(
                                                         'Status Updated',
                                                       );
                                                     } else {
@@ -624,7 +633,7 @@ class _CountryViewState extends State<CountryView> {
                                                             (x) => x.id == c.id,
                                                           );
                                                     });
-                                                    SnackbarHelper.showError(
+                                                    SnackbarHelper.showSuccess(
                                                       'Country Deleted Successfully',
                                                     );
                                                   } else {
@@ -676,12 +685,14 @@ class _CountryViewState extends State<CountryView> {
               onSubmit:
                   ({
                     required String country,
+                    required String countryCode,
                     required String divisionOne,
                     required String divisionTwo,
                     required String divisionThree,
                   }) async {
                     await _addCountry(
                       country: country,
+                      countryCode: countryCode,
                       divisionOne: divisionOne,
                       divisionTwo: divisionTwo,
                       divisionThree: divisionThree,

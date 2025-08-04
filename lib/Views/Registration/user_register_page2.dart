@@ -11,7 +11,6 @@ import 'package:voicefirst/Models/registration_model.dart';
 import 'package:voicefirst/Views/LoginPage/login_page.dart';
 import 'package:voicefirst/Views/Registration/user_register_page1.dart';
 import 'package:voicefirst/Views/Registration/user_register_page3.dart';
-import 'package:voicefirst/Widgets/bread_crumb.dart';
 import 'package:voicefirst/Widgets/number_breadcrumb.dart';
 import 'package:voicefirst/Widgets/registerform.dart';
 
@@ -41,7 +40,11 @@ class _RegPageState extends State<RegPage> {
 
   late RegistrationData registrationData;
 
-  CountryModel? _selectedCountry;
+  CountryModel? selectedCountry;
+  DivisionOneModel? selectedDiv1;
+  DivisionTwoModel? selectedDiv2;
+  DivisionThreeModel? selectedDiv3;
+
   List<DivisionOneModel> divisionOneList = [];
   List<DivisionOneModel> filteredDivOne = [];
 
@@ -72,40 +75,31 @@ class _RegPageState extends State<RegPage> {
           filteredCountries = fetched;
           isDataLoaded = true;
 
-          //   if (prefill && registrationData.country.isNotEmpty) {
-          //     try {
-          //       _selectedCountry = countries.firstWhere(
-          //         (c) => c.country == registrationData.country,
-          //       );
-          //     } catch (e) {
-          //       _selectedCountry = null; // fallback if not found
-          //     }
-          //   }
-          if (prefill && registrationData.country.isNotEmpty) {
+          if (prefill && registrationData.countryId.isNotEmpty) {
             try {
-              _selectedCountry = countries.firstWhere(
-                (c) => c.country == registrationData.country,
+              selectedCountry = countries.firstWhere(
+                (c) => c.country == registrationData.countryId,
               );
             } catch (e) {
-              _selectedCountry = null;
+              selectedCountry = null;
             }
           } else {
-            _selectedCountry = null; // Don't prefill, show hint
+            selectedCountry = null; // Don't prefill, show hint
           }
         });
 
-        if (prefill && _selectedCountry != null) {
+        if (prefill && selectedCountry != null) {
           await getAllDivisionOnes();
-          if (registrationData.divisionOne.isNotEmpty) {
+          if (registrationData.divisionOneId.isNotEmpty) {
             final divOne = divisionOneList.firstWhere(
-              (d) => d.divisionOne == registrationData.divisionOne,
+              (d) => d.divisionOne == registrationData.divisionOneId,
               orElse: () => divisionOneList.first,
             );
             await getAllDivisionTwos(divOne.id);
           }
-          if (registrationData.divisionTwo.isNotEmpty) {
+          if (registrationData.divisionTwoId.isNotEmpty) {
             final divTwo = divisionTwoList.firstWhere(
-              (d) => d.divisionTwo == registrationData.divisionTwo,
+              (d) => d.divisionTwo == registrationData.divisionTwoId,
               orElse: () => divisionTwoList.first,
             );
             await getAllDivisionThrees(divTwo.id);
@@ -119,60 +113,10 @@ class _RegPageState extends State<RegPage> {
     }
   }
 
-  // Future<void> getallCountries() async {
-  //   final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
-
-  //   try {
-  //     final response = await http.get(url);
-
-  //     if (response.statusCode == 200) {
-  //       final json = jsonDecode(response.body);
-  //       final List<dynamic> dataList = json['data'];
-
-  //       final fetched = dataList
-  //           .map((countryJson) => CountryModel.fromJson(countryJson))
-  //           .toList();
-
-  //       setState(() {
-  //         countries = fetched;
-  //         filteredCountries = fetched;
-  //         isDataLoaded = true;
-
-  //         _selectedCountry = countries.firstWhere(
-  //           (c) => c.country == registrationData.country,
-  //           orElse: () => countries.first,
-  //         );
-  //       });
-
-  //       if (_selectedCountry != null) {
-  //         await getAllDivisionOnes();
-  //         if (registrationData.divisionOne.isNotEmpty) {
-  //           final divOne = divisionOneList.firstWhere(
-  //             (d) => d.divisionOne == registrationData.divisionOne,
-  //             orElse: () => divisionOneList.first,
-  //           );
-  //           await getAllDivisionTwos(divOne.id);
-  //         }
-  //         if (registrationData.divisionTwo.isNotEmpty) {
-  //           final divTwo = divisionTwoList.firstWhere(
-  //             (d) => d.divisionTwo == registrationData.divisionTwo,
-  //             orElse: () => divisionTwoList.first,
-  //           );
-  //           await getAllDivisionThrees(divTwo.id);
-  //         }
-  //       }
-  //     } else {
-  //       debugPrint('failed to fetch countries: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Exception Occured : $e');
-  //   }
-  // }
-
   //getall division 1
   Future<void> getAllDivisionOnes() async {
     final url = Uri.parse(
-      '${ApiEndpoints.baseUrl}/division-one/all?country=${_selectedCountry?.id}',
+      '${ApiEndpoints.baseUrl}/division-one/all?country=${selectedCountry?.id}',
     );
 
     try {
@@ -260,11 +204,11 @@ class _RegPageState extends State<RegPage> {
     _address2Controller.text = registrationData.addressTwo ?? '';
     _zipCodeController.text = registrationData.zipCode;
     _localController.text = registrationData.place;
-    _div1Controller.text = registrationData.divisionOne;
-    _div2Controller.text = registrationData.divisionTwo;
-    _div3Controller.text = registrationData.divisionThree;
+    _div1Controller.text = registrationData.divisionOneId;
+    _div2Controller.text = registrationData.divisionTwoId;
+    _div3Controller.text = registrationData.divisionThreeId;
 
-    if (registrationData.country.isNotEmpty) {
+    if (registrationData.countryId.isNotEmpty) {
       getallCountries(prefill: true);
     } else {
       getallCountries(prefill: false);
@@ -275,7 +219,6 @@ class _RegPageState extends State<RegPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -284,10 +227,8 @@ class _RegPageState extends State<RegPage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 246, 202, 71),
-              Color.fromARGB(255, 246, 208, 97),
-              Color.fromARGB(255, 252, 238, 158),
-              Color.fromARGB(255, 241, 235, 204),
+              Color.fromARGB(255, 245, 198, 57),
+              Color.fromARGB(255, 252, 237, 155),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -297,366 +238,484 @@ class _RegPageState extends State<RegPage> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height,
-                  ),
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: IntrinsicHeight(
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(height: screenHeight * 0.02),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 20,
+                          ),
 
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              top: 50,
-                              bottom: 10,
-                              left: 25,
-                              right: 25,
-                            ),
-                            child: Form(
-                              key: _formKey,
-                              child: Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                elevation: 8,
-                                child: Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Center(
-                                        child: Text(
-                                          'Register Account',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 25),
-                                      StepBreadcrumb(
-                                        currentStep: 1,
-                                        steps: [
-                                          'Basic',
-                                          'Address',
-                                          'Password',
-                                          'Confirm',
-                                        ],
-                                      ),
-                                      SizedBox(height: 5),
-                                      Text(
-                                        'Enter your Details below.',
+                          child: Form(
+                            key: _formKey,
+                            child: Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 8,
+                              child: Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        'Register Account',
                                         style: TextStyle(
-                                          color: Colors.grey[600],
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      SizedBox(height: 20),
-                                      // ArrowBreadcrumb(
-                                      //   steps: ["Basic", "Address", "Password"],
-                                      //   currentIndex:
-                                      //       1, // or 1 or 2 depending on the page
-                                      //   onTap: (index) {},
-                                      // ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    StepBreadcrumb(
+                                      currentStep: 1,
+                                      steps: [
+                                        'Basic',
+                                        'Address',
+                                        'Password',
+                                        'Confirm',
+                                      ],
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Enter your Details below.',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                    SizedBox(height: 20),
 
-                                      // First Name
-                                      TextFormField(
-                                        controller: _address1Controller,
-                                        decoration: buildInputDecoration(
-                                          "AddressLine 1",
-                                          Icon(Icons.home),
-                                        ),
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.trim().isEmpty) {
-                                            return 'address  is required';
-                                          }
-                                          return null;
-                                        },
+                                    // First Name
+                                    TextFormField(
+                                      controller: _address1Controller,
+                                      decoration: buildInputDecoration(
+                                        "AddressLine 1",
+                                        Icon(Icons.home),
                                       ),
-                                      SizedBox(height: 15),
-                                      // Last Name
-                                      TextFormField(
-                                        controller: _address2Controller,
-                                        decoration: buildInputDecoration(
-                                          "AddressLine 2",
-                                          Icon(Icons.maps_home_work_outlined),
-                                        ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.trim().isEmpty) {
+                                          return 'address  is required';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    SizedBox(height: 10),
+                                    // Last Name
+                                    TextFormField(
+                                      controller: _address2Controller,
+                                      decoration: buildInputDecoration(
+                                        "AddressLine 2",
+                                        Icon(Icons.maps_home_work_outlined),
                                       ),
-                                      SizedBox(height: 15),
-                                      //COUNTRY DIV1,DIV2,DIV3
-                                      // Country
-                                      DropdownButtonFormField<CountryModel>(
-                                        value: _selectedCountry,
-                                        hint: Text("Select Country"),
-                                        decoration: buildInputDecoration(
-                                          'Country',
-                                          Icon(Icons.map),
+                                    ),
+                                    SizedBox(height: 10),
+                                    //COUNTRY DIV1,DIV2,DIV3
+                                    // Country
+                                    DropdownButtonFormField<CountryModel>(
+                                      value: selectedCountry,
+                                      hint: Text("Select Country"),
+                                      decoration: buildInputDecoration(
+                                        'Country',
+                                        Icon(Icons.map),
+                                      ),
+                                      items: countries.map((country) {
+                                        return DropdownMenuItem<CountryModel>(
+                                          value: country,
+                                          child: Text(country.country),
+                                        );
+                                      }).toList(),
+
+                                      onChanged: (CountryModel? newValue) {
+                                        if (newValue == null) return;
+
+                                        setState(() {
+                                          selectedCountry = newValue;
+                                          selectedDiv1 = null;
+                                          selectedDiv2 = null;
+                                          selectedDiv3 = null;
+                                          _div1Controller.clear();
+                                          _div2Controller.clear();
+                                          _div3Controller.clear();
+                                          divisionTwoList.clear();
+                                          divisionThreeList.clear();
+                                          getAllDivisionOnes();
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null) {
+                                          return 'select a country required';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+
+                                    // // Division 1 Dropdown
+                                    if (selectedCountry != null &&
+                                        divisionOneList.isNotEmpty) ...[
+                                      SizedBox(height: 10),
+                                      // DropdownButtonFormField<String>(
+                                      //   value:
+                                      //       divisionOneList.any(
+                                      //         (d) =>
+                                      //             d.divisionOne ==
+                                      //             _div1Controller.text,
+                                      //       )
+                                      //       ? _div1Controller.text
+                                      //       : null,
+                                      //   validator: (value) {
+                                      //     if (value == null) {
+                                      //       return "Division is required";
+                                      //     }
+                                      //     return null;
+                                      //   },
+                                      //   hint: Text(
+                                      //     selectedCountry?.divisionOneLabel ??
+                                      //         "--Select--",
+                                      //   ),
+                                      //   decoration: buildInputDecoration(
+                                      //     selectedCountry?.divisionOneLabel ??
+                                      //         "--Select--",
+                                      //     Icon(Icons.share_location_outlined),
+                                      //   ),
+                                      //   items: divisionOneList.map((div) {
+                                      //     return DropdownMenuItem<String>(
+                                      //       value: div.divisionOne,
+                                      //       child: Text(div.divisionOne),
+                                      //     );
+                                      //   }).toList(),
+                                      //   onChanged: (value) {
+                                      //     final selected = divisionOneList
+                                      //         .firstWhere(
+                                      //           (d) => d.divisionOne == value,
+                                      //         );
+                                      //     setState(() {
+                                      //       _div1Controller.text = value!;
+                                      //       selectedDiv1 = selected;
+                                      //       _div2Controller.clear();
+                                      //       _div3Controller.clear();
+                                      //       selectedDiv2 = null;
+                                      //       selectedDiv3 = null;
+                                      //       divisionTwoList = [];
+                                      //       divisionThreeList = [];
+                                      //       getAllDivisionTwos(selected.id);
+                                      //     });
+                                      //   },
+                                      // ),
+                                      DropdownButtonFormField<DivisionOneModel>(
+                                        value: selectedDiv1,
+                                        hint: Text(
+                                          selectedCountry?.divisionOneLabel ??
+                                              "--Select--",
                                         ),
-                                        items: countries.map((country) {
-                                          return DropdownMenuItem<CountryModel>(
-                                            value: country,
-                                            child: Text(country.country),
+                                        decoration: buildInputDecoration(
+                                          selectedCountry?.divisionOneLabel ??
+                                              "--Select--",
+                                          Icon(Icons.share_location_outlined),
+                                        ),
+                                        items: divisionOneList.map((div) {
+                                          return DropdownMenuItem<
+                                            DivisionOneModel
+                                          >(
+                                            value: div,
+                                            child: Text(div.divisionOne),
                                           );
                                         }).toList(),
-                                        // onChanged: (CountryModel? newValue) {
-                                        //   setState(() {
-                                        //     _selectedCountry = newValue!;
-                                        //     getAllDivisionOnes(); // Fetch based on selected country
-                                        //   });
-                                        // },
-                                        onChanged: (CountryModel? newValue) {
-                                          if (newValue == null) return;
-
+                                        onChanged: (value) {
                                           setState(() {
-                                            _selectedCountry = newValue;
-                                            _div1Controller.clear();
+                                            selectedDiv1 = value!;
+                                            _div1Controller.text =
+                                                value.divisionOne;
+                                            selectedDiv2 = null;
+                                            selectedDiv3 = null;
                                             _div2Controller.clear();
                                             _div3Controller.clear();
                                             divisionTwoList.clear();
                                             divisionThreeList.clear();
-                                            getAllDivisionOnes();
+                                            getAllDivisionTwos(value.id);
+                                          });
+                                        },
+                                      ),
+                                    ],
+
+                                    //division2
+                                    if (_div1Controller.text.isNotEmpty &&
+                                        divisionTwoList.isNotEmpty) ...[
+                                      SizedBox(height: 10),
+                                      // DropdownButtonFormField<String>(
+                                      //   value:
+                                      //       divisionTwoList.any(
+                                      //         (d) =>
+                                      //             d.divisionTwo ==
+                                      //             _div2Controller.text,
+                                      //       )
+                                      //       ? _div2Controller.text
+                                      //       : null,
+                                      //   validator: (value) {
+                                      //     if (value == null) {
+                                      //       return "This field is required";
+                                      //     }
+                                      //     return null;
+                                      //   },
+                                      //   hint: Text(
+                                      //     selectedCountry?.divisionTwoLabel ??
+                                      //         "--Select--",
+                                      //   ),
+                                      //   decoration: buildInputDecoration(
+                                      //     selectedCountry?.divisionTwoLabel ??
+                                      //         "--Select--",
+                                      //     Icon(Icons.share_location_outlined),
+                                      //   ),
+                                      //   items: divisionTwoList.map((div) {
+                                      //     return DropdownMenuItem<String>(
+                                      //       value: div.divisionTwo,
+                                      //       child: Text(div.divisionTwo),
+                                      //     );
+                                      //   }).toList(),
+                                      //   onChanged: (value) {
+                                      //     final selected = divisionTwoList
+                                      //         .firstWhere(
+                                      //           (d) => d.divisionTwo == value,
+                                      //         );
+                                      //     setState(() {
+                                      //       _div2Controller.text = value!;
+                                      //       selectedDiv2 = selected;
+                                      //       _div3Controller.clear();
+                                      //       selectedDiv3 = null;
+                                      //       divisionThreeList = [];
+                                      //       getAllDivisionThrees(selected.id);
+                                      //     });
+                                      //   },
+                                      // ),
+                                      DropdownButtonFormField<DivisionTwoModel>(
+                                        value: selectedDiv2,
+                                        hint: Text(
+                                          selectedCountry?.divisionTwoLabel ??
+                                              "--Select--",
+                                        ),
+                                        decoration: buildInputDecoration(
+                                          selectedCountry?.divisionTwoLabel ??
+                                              "--Select--",
+                                          Icon(Icons.share_location_outlined),
+                                        ),
+                                        items: divisionTwoList.map((div) {
+                                          return DropdownMenuItem<
+                                            DivisionTwoModel
+                                          >(
+                                            value: div,
+                                            child: Text(div.divisionTwo),
+                                          );
+                                        }).toList(),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedDiv2 = value!;
+                                            _div2Controller.text =
+                                                value.divisionTwo;
+                                            selectedDiv3 = null;
+                                            _div3Controller.clear();
+                                            divisionThreeList.clear();
+                                            getAllDivisionThrees(value.id);
                                           });
                                         },
                                         validator: (value) {
                                           if (value == null) {
-                                            return 'select a country required';
+                                            return "This field is required";
                                           }
                                           return null;
                                         },
                                       ),
+                                    ],
 
-                                      // // Division 1 Dropdown
-                                      if (_selectedCountry != null &&
-                                          divisionOneList.isNotEmpty) ...[
-                                        SizedBox(height: 15),
-                                        DropdownButtonFormField<String>(
-                                          value:
-                                              divisionOneList.any(
-                                                (d) =>
-                                                    d.divisionOne ==
-                                                    _div1Controller.text,
-                                              )
-                                              ? _div1Controller.text
-                                              : null,
-                                          validator: (value) {
-                                            if (value == null) {
-                                              return "Division is required";
-                                            }
-                                            return null;
-                                          },
-                                          hint: Text(
-                                            _selectedCountry
-                                                    ?.divisionOneLabel ??
-                                                "--Select--",
-                                          ),
-                                          decoration: buildInputDecoration(
-                                            _selectedCountry
-                                                    ?.divisionOneLabel ??
-                                                "--Select--",
-                                            Icon(Icons.share_location_outlined),
-                                          ),
-                                          items: divisionOneList.map((div) {
-                                            return DropdownMenuItem<String>(
-                                              value: div.divisionOne,
-                                              child: Text(div.divisionOne),
-                                            );
-                                          }).toList(),
-                                          onChanged: (value) {
-                                            setState(() {
-                                              _div1Controller.text = value!;
-                                              _div2Controller.clear();
-                                              _div3Controller.clear();
-                                              divisionTwoList = [];
-                                              divisionThreeList = [];
-                                              getAllDivisionTwos(
-                                                divisionOneList
-                                                    .firstWhere(
-                                                      (d) =>
-                                                          d.divisionOne ==
-                                                          value,
-                                                    )
-                                                    .id,
-                                              );
-                                            });
-                                          },
+                                    // Division 3 Dropdown
+                                    // Division 3
+                                    if (_div2Controller.text.isNotEmpty &&
+                                        divisionThreeList.isNotEmpty) ...[
+                                      SizedBox(height: 10),
+                                      
+                                      DropdownButtonFormField<
+                                        DivisionThreeModel
+                                      >(
+                                        value: selectedDiv3,
+                                        hint: Text(
+                                          selectedCountry?.divisionThreeLabel ??
+                                              "--Select--",
                                         ),
-                                      ],
-
-                                      //division2
-                                      if (_div1Controller.text.isNotEmpty &&
-                                          divisionTwoList.isNotEmpty) ...[
-                                        SizedBox(height: 15),
-                                        DropdownButtonFormField<String>(
-                                          value:
-                                              divisionTwoList.any(
-                                                (d) =>
-                                                    d.divisionTwo ==
-                                                    _div2Controller.text,
-                                              )
-                                              ? _div2Controller.text
-                                              : null,
-                                          validator: (value) {
-                                            if (value == null) {
-                                              return "This field is required";
-                                            }
-                                            return null;
-                                          },
-                                          hint: Text(
-                                            _selectedCountry
-                                                    ?.divisionTwoLabel ??
-                                                "--Select--",
-                                          ),
-                                          decoration: buildInputDecoration(
-                                            _selectedCountry
-                                                    ?.divisionTwoLabel ??
-                                                "--Select--",
-                                            Icon(Icons.share_location_outlined),
-                                          ),
-                                          items: divisionTwoList.map((div) {
-                                            return DropdownMenuItem<String>(
-                                              value: div.divisionTwo,
-                                              child: Text(div.divisionTwo),
-                                            );
-                                          }).toList(),
-                                          onChanged: (value) {
-                                            setState(() {
-                                              _div2Controller.text = value!;
-                                              _div3Controller.clear();
-                                              divisionThreeList = [];
-                                              getAllDivisionThrees(
-                                                divisionTwoList
-                                                    .firstWhere(
-                                                      (d) =>
-                                                          d.divisionTwo ==
-                                                          value,
-                                                    )
-                                                    .id,
-                                              );
-                                            });
-                                          },
-                                        ),
-                                      ],
-
-                                      // Division 3 Dropdown
-                                      // Division 3
-                                      if (_div2Controller.text.isNotEmpty &&
-                                          divisionThreeList.isNotEmpty) ...[
-                                        SizedBox(height: 15),
-                                        DropdownButtonFormField<String>(
-                                          value:
-                                              divisionThreeList.any(
-                                                (d) =>
-                                                    d.divisionThree ==
-                                                    _div3Controller.text,
-                                              )
-                                              ? _div3Controller.text
-                                              : null,
-                                          validator: (value) {
-                                            if (value == null) {
-                                              return "This field is required";
-                                            }
-                                            return null;
-                                          },
-                                          hint: Text(
-                                            _selectedCountry
-                                                    ?.divisionThreeLabel ??
-                                                "--Select--",
-                                          ),
-                                          decoration: buildInputDecoration(
-                                            _selectedCountry
-                                                    ?.divisionThreeLabel ??
-                                                "--Select--",
-                                            Icon(Icons.share_location_outlined),
-                                          ),
-                                          items: divisionThreeList.map((div) {
-                                            return DropdownMenuItem<String>(
-                                              value: div.divisionThree,
-                                              child: Text(div.divisionThree),
-                                            );
-                                          }).toList(),
-                                          onChanged: (value) {
-                                            setState(() {
-                                              _div3Controller.text = value!;
-                                            });
-                                          },
-                                        ),
-                                      ],
-
-                                      SizedBox(height: 15),
-                                      // Place
-                                      TextFormField(
-                                        controller: _localController,
                                         decoration: buildInputDecoration(
-                                          'Place',
-                                          Icon(Icons.location_city),
+                                          selectedCountry?.divisionThreeLabel ??
+                                              "--Select--",
+                                          Icon(Icons.share_location_outlined),
+                                        ),
+                                        items: divisionThreeList.map((div) {
+                                          return DropdownMenuItem<
+                                            DivisionThreeModel
+                                          >(
+                                            value: div,
+                                            child: Text(div.divisionThree),
+                                          );
+                                        }).toList(),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedDiv3 = value!;
+                                            _div3Controller.text =
+                                                value.divisionThree;
+                                          });
+                                        },
+                                      ),
+                                    ],
+
+                                    SizedBox(height: 10),
+                                    // Place
+                                    TextFormField(
+                                      controller: _localController,
+                                      decoration: buildInputDecoration(
+                                        'Place',
+                                        Icon(Icons.location_city),
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+                                    // zipCode
+                                    TextFormField(
+                                      controller: _zipCodeController,
+                                      decoration: buildInputDecoration(
+                                        'ZipCode',
+                                        Icon(Icons.mail_rounded),
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+
+                                    if (_errorMessage.isNotEmpty) ...[
+                                      SizedBox(height: 10),
+                                      Center(
+                                        child: Text(
+                                          _errorMessage,
+                                          style: TextStyle(color: Colors.red),
                                         ),
                                       ),
-                                      SizedBox(height: 15),
-                                      // zipCode
-                                      TextFormField(
-                                        controller: _zipCodeController,
-                                        decoration: buildInputDecoration(
-                                          'ZipCode',
-                                          Icon(Icons.mail_rounded),
-                                        ),
-                                      ),
-                                      SizedBox(height: 15),
+                                    ],
 
-                                      if (_errorMessage.isNotEmpty) ...[
-                                        SizedBox(height: 10),
-                                        Center(
-                                          child: Text(
-                                            _errorMessage,
-                                            style: TextStyle(color: Colors.red),
+                                    SizedBox(height: 20),
+
+                                    // Buttons
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 80,
+                                          child: InkWell(
+                                            onTap: () {
+                                              final updatedData =
+                                                  registrationData.copyWith(
+                                                    addressOne:
+                                                        _address1Controller.text
+                                                            .trim(),
+                                                    addressTwo:
+                                                        _address2Controller.text
+                                                            .trim(),
+                                                    zipCode: _zipCodeController
+                                                        .text
+                                                        .trim(),
+                                                    place: _localController.text
+                                                        .trim(),
+                                                    countryId:
+                                                        selectedCountry?.id ??
+                                                        '',
+                                                    countryLabel:
+                                                        selectedCountry
+                                                            ?.country ??
+                                                        '',
+                                                    divisionOneId:
+                                                        selectedDiv1?.id ?? '',
+                                                    divisionOneLabel:
+                                                        selectedDiv1
+                                                            ?.divisionOne ??
+                                                        '',
+                                                    divisionTwoId:
+                                                        selectedDiv2?.id ?? '',
+                                                    divisionTwoLabel:
+                                                        selectedDiv2
+                                                            ?.divisionTwo ??
+                                                        '',
+                                                    divisionThreeId:
+                                                        selectedDiv3?.id ?? '',
+                                                    divisionThreeLabel:
+                                                        selectedDiv3
+                                                            ?.divisionThree ??
+                                                        '',
+                                                  );
+
+                                              Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      RegistrationPage(
+                                                        registrationData:
+                                                            updatedData,
+                                                      ),
+                                                ),
+                                              );
+                                            },
+
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 14,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Color.fromARGB(
+                                                      255,
+                                                      53,
+                                                      122,
+                                                      233,
+                                                    ),
+                                                    Color.fromARGB(
+                                                      255,
+                                                      113,
+                                                      195,
+                                                      230,
+                                                    ),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              alignment: Alignment.center,
+                                              child: _isLoading
+                                                  ? CircularProgressIndicator(
+                                                      color: Colors.white,
+                                                    )
+                                                  : Text(
+                                                      'Back',
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                            ),
                                           ),
                                         ),
-                                      ],
-
-                                      SizedBox(height: 15),
-
-                                      // Buttons
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 80,
-                                            child: InkWell(
-                                              // onTap: () {
-                                              //   final updatedData =
-                                              //       registrationData.copyWith(
-                                              //         address1:
-                                              //             _address1Controller.text
-                                              //                 .trim(),
-                                              //         address2:
-                                              //             _address2Controller.text
-                                              //                 .trim(),
-                                              //         zipCode: _zipCodeController
-                                              //             .text
-                                              //             .trim(),
-                                              //         place: _localController.text
-                                              //             .trim(),
-                                              //         country:
-                                              //             _selectedCountry
-                                              //                 ?.country ??
-                                              //             '',
-                                              //         divisionOne:
-                                              //             _div1Controller.text,
-                                              //         divisionTwo:
-                                              //             _div2Controller.text,
-                                              //         divisionThree:
-                                              //             _div3Controller.text,
-                                              //       );
-
-                                              //   Navigator.pop(
-                                              //     context,
-                                              //     updatedData,
-                                              //   );
-                                              // },
-                                              onTap: () {
+                                        SizedBox(width: 50),
+                                        SizedBox(
+                                          width: 80,
+                                          child: InkWell(
+                                            onTap: () {
+                                              final form =
+                                                  _formKey.currentState;
+                                              if (form != null &&
+                                                  form.validate()) {
                                                 final updatedData =
                                                     registrationData.copyWith(
                                                       addressOne:
@@ -674,184 +733,106 @@ class _RegPageState extends State<RegPage> {
                                                       place: _localController
                                                           .text
                                                           .trim(),
-                                                      country:
-                                                          _selectedCountry
+                                                      countryId:
+                                                          selectedCountry?.id ??
+                                                          '',
+                                                      countryLabel:
+                                                          selectedCountry
                                                               ?.country ??
                                                           '',
-                                                      divisionOne:
-                                                          _div1Controller.text,
-                                                      divisionTwo:
-                                                          _div2Controller.text,
-                                                      divisionThree:
-                                                          _div3Controller.text,
+                                                      divisionOneId:
+                                                          selectedDiv1?.id ??
+                                                          '',
+                                                      divisionOneLabel:
+                                                          selectedDiv1
+                                                              ?.divisionOne ??
+                                                          '',
+                                                      divisionTwoId:
+                                                          selectedDiv2?.id ??
+                                                          '',
+                                                      divisionTwoLabel:
+                                                          selectedDiv2
+                                                              ?.divisionTwo ??
+                                                          '',
+                                                      divisionThreeId:
+                                                          selectedDiv3?.id ??
+                                                          '',
+                                                      divisionThreeLabel:
+                                                          selectedDiv3
+                                                              ?.divisionThree ??
+                                                          '',
                                                     );
-                                                Navigator.pushReplacement(
+
+                                                Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (context) =>
-                                                        RegistrationPage(
+                                                        PasswordPage(
                                                           registrationData:
                                                               updatedData,
                                                         ),
                                                   ),
                                                 );
-                                              },
+                                              }
+                                            },
 
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              child: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical: 15,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  gradient: LinearGradient(
-                                                    colors: [
-                                                      Color.fromARGB(
-                                                        255,
-                                                        53,
-                                                        122,
-                                                        233,
-                                                      ),
-                                                      Color.fromARGB(
-                                                        255,
-                                                        113,
-                                                        195,
-                                                        230,
-                                                      ),
-                                                    ],
-                                                    begin: Alignment.topLeft,
-                                                    end: Alignment.bottomRight,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                                alignment: Alignment.center,
-                                                child: _isLoading
-                                                    ? CircularProgressIndicator(
-                                                        color: Colors.white,
-                                                      )
-                                                    : Text(
-                                                        'Back',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                              ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
                                             ),
-                                          ),
-                                          SizedBox(width: 55),
-                                          SizedBox(
-                                            width: 80,
-                                            child: InkWell(
-                                              onTap: () {
-                                                final form =
-                                                    _formKey.currentState;
-                                                if (form != null &&
-                                                    form.validate()) {
-                                                  final updatedData =
-                                                      registrationData.copyWith(
-                                                        addressOne:
-                                                            _address1Controller
-                                                                .text
-                                                                .trim(),
-                                                        addressTwo:
-                                                            _address2Controller
-                                                                .text
-                                                                .trim(),
-                                                        zipCode:
-                                                            _zipCodeController
-                                                                .text
-                                                                .trim(),
-                                                        place: _localController
-                                                            .text
-                                                            .trim(),
-                                                        country:
-                                                            _selectedCountry
-                                                                ?.country ??
-                                                            '',
-                                                        divisionOne:
-                                                            _div1Controller
-                                                                .text,
-                                                        divisionTwo:
-                                                            _div2Controller
-                                                                .text,
-                                                        divisionThree:
-                                                            _div3Controller
-                                                                .text,
-                                                      );
-
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          PasswordPage(
-                                                            registrationData:
-                                                                updatedData,
-                                                          ),
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 15,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Color.fromARGB(
+                                                      255,
+                                                      53,
+                                                      122,
+                                                      233,
                                                     ),
-                                                  );
-                                                }
-                                              },
-
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              child: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical: 15,
+                                                    Color.fromARGB(
+                                                      255,
+                                                      113,
+                                                      195,
+                                                      230,
+                                                    ),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
                                                 ),
-                                                decoration: BoxDecoration(
-                                                  gradient: LinearGradient(
-                                                    colors: [
-                                                      Color.fromARGB(
-                                                        255,
-                                                        53,
-                                                        122,
-                                                        233,
-                                                      ),
-                                                      Color.fromARGB(
-                                                        255,
-                                                        113,
-                                                        195,
-                                                        230,
-                                                      ),
-                                                    ],
-                                                    begin: Alignment.topLeft,
-                                                    end: Alignment.bottomRight,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                                alignment: Alignment.center,
-                                                child: _isLoading
-                                                    ? CircularProgressIndicator(
-                                                        color: Colors.white,
-                                                      )
-                                                    : Text(
-                                                        'Next',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                               ),
+                                              alignment: Alignment.center,
+                                              child: _isLoading
+                                                  ? CircularProgressIndicator(
+                                                      color: Colors.white,
+                                                    )
+                                                  : Text(
+                                                      'Next',
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
                         ),
+
                         // Spacer(),
-                        SizedBox(height: 15),
+                        SizedBox(height: 20),
                         TextButton(
                           onPressed: () {
                             Navigator.pushReplacement(
@@ -861,23 +842,15 @@ class _RegPageState extends State<RegPage> {
                               ),
                             );
                           },
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              left: 10,
-                              right: 10,
-                              top: 35,
-                            ),
-                            child: Text(
-                              'Already have an account? Login',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: screenWidth * 0.045,
-                              ),
+
+                          child: Text(
+                            'Already have an account? Login',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: screenWidth * 0.045,
                             ),
                           ),
                         ),
-
-                        // Spacer(),
                       ],
                     ),
                   ),
