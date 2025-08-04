@@ -47,7 +47,7 @@ class _Division1ViewState extends State<Division1View> {
 
   List<DivisionOneModel> divisionOneList = [];
   List<DivisionOneModel> filteredDivOne = [];
-  final query = "";
+  final query = "";  
   final TextEditingController _searchController = TextEditingController();
 
   void _enterSelectionMode({bool selectAll = false}) {
@@ -263,7 +263,7 @@ class _Division1ViewState extends State<Division1View> {
         title: Text(
           isMultiSelectMode
               ? '${selectedIds.length} selected'
-              : widget.country.divisionOneLabel,
+              : widget.country.divisionOneLabel ?? '',
           style: TextStyle(color: _textPrimary),
         ),
 
@@ -326,7 +326,10 @@ class _Division1ViewState extends State<Division1View> {
         children: [
           //breadcrumb
           ArrowBreadcrumb(
-            steps: ["Country", widget.country.divisionOneLabel],
+            steps: [
+              "Country",
+              widget.country.divisionOneLabel ?? 'divisuion 1',
+            ],
             currentIndex: 1,
             onTap: (index) {
               // Handle navigation based on index
@@ -698,7 +701,7 @@ class _Division1ViewState extends State<Division1View> {
           showDialog(
             context: context,
             builder: (_) => AddDivisionDialog(
-              label: widget.country.divisionOneLabel,
+              label: widget.country.divisionOneLabel ?? '',
               cardColor: _cardColor,
               textPrimary: _textPrimary,
               textSecondary: _textSecondary,

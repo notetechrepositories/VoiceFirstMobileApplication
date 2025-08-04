@@ -30,19 +30,20 @@ class CountryDetailDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _infoText("Country Code: ", country.countryCode, textPrimary),
           _infoText(
             "Division One Label: ",
-            country.divisionOneLabel,
+            country.divisionOneLabel ?? '',
             textPrimary,
           ),
           _infoText(
             "Division Two Label: ",
-            country.divisionTwoLabel,
+            country.divisionTwoLabel ?? '',
             textPrimary,
           ),
           _infoText(
             "Division Three Label: ",
-            country.divisionThreeLabel,
+            country.divisionThreeLabel ?? '',
             textPrimary,
           ),
         ],

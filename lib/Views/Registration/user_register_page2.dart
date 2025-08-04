@@ -536,47 +536,7 @@ class _RegPageState extends State<RegPage> {
                                     if (_div2Controller.text.isNotEmpty &&
                                         divisionThreeList.isNotEmpty) ...[
                                       SizedBox(height: 10),
-                                      // DropdownButtonFormField<String>(
-                                      //   value:
-                                      //       divisionThreeList.any(
-                                      //         (d) =>
-                                      //             d.divisionThree ==
-                                      //             _div3Controller.text,
-                                      //       )
-                                      //       ? _div3Controller.text
-                                      //       : null,
-                                      //   validator: (value) {
-                                      //     if (value == null) {
-                                      //       return "This field is required";
-                                      //     }
-                                      //     return null;
-                                      //   },
-                                      //   hint: Text(
-                                      //     selectedCountry?.divisionThreeLabel ??
-                                      //         "--Select--",
-                                      //   ),
-                                      //   decoration: buildInputDecoration(
-                                      //     selectedCountry?.divisionThreeLabel ??
-                                      //         "--Select--",
-                                      //     Icon(Icons.share_location_outlined),
-                                      //   ),
-                                      //   items: divisionThreeList.map((div) {
-                                      //     return DropdownMenuItem<String>(
-                                      //       value: div.divisionThree,
-                                      //       child: Text(div.divisionThree),
-                                      //     );
-                                      //   }).toList(),
-                                      //   onChanged: (value) {
-                                      //     final selected = divisionThreeList
-                                      //         .firstWhere(
-                                      //           (d) => d.divisionThree == value,
-                                      //         );
-                                      //     setState(() {
-                                      //       _div3Controller.text = value!;
-                                      //       selectedDiv3 = selected;
-                                      //     });
-                                      //   },
-                                      // ),
+                                      
                                       DropdownButtonFormField<
                                         DivisionThreeModel
                                       >(

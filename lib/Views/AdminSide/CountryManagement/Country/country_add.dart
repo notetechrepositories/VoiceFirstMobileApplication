@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class AddCountryDialog extends StatefulWidget {
   final Function({
     required String country,
+    required String countryCode,
     required String divisionOne,
     required String divisionTwo,
     required String divisionThree,
@@ -17,6 +18,7 @@ class AddCountryDialog extends StatefulWidget {
 
 class _AddCountryDialogState extends State<AddCountryDialog> {
   final TextEditingController _countryController = TextEditingController();
+  final TextEditingController _countryCodeController = TextEditingController();
   final TextEditingController _div1Controller = TextEditingController();
   final TextEditingController _div2Controller = TextEditingController();
   final TextEditingController _div3Controller = TextEditingController();
@@ -33,6 +35,7 @@ class _AddCountryDialogState extends State<AddCountryDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildTextField(_countryController, 'Country'),
+            _buildTextField(_countryCodeController, 'Country Code'),
             _buildTextField(_div1Controller, 'Division One Label'),
             _buildTextField(_div2Controller, 'Division Two Label'),
             _buildTextField(_div3Controller, 'Division Three Label'),
@@ -50,6 +53,7 @@ class _AddCountryDialogState extends State<AddCountryDialog> {
 
             widget.onSubmit(
               country: _countryController.text.trim(),
+              countryCode: _countryCodeController.text.trim(),
               divisionOne: _div1Controller.text.trim(),
               divisionTwo: _div2Controller.text.trim(),
               divisionThree: _div3Controller.text.trim(),
