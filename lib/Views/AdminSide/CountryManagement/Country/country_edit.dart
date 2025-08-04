@@ -32,6 +32,7 @@ class EditCountryDialog extends StatefulWidget {
 
 class _EditCountryDialogState extends State<EditCountryDialog> {
   late TextEditingController _countryController;
+  late TextEditingController _countryCodeController;
   late TextEditingController _div1Controller;
   late TextEditingController _div2Controller;
   late TextEditingController _div3Controller;
@@ -40,6 +41,9 @@ class _EditCountryDialogState extends State<EditCountryDialog> {
   void initState() {
     super.initState();
     _countryController = TextEditingController(text: widget.country.country);
+    _countryCodeController = TextEditingController(
+      text: widget.country.countryCode,
+    );
     _div1Controller = TextEditingController(
       text: widget.country.divisionOneLabel,
     );
@@ -54,6 +58,7 @@ class _EditCountryDialogState extends State<EditCountryDialog> {
   @override
   void dispose() {
     _countryController.dispose();
+    _countryCodeController.dispose();
     _div1Controller.dispose();
     _div2Controller.dispose();
     _div3Controller.dispose();
@@ -64,12 +69,16 @@ class _EditCountryDialogState extends State<EditCountryDialog> {
     final updatedData = <String, dynamic>{'id': widget.country.id};
 
     final newCountry = _countryController.text.trim();
+    final newCode = _countryCodeController.text.trim();
     final newDiv1 = _div1Controller.text.trim();
     final newDiv2 = _div2Controller.text.trim();
     final newDiv3 = _div3Controller.text.trim();
 
     if (newCountry.isNotEmpty && newCountry != widget.country.country) {
       updatedData['country'] = newCountry;
+    }
+    if (newCode.isNotEmpty && newCode != widget.country.countryCode) {
+      updatedData['countryCode'] = newCode;
     }
     if (newDiv1.isNotEmpty && newDiv1 != widget.country.divisionOneLabel) {
       updatedData['divisionOneLabel'] = newDiv1;
@@ -108,6 +117,7 @@ class _EditCountryDialogState extends State<EditCountryDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildTextField(_countryController, 'Country Name'),
+            _buildTextField(_countryCodeController, 'Country Code'),
             _buildTextField(_div1Controller, 'Division One Label'),
             _buildTextField(_div2Controller, 'Division Two Label'),
             _buildTextField(_div3Controller, 'Division Three Label'),

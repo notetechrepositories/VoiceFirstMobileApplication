@@ -129,6 +129,7 @@ class RegistrationData {
   // Country & Divisions - both label and ID
   final String countryId;
   final String countryLabel;
+  final String countryCode;
 
   final String divisionOneId;
   final String divisionOneLabel;
@@ -155,6 +156,7 @@ class RegistrationData {
     required this.gender,
     required this.countryId,
     required this.countryLabel,
+    required this.countryCode,
     required this.divisionOneId,
     required this.divisionOneLabel,
     required this.divisionTwoId,
@@ -178,6 +180,7 @@ class RegistrationData {
     String? gender,
     String? countryId,
     String? countryLabel,
+    String? countryCode,
     String? divisionOneId,
     String? divisionOneLabel,
     String? divisionTwoId,
@@ -200,6 +203,7 @@ class RegistrationData {
       gender: gender ?? this.gender,
       countryId: countryId ?? this.countryId,
       countryLabel: countryLabel ?? this.countryLabel,
+      countryCode:countryCode ?? this.countryCode,
       divisionOneId: divisionOneId ?? this.divisionOneId,
       divisionOneLabel: divisionOneLabel ?? this.divisionOneLabel,
       divisionTwoId: divisionTwoId ?? this.divisionTwoId,
@@ -224,6 +228,7 @@ class RegistrationData {
       'birthYear': birthYear,
       'gender': gender,
       'country': countryId,
+      'countryCode':countryCode,
       'divisionOne': divisionOneId,
       'divisionTwo': divisionTwoId,
       'divisionThree': divisionThreeId,
@@ -246,6 +251,7 @@ class RegistrationData {
       gender: json['gender'],
       countryId: json['country'], // assuming you store ID from API
       countryLabel: '', // fill manually if needed
+      countryCode:json['countryCode'],
       divisionOneId: json['divisionOne'],
       divisionOneLabel: '',
       divisionTwoId: json['divisionTwo'],

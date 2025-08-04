@@ -267,7 +267,7 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
         title: Text(
           isMultiSelectMode
               ? '${selectedIds.length} selected'
-              : widget.country.divisionThreeLabel,
+              : widget.country.divisionThreeLabel ?? '',
           style: TextStyle(color: _textPrimary),
         ),
 
@@ -335,9 +335,9 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
           ArrowBreadcrumb(
             steps: [
               "Country",
-              widget.country.divisionOneLabel,
-              widget.country.divisionTwoLabel,
-              widget.country.divisionThreeLabel,
+              widget.country.divisionOneLabel ?? '',
+              widget.country.divisionTwoLabel ?? '',
+              widget.country.divisionThreeLabel ?? '',
             ],
             currentIndex: 3,
             onTap: (index) {
@@ -709,7 +709,7 @@ class _DivisionThreeViewState extends State<DivisionThreeView> {
           showDialog(
             context: context,
             builder: (_) => AddDivisionDialog(
-              label: widget.country.divisionOneLabel,
+              label: widget.country.divisionOneLabel ?? '',
               cardColor: _cardColor,
               textPrimary: _textPrimary,
               textSecondary: _textSecondary,

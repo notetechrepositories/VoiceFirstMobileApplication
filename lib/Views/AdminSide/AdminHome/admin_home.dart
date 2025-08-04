@@ -42,10 +42,10 @@ class _AdminHomeState extends State<AdminHome> {
           menuItems = buildMenuTree(items);
         });
       } else {
-        print('Menu fetch failed: ${res.statusCode}');
+        debugPrint('Menu fetch failed: ${res.statusCode}');
       }
     } catch (e) {
-      print('Menu load error: $e');
+      debugPrint('Menu load error: $e');
     }
   }
 

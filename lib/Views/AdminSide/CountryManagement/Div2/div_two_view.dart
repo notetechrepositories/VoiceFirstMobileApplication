@@ -261,7 +261,7 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
         title: Text(
           isMultiSelectMode
               ? '${selectedIds.length} selected'
-              : widget.country.divisionTwoLabel, // dynamic label"
+              : widget.country.divisionTwoLabel ?? '', // dynamic label"
           style: TextStyle(color: _textPrimary),
         ),
 
@@ -326,8 +326,8 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
           ArrowBreadcrumb(
             steps: [
               "Country",
-              widget.country.divisionOneLabel,
-              widget.country.divisionTwoLabel,
+              widget.country.divisionOneLabel ?? '',
+              widget.country.divisionTwoLabel ?? '',
             ],
             currentIndex: 2,
             onTap: (index) {
@@ -706,7 +706,7 @@ class _DivisionTwoViewState extends State<DivisionTwoView> {
           showDialog(
             context: context,
             builder: (_) => AddDivisionDialog(
-              label: widget.country.divisionOneLabel,
+              label: widget.country.divisionOneLabel ?? '',
               cardColor: _cardColor,
               textPrimary: _textPrimary,
               textSecondary: _textSecondary,
