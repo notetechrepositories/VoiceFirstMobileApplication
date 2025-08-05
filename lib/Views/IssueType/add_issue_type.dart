@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
 import '../../Core/Constants/api_endpoins.dart';
 
 class AddIssueTypePage extends StatefulWidget {
-  const AddIssueTypePage({super.key});
+  final Map<String, dynamic>? existingIssue;
+
+  const AddIssueTypePage({super.key, this.existingIssue});
 
   @override
   State<AddIssueTypePage> createState() => _AddIssueTypePageState();
@@ -30,7 +31,12 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
   @override
   void initState() {
     super.initState();
-    _loadDropdownData();
+    _loadAndInitializeData();
+  }
+
+  Future<void> _loadAndInitializeData() async {
+    await _loadDropdownData();
+    _prepopulateFieldsIfEditing();
   }
 
   Future<void> _loadDropdownData() async {
@@ -62,6 +68,32 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
         error = 'Failed to load data: $e';
         isLoading = false;
       });
+    }
+  }
+
+  void _prepopulateFieldsIfEditing() {
+    final issue = widget.existingIssue;
+    if (issue == null) return;
+
+    _issueTypeController.text = issue['issueType'] ?? '';
+
+    selectedAnswerTypeIds = (issue['issueAnswerTypes'] as List)
+        .map<String>((a) => a['answerTypeId'] as String)
+        .toList();
+
+    selectedAttachmentTypes = (issue['mediaRequired'] as List)
+        .map<String>((m) => m['attachmentTypeId'] as String)
+        .toList();
+
+    for (final media in issue['mediaRequired']) {
+      final attachId = media['attachmentTypeId'];
+      mediaData[attachId] = {
+        'max': media['maximum'].toString(),
+        'maxSize': media['maximumSize'].toString(),
+        'media': (media['issueMediaType'] as List).map((m) {
+          return {"mediaTypeId": m['mediaTypeId'], "mandatory": m['mandatory']};
+        }).toList(),
+      };
     }
   }
 
@@ -123,6 +155,7 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
       return;
     }
 
+    final isEditing = widget.existingIssue != null;
     final filteredAnswerTypeIds = selectedAnswerTypeIds
         .where((id) => id.isNotEmpty)
         .toList();
@@ -134,51 +167,79 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
 
       if (mediaList.isEmpty) continue;
 
-      final entry = {
+      final existingMediaRequired = isEditing
+          ? (widget.existingIssue!['mediaRequired'] as List).firstWhere(
+              (m) => m['attachmentTypeId'] == typeId,
+              orElse: () => <String, dynamic>{},
+            )
+          : <String, dynamic>{};
+
+      mediaRequiredList.add({
+        "mediaRequiredId": existingMediaRequired['mediaRequiredId'],
         "attachmentTypeId": typeId,
         "maximum": int.tryParse(mediaData[typeId]?['max'] ?? '') ?? 0,
         "maximumSize": int.tryParse(mediaData[typeId]?['maxSize'] ?? '') ?? 0,
-        "issueMediaType": mediaList
-            .where((e) => e['mediaTypeId'] != null)
-            .map(
-              (e) => {
-                "mediaTypeId": e['mediaTypeId'],
-                "mandatory": e['mandatory'] ?? false,
-              },
-            )
-            .toList(),
-      };
+        "issueMediaType": mediaList.map((m) {
+          final existingMediaItem =
+              (existingMediaRequired['issueMediaType'] as List?)?.firstWhere(
+                (x) => x['mediaTypeId'] == m['mediaTypeId'],
+                orElse: () => <String, dynamic>{},
+              ) ??
+              <String, dynamic>{};
 
-      // Don't include empty `issueMediaType`
-      if ((entry["issueMediaType"] as List).isNotEmpty) {
-        mediaRequiredList.add(entry);
-      }
+          return {
+            "mediaTypeId": m["mediaTypeId"],
+            "mandatory": m["mandatory"] ?? false,
+            "issueMediaTypeId": existingMediaItem['issueMediaTypeId'],
+          };
+        }).toList(),
+      });
     }
 
-    final payload = {
-      "issueType": issueType,
-      "answerTypeIds": filteredAnswerTypeIds,
-      "mediaRequired": mediaRequiredList,
-    };
+    final body = isEditing
+        ? {
+            "id": widget.existingIssue!['id'],
+            "issueType": issueType,
+            "issueAnswerTypes": filteredAnswerTypeIds.map((id) {
+              final existingAnswer =
+                  (widget.existingIssue!['issueAnswerTypes'] as List)
+                      .firstWhere(
+                        (e) => e['answerTypeId'] == id,
+                        orElse: () => <String, dynamic>{},
+                      );
 
-    // Optional: Debug log
-    debugPrint("Payload: ${jsonEncode(payload)}");
+              return {
+                "answerTypeId": id,
+                "issueAnswerTypeId": existingAnswer['issueAnswerTypeId'],
+              };
+            }).toList(),
+            "mediaRequired": mediaRequiredList,
+          }
+        : {
+            "issueType": issueType,
+            "answerTypeIds": filteredAnswerTypeIds,
+            "mediaRequired": mediaRequiredList,
+          };
 
-    final res = await http.post(
-      Uri.parse('${ApiEndpoints.baseUrl}/issue-type'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(payload),
-    );
+    final uri = Uri.parse('${ApiEndpoints.baseUrl}/issue-type');
+    final res = isEditing
+        ? await http.put(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          )
+        : await http.post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          );
 
     if (res.statusCode == 200) {
       Navigator.pop(context, true);
     } else {
-      final body = jsonDecode(res.body);
-      final errorMsg = body['message'] ?? 'Submission Failed';
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(errorMsg)));
+      final response = jsonDecode(res.body);
+      final msg = response['message'] ?? 'Submission Failed';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -189,13 +250,17 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
     if (error.isNotEmpty) return Scaffold(body: Center(child: Text(error)));
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Issue Type")),
+      appBar: AppBar(
+        title: Text(
+          widget.existingIssue != null ? "Edit Issue Type" : "Add Issue Type",
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Issue Type Name + Answer Type
+            // Issue Type + AnswerType dropdown
             Row(
               children: [
                 Expanded(
@@ -263,13 +328,13 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 30),
 
+            const SizedBox(height: 30),
             const Text(
               "Media Type Options",
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            const Text("Configure photo/video attachment requirements"),
+            const Text("Configure attachment requirements"),
             const SizedBox(height: 10),
 
             Wrap(
@@ -282,8 +347,8 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 20),
 
+            const SizedBox(height: 20),
             ...selectedAttachmentTypes.map((id) {
               final label = attachmentTypes.firstWhere(
                 (e) => e['id'] == id,
@@ -309,6 +374,9 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                               ),
                               keyboardType: TextInputType.number,
                               onChanged: (v) => mediaData[id]?['maxSize'] = v,
+                              controller: TextEditingController(
+                                text: mediaData[id]?['maxSize'],
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -319,6 +387,9 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                               ),
                               keyboardType: TextInputType.number,
                               onChanged: (v) => mediaData[id]?['max'] = v,
+                              controller: TextEditingController(
+                                text: mediaData[id]?['max'],
+                              ),
                             ),
                           ),
                         ],
@@ -359,9 +430,8 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                         return CheckboxListTile(
                           title: Text('Mandatory: ${mediaType['description']}'),
                           value: m['mandatory'],
-                          onChanged: (val) {
-                            setState(() => m['mandatory'] = val);
-                          },
+                          onChanged: (val) =>
+                              setState(() => m['mandatory'] = val),
                         );
                       }).toList(),
                     ],
@@ -378,7 +448,10 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text("Submit", style: TextStyle(fontSize: 16)),
+                child: Text(
+                  widget.existingIssue != null ? "Update" : "Submit",
+                  style: const TextStyle(fontSize: 16),
+                ),
               ),
             ),
           ],

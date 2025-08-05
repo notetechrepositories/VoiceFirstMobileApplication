@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
 import '../../Core/Constants/api_endpoins.dart';
 import '../../Models/issue_type_model.dart';
 import 'add_issue_type.dart';
@@ -25,7 +24,7 @@ class _ManageIssueTypeScreenState extends State<ManageIssueTypeScreen> {
   }
 
   Future<void> fetchIssueTypes() async {
-    final url = Uri.parse(("${ApiEndpoints.baseUrl}/issue-type/all"));
+    final url = Uri.parse("${ApiEndpoints.baseUrl}/issue-type/all");
 
     try {
       final response = await http.get(url);
@@ -52,6 +51,53 @@ class _ManageIssueTypeScreenState extends State<ManageIssueTypeScreen> {
         errorMessage = 'Failed to load issue types: $e';
       });
     }
+  }
+
+  void _showIssueDetailPopup(IssueType issue) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Issue Type Details"),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Name: ${issue.issueType}"),
+              const SizedBox(height: 8),
+              Text("Status: ${issue.status ? 'Active' : 'Inactive'}"),
+              const SizedBox(height: 8),
+              Text(
+                "Answers: ${issue.issueAnswerTypes.map((e) => e.answerTypeName).join(', ')}",
+              ),
+              const SizedBox(height: 8),
+              Text("Media Types: ${issue.mediaRequired.length} attached"),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Close"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      AddIssueTypePage(existingIssue: issue.toJson()),
+                ),
+              );
+              if (result == true) {
+                fetchIssueTypes();
+              }
+            },
+            child: const Text("Edit"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -103,22 +149,38 @@ class _ManageIssueTypeScreenState extends State<ManageIssueTypeScreen> {
                       return ListTile(
                         leading: Checkbox(value: false, onChanged: (_) {}),
                         title: Text(issue.issueType),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: issue.status ? Colors.green : Colors.red,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            issue.status ? 'Active' : 'Inactive',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                        subtitle: Text(
+                          issue.issueAnswerTypes
+                              .map((e) => e.answerTypeName)
+                              .join(', '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.visibility),
+                              onPressed: () => _showIssueDetailPopup(issue),
                             ),
-                          ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: issue.status ? Colors.green : Colors.red,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                issue.status ? 'Active' : 'Inactive',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -133,7 +195,6 @@ class _ManageIssueTypeScreenState extends State<ManageIssueTypeScreen> {
             MaterialPageRoute(builder: (context) => const AddIssueTypePage()),
           );
 
-          // If result is true, refresh the list
           if (result == true) {
             fetchIssueTypes();
           }
