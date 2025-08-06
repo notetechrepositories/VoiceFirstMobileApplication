@@ -515,7 +515,7 @@ class _CountryViewState extends State<CountryView> {
                                             Transform.scale(
                                               scale: 0.7,
                                               child: Switch(
-                                                value: c.status,
+                                                value: c.status!,
                                                 activeColor: Colors.green,
                                                 onChanged: (val) async {
                                                   final confirm =

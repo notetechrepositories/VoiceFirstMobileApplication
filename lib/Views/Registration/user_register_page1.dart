@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
@@ -13,8 +12,13 @@ import 'package:voicefirst/Widgets/snack_bar.dart';
 
 class RegistrationPage extends StatefulWidget {
   final RegistrationData? registrationData;
+  final CountryModel? selectedCountryCode;
 
-  const RegistrationPage({super.key, this.registrationData});
+  const RegistrationPage({
+    super.key,
+    this.registrationData,
+    this.selectedCountryCode,
+  });
 
   @override
   _RegistrationPageState createState() => _RegistrationPageState();
@@ -28,8 +32,20 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _birthYearController = TextEditingController();
+  CountryModel? selectedCountryCode; //for phn code
+  List<CountryModel> _countries = [];
 
-   Future<void> getallCountries({required bool prefill}) async {
+  List<CountryModel> countries = [];
+  // List<CountryModel> filteredCountries = [];
+  final bool isDataLoaded = false;
+  // final uniqueCodes = <String>{};
+
+  // final query = "";
+  String _selectedGender = "Male";
+  final bool _isLoading = false;
+  final String _errorMessage = '';
+
+  Future<void> getallCountries() async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
 
     try {
@@ -38,12 +54,29 @@ class _RegistrationPageState extends State<RegistrationPage> {
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final List<dynamic> dataList = json['data'];
+        print(dataList);
 
+        //using model
         final fetched = dataList
             .map((countryJson) => CountryModel.fromJson(countryJson))
             .toList();
 
-        
+        setState(() {
+          countries = fetched;
+          selectedCountryCode = countries.firstWhere(
+            (c) => c.id == registrationData.countryCode,
+            orElse: () => CountryModel(id: '', country: '', countryCode: ''),
+          );
+          if (selectedCountryCode?.id == '') selectedCountryCode = null;
+
+          // filteredCountries = List.from(fetched);
+          // filteredCountries = countries
+          //     .where((c) => c.country.toLowerCase().contains(query))
+          //     .toList();
+
+          // isDataLoaded = true;
+          print(countries);
+        });
       } else {
         debugPrint('failed to fetch countries: ${response.statusCode}');
       }
@@ -52,15 +85,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     }
   }
 
-
-  final List<Map<String, String>> _countryCodes = [
-    {'name': 'India', 'code': '+91'},
-    {'name': 'USA', 'code': '+1'},
-    {'name': 'UK', 'code': '+44'},
-    {'name': 'UAE', 'code': '+971'},
-  ];
-
-  String _selectedCountryCode = '+91'; // default
+  // String selectedCountry = ''; // default
 
   RegistrationData registrationData = RegistrationData(
     firstName: '',
@@ -74,7 +99,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
     gender: '',
     countryId: '',
     countryLabel: '',
-    countryCode : '',
+    countryCode: '',
+    countryCodeLabel: '',
     divisionOneId: '',
     divisionOneLabel: '',
     divisionTwoId: '',
@@ -85,10 +111,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
     password: '',
     confirmPassword: '',
   );
-
-  String _selectedGender = "Male"; // Default gender
-  final bool _isLoading = false;
-  final String _errorMessage = '';
 
   Future<void> _selectBirthYear(BuildContext context) async {
     final currentYear = DateTime.now().year;
@@ -101,7 +123,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Select Birth Year'),
-          content: Container(
+          content: SizedBox(
             height: 300,
             width: 100,
             child: YearPicker(
@@ -142,7 +164,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
           gender: '',
           countryId: '',
           countryLabel: '',
-          countryCode:'',
+          countryCode: '',
+          countryCodeLabel: '',
           divisionOneId: '',
           divisionOneLabel: '',
           divisionTwoId: '',
@@ -158,17 +181,31 @@ class _RegistrationPageState extends State<RegistrationPage> {
     _lastNameController.text = registrationData.lastName ?? '';
     _emailController.text = registrationData.email;
     _mobileController.text = registrationData.mobile;
+    _birthYearController.text = registrationData.birthYear != 0
+        ? registrationData.birthYear.toString()
+        : '';
+    selectedCountryCode = CountryModel(
+      id: registrationData.countryCode,
+      countryCode: registrationData.countryCodeLabel,
+      country: '', // optional
+    );
+    print(selectedCountryCode);
 
-    // ✅ Only show birth year if it's not 0
-    if (registrationData.birthYear != 0) {
-      _birthYearController.text = registrationData.birthYear.toString();
-    } else {
-      _birthYearController.text = '';
-    }
+    // if (registrationData.birthYear != 0) {
+    //   _birthYearController.text = registrationData.birthYear.toString();
+    // } else {
+    //   _birthYearController.text = '';
+    // }
+    getallCountries();
   }
 
   @override
   Widget build(BuildContext context) {
+    // final countryCodeList = countries;
+    // final uniqueCountryList = countries.where((country) {
+    //   return uniqueCountryCodes.add(country.countryCode);
+    // }).toList();
+    // print(countryCodeList);
     // final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -290,45 +327,137 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                         ),
 
                                         SizedBox(height: 10),
-                                        //mibile num
+
+                                        // Mobile number row
                                         Row(
                                           children: [
                                             // Dropdown for country code
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                  color: Colors.grey,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              child: DropdownButtonHideUnderline(
-                                                child: DropdownButton<String>(
-                                                  value: _selectedCountryCode,
-                                                  items: _countryCodes.map((
-                                                    country,
-                                                  ) {
-                                                    return DropdownMenuItem<
-                                                      String
-                                                    >(
-                                                      value: country['code'],
-                                                      child: Text(
-                                                        '${country['code']}',
+                                            // SizedBox(
+                                            //   width: 100,
+                                            //   child: Container(
+                                            //     padding: EdgeInsets.symmetric(
+                                            //       horizontal: 8,
+                                            //     ),
+                                            //     decoration: BoxDecoration(
+                                            //       border: Border.all(
+                                            //         color: Colors.grey,
+                                            //       ),
+                                            //       borderRadius:
+                                            //           BorderRadius.circular(10),
+                                            //     ),
+                                            //     child: DropdownButtonHideUnderline(
+                                            //       //for unique couyntry list
+
+                                            //       // child: DropdownButton<CountryModel>(
+                                            //       //   value: selectedCountryCode,
+                                            //       //   hint: Text('Code'),
+                                            //       //   items: uniqueCountryList.map(
+                                            //       //     (country) {
+                                            //       //       return DropdownMenuItem<
+                                            //       //         CountryModel
+                                            //       //       >(
+                                            //       //         value: country,
+                                            //       //         child: Text(
+                                            //       //           country.countryCode,
+                                            //       //         ),
+                                            //       //       );
+                                            //       //     },
+                                            //       //   ).toList(),
+                                            //       //   onChanged: (value) {
+                                            //       //     setState(() {
+                                            //       //       selectedCountryCode =
+                                            //       //           value; //now selectedCountry holds both code & ID
+                                            //       //     });
+                                            //       //   },
+                                            //       // ),
+
+                                            //       //for all list
+
+                                            //       child: DropdownButtonFormField<CountryModel>(
+                                            //         isExpanded: true,
+                                            //         decoration: InputDecoration(
+                                            //           border: OutlineInputBorder(
+                                            //             borderRadius:
+                                            //                 BorderRadius.circular(
+                                            //                   10,
+                                            //                 ),
+                                            //           ),
+                                            //         ),
+                                            //         value:
+                                            //             countries.contains(
+                                            //               selectedCountryCode,
+                                            //             )
+                                            //             ? selectedCountryCode
+                                            //             : null,
+                                            //         hint: Text('Code'),
+                                            //         items: countries.map((
+                                            //           country,
+                                            //         ) {
+                                            //           return DropdownMenuItem(
+                                            //             value: country,
+                                            //             child: Text(
+                                            //               country.countryCode,
+                                            //             ),
+                                            //           );
+                                            //         }).toList(),
+                                            //         onChanged: (value) {
+                                            //           setState(
+                                            //             () =>
+                                            //                 selectedCountryCode =
+                                            //                     value,
+                                            //           );
+                                            //         },
+                                            //       ),
+                                            //     ),
+                                            //   ),
+                                            // ),
+                                            SizedBox(
+                                              width: 100,
+                                              child:
+                                                  DropdownButtonFormField<
+                                                    CountryModel
+                                                  >(
+                                                    isExpanded: true,
+                                                    decoration: InputDecoration(
+                                                      labelText: 'Code',
+                                                      border: OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10,
+                                                            ),
                                                       ),
-                                                    );
-                                                  }).toList(),
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      _selectedCountryCode =
-                                                          value!;
-                                                    });
-                                                  },
-                                                ),
-                                              ),
+                                                      contentPadding:
+                                                          EdgeInsets.symmetric(
+                                                            horizontal: 12,
+                                                            vertical: 16,
+                                                          ),
+                                                    ),
+                                                    value:
+                                                        countries.contains(
+                                                          selectedCountryCode,
+                                                        )
+                                                        ? selectedCountryCode
+                                                        : null,
+                                                    items: countries.map((
+                                                      country,
+                                                    ) {
+                                                      return DropdownMenuItem(
+                                                        value: country,
+                                                        child: Text(
+                                                          country.countryCode,
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                    onChanged: (value) {
+                                                      setState(
+                                                        () =>
+                                                            selectedCountryCode =
+                                                                value,
+                                                      );
+                                                    },
+                                                  ),
                                             ),
+
                                             SizedBox(width: 10),
 
                                             // TextFormField for mobile number
@@ -469,15 +598,24 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                                               .trim(),
                                                         ) ??
                                                         0,
-
                                                     gender: _selectedGender,
+
+                                                    countryCode:
+                                                        selectedCountryCode
+                                                            ?.id ??
+                                                        '', // This is the ID to be passed to API
+                                                    countryCodeLabel:
+                                                        selectedCountryCode
+                                                            ?.countryCode ??
+                                                        '', // This is the visible code like +91
                                                   );
-                                              if (_selectedGender.isEmpty) {
-                                                SnackbarHelper.showError(
-                                                  'select a gender',
-                                                );
-                                                return; // Prevent navigation
-                                              }
+
+                                              // if (_selectedGender.isEmpty) {
+                                              //   SnackbarHelper.showError(
+                                              //     'select a gender',
+                                              //   );
+                                              //   return; // Prevent navigation
+                                              // }
 
                                               final result =
                                                   await Navigator.push(
@@ -491,7 +629,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                                     ),
                                                   );
 
-                                              if (result is RegistrationData) {
+                                              if (result != null &&
+                                                  result is RegistrationData) {
+                                                if (!mounted) return;
                                                 setState(() {
                                                   registrationData = result;
 
@@ -512,6 +652,18 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
                                                   _selectedGender =
                                                       result.gender;
+                                                  // restore phone code
+                                                  try {
+                                                    selectedCountryCode =
+                                                        countries.firstWhere(
+                                                          (c) =>
+                                                              c.id ==
+                                                              result
+                                                                  .countryCode,
+                                                        );
+                                                  } catch (_) {
+                                                    selectedCountryCode = null;
+                                                  }
                                                 });
                                               }
                                             }

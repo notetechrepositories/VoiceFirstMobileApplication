@@ -1,120 +1,3 @@
-// class RegistrationData {
-//   final String firstName;
-//   final String? lastName;
-//   final String addressOne;
-//   final String? addressTwo;
-//   final String mobile;
-//   final String zipCode;
-//   final String email;
-//   final int birthYear;
-//   final String gender;
-//   final String countryId;
-//   final String divisionOneId;
-//   final String divisionTwoId;
-//   final String divisionThreeId;
-//   final String place;
-//   final String password;
-//   final String confirmPassword;
-
-//   RegistrationData({
-//     required this.firstName,
-//     this.lastName,
-//     required this.addressOne,
-//     this.addressTwo,
-//     required this.mobile,
-//     required this.zipCode,
-//     required this.email,
-//     required this.birthYear,
-//     required this.gender,
-//     required this.countryId,
-//     required this.divisionOneId,
-//     required this.divisionTwoId,
-//     required this.divisionThreeId,
-//     required this.place,
-//     required this.password,
-//     required this.confirmPassword,
-//   });
-
-//   RegistrationData copyWith({
-//     String? firstName,
-//     String? lastName,
-//     String? addressOne,
-//     String? addressTwo,
-//     String? mobile,
-//     String? zipCode,
-//     String? email,
-//     int? birthYear,
-//     String? gender,
-//     String? countryId,
-//     String? divisionOneId,
-//     String? divisionTwoId,
-//     String? divisionThreeId,
-//     String? place,
-//     String? password,
-//     String? confirmPassword,
-//   }) {
-//     return RegistrationData(
-//       firstName: firstName ?? this.firstName,
-//       lastName: lastName ?? this.lastName,
-//       addressOne: addressOne ?? this.addressOne,
-//       addressTwo: addressTwo ?? this.addressTwo,
-//       mobile: mobile ?? this.mobile,
-//       zipCode: zipCode ?? this.zipCode,
-//       email: email ?? this.email,
-//       birthYear: birthYear ?? this.birthYear,
-//       gender: gender ?? this.gender,
-//       countryId: countryId ?? this.countryId,
-//       divisionOneId: divisionOneId ?? this.divisionOneId,
-//       divisionTwoId: divisionTwoId ?? this.divisionTwoId,
-//       divisionThreeId: divisionThreeId ?? this.divisionThreeId,
-//       place: place ?? this.place,
-//       password: password ?? this.password,
-//       confirmPassword: confirmPassword ?? this.confirmPassword,
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() {
-//     return {
-//       'firstName': firstName,
-//       'lastName': lastName ?? '',
-//       'addressOne': addressOne,
-//       'addressTwo': addressTwo ?? '',
-//       'mobile': mobile,
-//       'zipCode': zipCode,
-//       'email': email,
-//       'birthYear': birthYear,
-//       'gender': gender,
-//       'country': countryId,
-//       'divisionOne': divisionOneId,
-//       'divisionTwo': divisionTwoId,
-//       'divisionThree': divisionThreeId,
-//       'place': place,
-//       'password': password,
-//       'confirmPassword': confirmPassword,
-//     };
-//   }
-
-//   factory RegistrationData.fromJson(Map<String, dynamic> json) {
-//     return RegistrationData(
-//       firstName: json['firstName'],
-//       lastName: json['lastName'],
-//       addressOne: json['addressOne'],
-//       addressTwo: json['addressTwo'],
-//       mobile: json['mobile'],
-//       zipCode: json['zipCode'],
-//       email: json['email'],
-//       birthYear: json['birthYear'],
-//       gender: json['gender'],
-//       countryId: json['country'],
-//       divisionOneId: json['divisionOne'],
-//       divisionThreeId: json['divisionTwo'],
-//       divisionTwoId: json['divisionThree'],
-//       place: json['place'],
-//       password: json['password'],
-//       confirmPassword: json['confirmPassword'],
-//     );
-//   }
-// }
 class RegistrationData {
   final String firstName;
   final String? lastName;
@@ -129,7 +12,9 @@ class RegistrationData {
   // Country & Divisions - both label and ID
   final String countryId;
   final String countryLabel;
+
   final String countryCode;
+  final String countryCodeLabel;
 
   final String divisionOneId;
   final String divisionOneLabel;
@@ -157,6 +42,7 @@ class RegistrationData {
     required this.countryId,
     required this.countryLabel,
     required this.countryCode,
+    required this.countryCodeLabel,
     required this.divisionOneId,
     required this.divisionOneLabel,
     required this.divisionTwoId,
@@ -181,6 +67,7 @@ class RegistrationData {
     String? countryId,
     String? countryLabel,
     String? countryCode,
+    String? countryCodeLabel,
     String? divisionOneId,
     String? divisionOneLabel,
     String? divisionTwoId,
@@ -203,7 +90,8 @@ class RegistrationData {
       gender: gender ?? this.gender,
       countryId: countryId ?? this.countryId,
       countryLabel: countryLabel ?? this.countryLabel,
-      countryCode:countryCode ?? this.countryCode,
+      countryCode: countryCode ?? this.countryCode,
+      countryCodeLabel: countryCodeLabel ?? this.countryCodeLabel,
       divisionOneId: divisionOneId ?? this.divisionOneId,
       divisionOneLabel: divisionOneLabel ?? this.divisionOneLabel,
       divisionTwoId: divisionTwoId ?? this.divisionTwoId,
@@ -228,7 +116,7 @@ class RegistrationData {
       'birthYear': birthYear,
       'gender': gender,
       'country': countryId,
-      'countryCode':countryCode,
+      'countryCode': countryCode,
       'divisionOne': divisionOneId,
       'divisionTwo': divisionTwoId,
       'divisionThree': divisionThreeId,
@@ -238,29 +126,58 @@ class RegistrationData {
     };
   }
 
+  // factory RegistrationData.fromJson(Map<String, dynamic> json) {
+  //   return RegistrationData(
+  //     firstName: json['firstName'],
+  //     lastName: json['lastName'],
+  //     addressOne: json['addressOne'],
+  //     addressTwo: json['addressTwo'],
+  //     mobile: json['mobile'],
+  //     zipCode: json['zipCode'],
+  //     email: json['email'],
+  //     birthYear: json['birthYear'],
+  //     gender: json['gender'],
+  //     countryId: json['country'],
+  //     countryLabel: '', // No label from backend
+  //     countryCode: json['countryCode'],
+  //     countryCodeLabel: '', // <- temporary fallback
+  //     divisionOneId: json['divisionOne'],
+  //     divisionOneLabel: '',
+  //     divisionTwoId: json['divisionTwo'],
+  //     divisionTwoLabel: '',
+  //     divisionThreeId: json['divisionThree'],
+  //     divisionThreeLabel: '',
+  //     place: json['place'],
+  //     password: json['password'],
+  //     confirmPassword: json['confirmPassword'],
+  //   );
+  // }
   factory RegistrationData.fromJson(Map<String, dynamic> json) {
     return RegistrationData(
-      firstName: json['firstName'],
-      lastName: json['lastName'],
-      addressOne: json['addressOne'],
-      addressTwo: json['addressTwo'],
-      mobile: json['mobile'],
-      zipCode: json['zipCode'],
-      email: json['email'],
-      birthYear: json['birthYear'],
-      gender: json['gender'],
-      countryId: json['country'], // assuming you store ID from API
-      countryLabel: '', // fill manually if needed
-      countryCode:json['countryCode'],
-      divisionOneId: json['divisionOne'],
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      addressOne: json['addressOne'] ?? '',
+      addressTwo: json['addressTwo'] ?? '',
+      mobile: json['mobile'] ?? '',
+      zipCode: json['zipCode'] ?? '',
+      email: json['email'] ?? '',
+      birthYear: json['birthYear'] ?? 0,
+      gender: json['gender'] ?? '',
+      countryId: json['country'] ?? '',
+      countryLabel: '',
+      countryCode: json['countryCode'] ?? '',
+      countryCodeLabel: '',
+      divisionOneId: json['divisionOne'] ?? '',
       divisionOneLabel: '',
-      divisionTwoId: json['divisionTwo'],
+      divisionTwoId: json['divisionTwo'] ?? '',
       divisionTwoLabel: '',
-      divisionThreeId: json['divisionThree'],
+      divisionThreeId: json['divisionThree'] ?? '',
       divisionThreeLabel: '',
-      place: json['place'],
-      password: json['password'],
-      confirmPassword: json['confirmPassword'],
+      place: json['place'] ?? '',
+      password: json['password'] ?? '',
+      confirmPassword: json['confirmPassword'] ?? '',
     );
   }
+
+  
 }

@@ -13,6 +13,7 @@ import 'package:voicefirst/Views/Registration/user_register_page1.dart';
 import 'package:voicefirst/Views/Registration/user_register_page3.dart';
 import 'package:voicefirst/Widgets/number_breadcrumb.dart';
 import 'package:voicefirst/Widgets/registerform.dart';
+import 'package:voicefirst/Widgets/snack_bar.dart';
 
 class RegPage extends StatefulWidget {
   final RegistrationData registrationData;
@@ -20,7 +21,6 @@ class RegPage extends StatefulWidget {
   const RegPage({super.key, required this.registrationData});
 
   @override
-  // ignore: library_private_types_in_public_api
   _RegPageState createState() => _RegPageState();
 }
 
@@ -56,6 +56,7 @@ class _RegPageState extends State<RegPage> {
   bool isDataLoaded = false;
   String query = '';
 
+  //get all countries
   Future<void> getallCountries({required bool prefill}) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
 
@@ -66,44 +67,18 @@ class _RegPageState extends State<RegPage> {
         final json = jsonDecode(response.body);
         final List<dynamic> dataList = json['data'];
 
-        final fetched = dataList
-            .map((countryJson) => CountryModel.fromJson(countryJson))
-            .toList();
+        final fetched = dataList.map((e) => CountryModel.fromJson(e)).toList();
 
         setState(() {
           countries = fetched;
           filteredCountries = fetched;
           isDataLoaded = true;
 
-          if (prefill && registrationData.countryId.isNotEmpty) {
-            try {
-              selectedCountry = countries.firstWhere(
-                (c) => c.country == registrationData.countryId,
-              );
-            } catch (e) {
-              selectedCountry = null;
-            }
-          } else {
-            selectedCountry = null; // Don't prefill, show hint
-          }
+          getAllDivisionOnes(prefill: false); // move this outside setState
         });
 
-        if (prefill && selectedCountry != null) {
-          await getAllDivisionOnes();
-          if (registrationData.divisionOneId.isNotEmpty) {
-            final divOne = divisionOneList.firstWhere(
-              (d) => d.divisionOne == registrationData.divisionOneId,
-              orElse: () => divisionOneList.first,
-            );
-            await getAllDivisionTwos(divOne.id);
-          }
-          if (registrationData.divisionTwoId.isNotEmpty) {
-            final divTwo = divisionTwoList.firstWhere(
-              (d) => d.divisionTwo == registrationData.divisionTwoId,
-              orElse: () => divisionTwoList.first,
-            );
-            await getAllDivisionThrees(divTwo.id);
-          }
+        if (selectedCountry != null) {
+          await getAllDivisionOnes(prefill: prefill);
         }
       } else {
         debugPrint('failed to fetch countries: ${response.statusCode}');
@@ -113,8 +88,8 @@ class _RegPageState extends State<RegPage> {
     }
   }
 
-  //getall division 1
-  Future<void> getAllDivisionOnes() async {
+  //division 1
+  Future<void> getAllDivisionOnes({required bool prefill}) async {
     final url = Uri.parse(
       '${ApiEndpoints.baseUrl}/division-one/all?country=${selectedCountry?.id}',
     );
@@ -134,23 +109,68 @@ class _RegPageState extends State<RegPage> {
           divisionOneList = fetched;
           filteredDivOne = List.from(divisionOneList);
           isDataLoaded = true;
+
+          // if (prefill && registrationData.divisionOneId.isNotEmpty) {
+          //   selectedDiv1 = divisionOneList.firstWhere(
+          //     (d) => d.id == registrationData.divisionOneId,
+          //     orElse: () => fetched.first,
+          //   );
+          // }
+          if (prefill && registrationData.divisionOneId.isNotEmpty) {
+            final match = fetched.where(
+              (d) => d.id == registrationData.divisionOneId,
+            );
+            if (match.isNotEmpty) {
+              selectedDiv1 = match.first;
+            } else {
+              selectedDiv1 = null;
+            }
+          }
         });
+
+        // if (selectedDiv1 != null) {
+        //   await getAllDivisionTwos(
+        //     prefill: prefill,
+        //     divisionOneId: selectedDiv1!.id,
+        //   );
+        // }
+        if (divisionOneList.isEmpty) {
+          setState(() {
+            selectedDiv1 = null;
+            selectedDiv2 = null;
+            selectedDiv3 = null;
+            divisionTwoList.clear();
+            divisionThreeList.clear();
+          });
+          return; // Stop here since no divisions are available
+        }
+
+        if (selectedDiv1 != null) {
+          await getAllDivisionTwos(
+            prefill: prefill,
+            divisionOneId: selectedDiv1!.id,
+          );
+        }
       } else {
         debugPrint('Failed to fetch Division One: ${response.statusCode}');
-        debugPrint('Response body: ${response.body}');
       }
     } catch (e) {
       debugPrint('Error fetching Division One: $e');
     }
   }
 
-  Future<void> getAllDivisionTwos(String divisionOneId) async {
+  // division2
+  Future<void> getAllDivisionTwos({
+    required bool prefill,
+    required String divisionOneId,
+  }) async {
     final url = Uri.parse(
       '${ApiEndpoints.baseUrl}/division-two/all?divisionOne=$divisionOneId',
     );
 
     try {
       final response = await http.get(url);
+
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final List<dynamic> dataList = json['data'];
@@ -158,9 +178,34 @@ class _RegPageState extends State<RegPage> {
         final fetched = dataList
             .map((e) => DivisionTwoModel.fromJson(e))
             .toList();
+
         setState(() {
           divisionTwoList = fetched;
+
+          // if (prefill && registrationData.divisionTwoId.isNotEmpty) {
+          //   selectedDiv2 = divisionTwoList.firstWhere(
+          //     (d) => d.id == registrationData.divisionTwoId,
+          //     orElse: () => fetched.first,
+          //   );
+          // }
+          if (prefill && registrationData.divisionTwoId.isNotEmpty) {
+            final match = fetched.where(
+              (d) => d.id == registrationData.divisionTwoId,
+            );
+            if (match.isNotEmpty) {
+              selectedDiv2 = match.first;
+            } else {
+              selectedDiv2 = null;
+            }
+          }
         });
+
+        if (selectedDiv2 != null) {
+          await getAllDivisionThrees(
+            prefill: prefill,
+            divisionTwoId: selectedDiv2!.id,
+          );
+        }
       } else {
         debugPrint('Failed to fetch Division Two: ${response.statusCode}');
       }
@@ -169,13 +214,19 @@ class _RegPageState extends State<RegPage> {
     }
   }
 
-  Future<void> getAllDivisionThrees(String divisionTwoId) async {
+  //division 3
+
+  Future<void> getAllDivisionThrees({
+    required bool prefill,
+    required String divisionTwoId,
+  }) async {
     final url = Uri.parse(
       '${ApiEndpoints.baseUrl}/division-three/all?divisionTwo=$divisionTwoId',
     );
 
     try {
       final response = await http.get(url);
+
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final List<dynamic> dataList = json['data'];
@@ -183,8 +234,26 @@ class _RegPageState extends State<RegPage> {
         final fetched = dataList
             .map((e) => DivisionThreeModel.fromJson(e))
             .toList();
+
         setState(() {
           divisionThreeList = fetched;
+
+          // if (prefill && registrationData.divisionThreeId.isNotEmpty) {
+          //   selectedDiv3 = divisionThreeList.firstWhere(
+          //     (d) => d.id == registrationData.divisionThreeId,
+          //     orElse: () => fetched.first,
+          //   );
+          // }
+          if (prefill && registrationData.divisionThreeId.isNotEmpty) {
+            final match = fetched.where(
+              (d) => d.id == registrationData.divisionThreeId,
+            );
+            if (match.isNotEmpty) {
+              selectedDiv3 = match.first;
+            } else {
+              selectedDiv3 = null;
+            }
+          }
         });
       } else {
         debugPrint('Failed to fetch Division Three: ${response.statusCode}');
@@ -204,21 +273,30 @@ class _RegPageState extends State<RegPage> {
     _address2Controller.text = registrationData.addressTwo ?? '';
     _zipCodeController.text = registrationData.zipCode;
     _localController.text = registrationData.place;
-    _div1Controller.text = registrationData.divisionOneId;
-    _div2Controller.text = registrationData.divisionTwoId;
-    _div3Controller.text = registrationData.divisionThreeId;
 
+    // Check if country is already selected → we are returning from Page 1 or 3
     if (registrationData.countryId.isNotEmpty) {
-      getallCountries(prefill: true);
+      selectedCountry = CountryModel(
+        id: registrationData.countryId,
+        country: registrationData.countryLabel,
+        countryCode: registrationData.countryCodeLabel,
+        divisionOneLabel: registrationData.divisionOneLabel,
+        divisionTwoLabel: registrationData.divisionTwoLabel,
+        divisionThreeLabel: registrationData.divisionThreeLabel,
+      );
+
+      getallCountries(prefill: true); // pre-fill divisions too
     } else {
+      // First time — show hint only
       getallCountries(prefill: false);
     }
-
-    // getallCountries(prefill: null); // Still fetch country list
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!isDataLoaded) {
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -333,7 +411,6 @@ class _RegPageState extends State<RegPage> {
 
                                       onChanged: (CountryModel? newValue) {
                                         if (newValue == null) return;
-
                                         setState(() {
                                           selectedCountry = newValue;
                                           selectedDiv1 = null;
@@ -342,10 +419,14 @@ class _RegPageState extends State<RegPage> {
                                           _div1Controller.clear();
                                           _div2Controller.clear();
                                           _div3Controller.clear();
+                                          divisionOneList.clear();
                                           divisionTwoList.clear();
                                           divisionThreeList.clear();
-                                          getAllDivisionOnes();
                                         });
+
+                                        getAllDivisionOnes(
+                                          prefill: false,
+                                        ); // move this outside setState
                                       },
                                       validator: (value) {
                                         if (value == null) {
@@ -359,60 +440,17 @@ class _RegPageState extends State<RegPage> {
                                     if (selectedCountry != null &&
                                         divisionOneList.isNotEmpty) ...[
                                       SizedBox(height: 10),
-                                      // DropdownButtonFormField<String>(
-                                      //   value:
-                                      //       divisionOneList.any(
-                                      //         (d) =>
-                                      //             d.divisionOne ==
-                                      //             _div1Controller.text,
-                                      //       )
-                                      //       ? _div1Controller.text
-                                      //       : null,
-                                      //   validator: (value) {
-                                      //     if (value == null) {
-                                      //       return "Division is required";
-                                      //     }
-                                      //     return null;
-                                      //   },
-                                      //   hint: Text(
-                                      //     selectedCountry?.divisionOneLabel ??
-                                      //         "--Select--",
-                                      //   ),
-                                      //   decoration: buildInputDecoration(
-                                      //     selectedCountry?.divisionOneLabel ??
-                                      //         "--Select--",
-                                      //     Icon(Icons.share_location_outlined),
-                                      //   ),
-                                      //   items: divisionOneList.map((div) {
-                                      //     return DropdownMenuItem<String>(
-                                      //       value: div.divisionOne,
-                                      //       child: Text(div.divisionOne),
-                                      //     );
-                                      //   }).toList(),
-                                      //   onChanged: (value) {
-                                      //     final selected = divisionOneList
-                                      //         .firstWhere(
-                                      //           (d) => d.divisionOne == value,
-                                      //         );
-                                      //     setState(() {
-                                      //       _div1Controller.text = value!;
-                                      //       selectedDiv1 = selected;
-                                      //       _div2Controller.clear();
-                                      //       _div3Controller.clear();
-                                      //       selectedDiv2 = null;
-                                      //       selectedDiv3 = null;
-                                      //       divisionTwoList = [];
-                                      //       divisionThreeList = [];
-                                      //       getAllDivisionTwos(selected.id);
-                                      //     });
-                                      //   },
-                                      // ),
                                       DropdownButtonFormField<DivisionOneModel>(
                                         value: selectedDiv1,
+                                        // hint: Text(
+                                        //   selectedCountry?.divisionOneLabel ??
+                                        //       "--Select--",
+                                        // ),
                                         hint: Text(
                                           selectedCountry?.divisionOneLabel ??
                                               "--Select--",
                                         ),
+
                                         decoration: buildInputDecoration(
                                           selectedCountry?.divisionOneLabel ??
                                               "--Select--",
@@ -437,61 +475,20 @@ class _RegPageState extends State<RegPage> {
                                             _div3Controller.clear();
                                             divisionTwoList.clear();
                                             divisionThreeList.clear();
-                                            getAllDivisionTwos(value.id);
+                                            getAllDivisionTwos(
+                                              prefill: false,
+                                              divisionOneId: value.id,
+                                            );
                                           });
                                         },
                                       ),
                                     ],
 
                                     //division2
-                                    if (_div1Controller.text.isNotEmpty &&
+                                    if (selectedDiv1 != null &&
                                         divisionTwoList.isNotEmpty) ...[
                                       SizedBox(height: 10),
-                                      // DropdownButtonFormField<String>(
-                                      //   value:
-                                      //       divisionTwoList.any(
-                                      //         (d) =>
-                                      //             d.divisionTwo ==
-                                      //             _div2Controller.text,
-                                      //       )
-                                      //       ? _div2Controller.text
-                                      //       : null,
-                                      //   validator: (value) {
-                                      //     if (value == null) {
-                                      //       return "This field is required";
-                                      //     }
-                                      //     return null;
-                                      //   },
-                                      //   hint: Text(
-                                      //     selectedCountry?.divisionTwoLabel ??
-                                      //         "--Select--",
-                                      //   ),
-                                      //   decoration: buildInputDecoration(
-                                      //     selectedCountry?.divisionTwoLabel ??
-                                      //         "--Select--",
-                                      //     Icon(Icons.share_location_outlined),
-                                      //   ),
-                                      //   items: divisionTwoList.map((div) {
-                                      //     return DropdownMenuItem<String>(
-                                      //       value: div.divisionTwo,
-                                      //       child: Text(div.divisionTwo),
-                                      //     );
-                                      //   }).toList(),
-                                      //   onChanged: (value) {
-                                      //     final selected = divisionTwoList
-                                      //         .firstWhere(
-                                      //           (d) => d.divisionTwo == value,
-                                      //         );
-                                      //     setState(() {
-                                      //       _div2Controller.text = value!;
-                                      //       selectedDiv2 = selected;
-                                      //       _div3Controller.clear();
-                                      //       selectedDiv3 = null;
-                                      //       divisionThreeList = [];
-                                      //       getAllDivisionThrees(selected.id);
-                                      //     });
-                                      //   },
-                                      // ),
+
                                       DropdownButtonFormField<DivisionTwoModel>(
                                         value: selectedDiv2,
                                         hint: Text(
@@ -519,7 +516,10 @@ class _RegPageState extends State<RegPage> {
                                             selectedDiv3 = null;
                                             _div3Controller.clear();
                                             divisionThreeList.clear();
-                                            getAllDivisionThrees(value.id);
+                                            getAllDivisionThrees(
+                                              prefill: false,
+                                              divisionTwoId: value.id,
+                                            );
                                           });
                                         },
                                         validator: (value) {
@@ -532,11 +532,10 @@ class _RegPageState extends State<RegPage> {
                                     ],
 
                                     // Division 3 Dropdown
-                                    // Division 3
-                                    if (_div2Controller.text.isNotEmpty &&
+                                    if (selectedDiv2 != null &&
                                         divisionThreeList.isNotEmpty) ...[
                                       SizedBox(height: 10),
-                                      
+
                                       DropdownButtonFormField<
                                         DivisionThreeModel
                                       >(
@@ -622,30 +621,32 @@ class _RegPageState extends State<RegPage> {
                                                         .trim(),
                                                     place: _localController.text
                                                         .trim(),
-                                                    countryId:
-                                                        selectedCountry?.id ??
-                                                        '',
-                                                    countryLabel:
-                                                        selectedCountry
-                                                            ?.country ??
-                                                        '',
+
+                                                    countryCode:
+                                                        registrationData
+                                                            .countryCode,
+                                                    countryCodeLabel:
+                                                        registrationData
+                                                            .countryCodeLabel,
+
                                                     divisionOneId:
                                                         selectedDiv1?.id ?? '',
-                                                    divisionOneLabel:
-                                                        selectedDiv1
-                                                            ?.divisionOne ??
-                                                        '',
                                                     divisionTwoId:
                                                         selectedDiv2?.id ?? '',
-                                                    divisionTwoLabel:
-                                                        selectedDiv2
-                                                            ?.divisionTwo ??
-                                                        '',
                                                     divisionThreeId:
                                                         selectedDiv3?.id ?? '',
+
+                                                    divisionOneLabel:
+                                                        selectedCountry
+                                                            ?.divisionOneLabel ??
+                                                        '',
+                                                    divisionTwoLabel:
+                                                        selectedCountry
+                                                            ?.divisionTwoLabel ??
+                                                        '',
                                                     divisionThreeLabel:
-                                                        selectedDiv3
-                                                            ?.divisionThree ??
+                                                        selectedCountry
+                                                            ?.divisionThreeLabel ??
                                                         '',
                                                   );
 
@@ -656,6 +657,8 @@ class _RegPageState extends State<RegPage> {
                                                       RegistrationPage(
                                                         registrationData:
                                                             updatedData,
+
+                                                        //optionally we can pass country
                                                       ),
                                                 ),
                                               );
@@ -716,6 +719,13 @@ class _RegPageState extends State<RegPage> {
                                                   _formKey.currentState;
                                               if (form != null &&
                                                   form.validate()) {
+                                                if (selectedCountry == null) {
+                                                  setState(() {
+                                                    SnackbarHelper.showError(
+                                                      'select a country',
+                                                    );
+                                                  });
+                                                }
                                                 final updatedData =
                                                     registrationData.copyWith(
                                                       addressOne:
@@ -740,6 +750,7 @@ class _RegPageState extends State<RegPage> {
                                                           selectedCountry
                                                               ?.country ??
                                                           '',
+
                                                       divisionOneId:
                                                           selectedDiv1?.id ??
                                                           '',
@@ -770,6 +781,8 @@ class _RegPageState extends State<RegPage> {
                                                         PasswordPage(
                                                           registrationData:
                                                               updatedData,
+                                                          selectedCountry:
+                                                              selectedCountry!,
                                                         ),
                                                   ),
                                                 );

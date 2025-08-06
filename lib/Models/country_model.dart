@@ -5,7 +5,7 @@ class CountryModel {
   final String? divisionOneLabel;
   final String? divisionTwoLabel;
   final String? divisionThreeLabel;
-  bool status;
+  bool? status;
 
   CountryModel({
     required this.id,
@@ -14,7 +14,7 @@ class CountryModel {
     this.divisionOneLabel,
     this.divisionTwoLabel,
     this.divisionThreeLabel,
-    required this.status,
+    this.status,
   });
 
   factory CountryModel.fromJson(Map<String, dynamic> json) {
@@ -28,4 +28,14 @@ class CountryModel {
       status: json['status'],
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CountryModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
