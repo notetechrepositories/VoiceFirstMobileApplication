@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Views/AdminSide/AdminHome/admin_home.dart';
-import 'package:voicefirst/Views/CompanySide/company_home.dart';
+import 'package:voicefirst/Views/CompanySide/BusinessActivity/company_home.dart';
 import 'package:voicefirst/Views/Dashboard/bottom_bar.dart';
 import 'package:voicefirst/Views/Registration/user_register_page1.dart';
 
@@ -51,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // Actual API login for real users
-    final url = Uri.parse('http://192.168.0.180/api/auth/login');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/auth/login');
 
     try {
       final response = await http.post(

@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
-import 'package:voicefirst/Views/CompanySide/add_business.dart';
+import 'package:voicefirst/Views/CompanySide/BusinessActivity/add_business.dart';
 import 'package:voicefirst/Widgets/dynamic_drawer.dart';
 
 class CompanyHome extends StatefulWidget {
@@ -23,17 +24,24 @@ class _CompanyHomeState extends State<CompanyHome> {
   }
 
   Future<void> loadMenu() async {
-    final url = Uri.parse('http://192.168.0.180:8064/api/menu/get-menu');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/menus/app');
     try {
       final res = await http.get(url);
+      print(res);
       if (res.statusCode == 200) {
         final jsonData = jsonDecode(res.body);
-        final items = (jsonData['data']['Items'] as List)
+
+        // final items = (jsonData['data']['Items'] as List)
+        //     .map((e) => MenuItem.fromJson(e))
+        //     .toList();
+
+        final items = (jsonData['data'] as List)
             .map((e) => MenuItem.fromJson(e))
             .toList();
 
         setState(() {
           menuItems = buildMenuTree(items);
+          print(menuItems);
         });
       } else {
         print('Menu fetch failed: ${res.statusCode}');
@@ -82,7 +90,7 @@ class _CompanyHomeState extends State<CompanyHome> {
                 MaterialPageRoute(builder: (context) => AddBusiness()),
               );
             },
-            child: Text('add activity'),
+            child: Text('add business activity'),
           ),
         ],
       ),

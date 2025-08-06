@@ -126,32 +126,7 @@ class RegistrationData {
     };
   }
 
-  // factory RegistrationData.fromJson(Map<String, dynamic> json) {
-  //   return RegistrationData(
-  //     firstName: json['firstName'],
-  //     lastName: json['lastName'],
-  //     addressOne: json['addressOne'],
-  //     addressTwo: json['addressTwo'],
-  //     mobile: json['mobile'],
-  //     zipCode: json['zipCode'],
-  //     email: json['email'],
-  //     birthYear: json['birthYear'],
-  //     gender: json['gender'],
-  //     countryId: json['country'],
-  //     countryLabel: '', // No label from backend
-  //     countryCode: json['countryCode'],
-  //     countryCodeLabel: '', // <- temporary fallback
-  //     divisionOneId: json['divisionOne'],
-  //     divisionOneLabel: '',
-  //     divisionTwoId: json['divisionTwo'],
-  //     divisionTwoLabel: '',
-  //     divisionThreeId: json['divisionThree'],
-  //     divisionThreeLabel: '',
-  //     place: json['place'],
-  //     password: json['password'],
-  //     confirmPassword: json['confirmPassword'],
-  //   );
-  // }
+  
   factory RegistrationData.fromJson(Map<String, dynamic> json) {
     return RegistrationData(
       firstName: json['firstName'] ?? '',
