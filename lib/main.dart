@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Views/CompanySide/BusinessActivity/add_business.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
 import 'package:voicefirst/Views/IssueType/issue_type.dart';
@@ -18,36 +19,37 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.grey[850],
-          border: OutlineInputBorder(),
-          hintStyle: TextStyle(color: Colors.white60),
-          labelStyle: TextStyle(color: Colors.white),
-        ),
-        textTheme: TextTheme(bodyMedium: TextStyle(color: Colors.white)),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.amber,
-            foregroundColor: Colors.black,
-          ),
-        ),
-        dropdownMenuTheme: DropdownMenuThemeData(
-          textStyle: TextStyle(color: Colors.white),
-        ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: Colors.amber,
-          foregroundColor: Colors.black,
-        ),
-      ),
+      // theme: ThemeData.dark().copyWith(
+      //   scaffoldBackgroundColor: Colors.black,
+      //   inputDecorationTheme: InputDecorationTheme(
+      //     filled: true,
+      //     fillColor: Colors.grey[850],
+      //     border: OutlineInputBorder(),
+      //     hintStyle: TextStyle(color: Colors.white60),
+      //     labelStyle: TextStyle(color: Colors.white),
+      //   ),
+      //   textTheme: TextTheme(bodyMedium: TextStyle(color: Colors.white)),
+      //   elevatedButtonTheme: ElevatedButtonThemeData(
+      //     style: ElevatedButton.styleFrom(
+      //       backgroundColor: Colors.amber,
+      //       foregroundColor: Colors.black,
+      //     ),
+      //   ),
+      //   dropdownMenuTheme: DropdownMenuThemeData(
+      //     textStyle: TextStyle(color: Colors.white),
+      //   ),
+      //   floatingActionButtonTheme: FloatingActionButtonThemeData(
+      //     backgroundColor: Colors.amber,
+      //     foregroundColor: Colors.black,
+      //   ),
+      // ),
       debugShowCheckedModeBanner: false,
       navigatorKey: SnackbarHelper.navigatorKey,
       home: SplashScreen(),
       routes: {
         'system-roles': (context) => RoleListScreen(),
         "system-business-activity": (context) => AddBusinessactivity(),
+        "business-activity": (context) => AddBusiness(),
         "/admin/admin-dashboard": (context) => Userhomescreen(),
         "country": (context) => CountryView(),
         "system-answer-type": (context) => ManageAnswerTypePage(),
