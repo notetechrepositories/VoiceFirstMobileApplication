@@ -18,30 +18,30 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // theme: ThemeData.dark().copyWith(
-      //   scaffoldBackgroundColor: Colors.black,
-      //   inputDecorationTheme: InputDecorationTheme(
-      //     filled: true,
-      //     fillColor: Colors.grey[850],
-      //     border: OutlineInputBorder(),
-      //     hintStyle: TextStyle(color: Colors.white60),
-      //     labelStyle: TextStyle(color: Colors.white),
-      //   ),
-      //   textTheme: TextTheme(bodyMedium: TextStyle(color: Colors.white)),
-      //   elevatedButtonTheme: ElevatedButtonThemeData(
-      //     style: ElevatedButton.styleFrom(
-      //       backgroundColor: Colors.amber,
-      //       foregroundColor: Colors.black,
-      //     ),
-      //   ),
-      //   dropdownMenuTheme: DropdownMenuThemeData(
-      //     textStyle: TextStyle(color: Colors.white),
-      //   ),
-      //   floatingActionButtonTheme: FloatingActionButtonThemeData(
-      //     backgroundColor: Colors.amber,
-      //     foregroundColor: Colors.black,
-      //   ),
-      // ),
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: Colors.black,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey[850],
+          border: OutlineInputBorder(),
+          hintStyle: TextStyle(color: Colors.white60),
+          labelStyle: TextStyle(color: Colors.white),
+        ),
+        textTheme: TextTheme(bodyMedium: TextStyle(color: Colors.white)),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.amber,
+            foregroundColor: Colors.black,
+          ),
+        ),
+        dropdownMenuTheme: DropdownMenuThemeData(
+          textStyle: TextStyle(color: Colors.white),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.amber,
+          foregroundColor: Colors.black,
+        ),
+      ),
       debugShowCheckedModeBanner: false,
       navigatorKey: SnackbarHelper.navigatorKey,
       home: SplashScreen(),
