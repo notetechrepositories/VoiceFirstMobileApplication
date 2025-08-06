@@ -13,14 +13,6 @@ class DivisionOneModel {
     this.divisionTwoLabel,
   });
 
-  // factory DivisionOneModel.fromJson(Map<String, dynamic> json) {
-  //   return DivisionOneModel(
-  //     id: json['id'],
-  //     divisionOne: json['divisionOne'],
-  //     countryId: json['countryId'],
-  //     status: json['status'],
-  //   );
-
   factory DivisionOneModel.fromJson(
     Map<String, dynamic> json, {
     String? divisionTwoLabel,
@@ -42,4 +34,14 @@ class DivisionOneModel {
       'status': status,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DivisionOneModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

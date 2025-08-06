@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
+import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/registration_model.dart';
 import 'package:voicefirst/Views/LoginPage/login_page.dart';
 import 'package:voicefirst/Widgets/number_breadcrumb.dart';
@@ -9,7 +10,13 @@ import 'package:voicefirst/Widgets/number_breadcrumb.dart';
 class PreviewPage extends StatefulWidget {
   final RegistrationData registrationData;
 
-  const PreviewPage({super.key, required this.registrationData});
+  final CountryModel selectedCountry;
+
+  const PreviewPage({
+    super.key,
+    required this.registrationData,
+    required this.selectedCountry,
+  });
 
   @override
   State<PreviewPage> createState() => _PreviewPageState();
@@ -19,34 +26,7 @@ class _PreviewPageState extends State<PreviewPage> {
   bool _isLoading = false;
   String _errorMessage = '';
 
-  // Future<bool> registerUser(RegistrationData data) async {
-  //   final url = Uri.parse('${ApiEndpoints.baseUrl}/Auth/register');
-  //   debugPrint(jsonEncode(data.toJson()));
-  //   //  Add this to log what you're sending to the server
-  //   debugPrint("Payload sent to API:");
-
-  //   try {
-  //     final response = await http.post(
-  //       url,
-  //       headers: {'Content-Type': 'application/json'},
-  //       body: jsonEncode(data.toJson()),
-  //     );
-  //     debugPrint('Response body: ${response.body}');
-
-  //     if (response.statusCode == 200) {
-  //       final responseBody = jsonDecode(response.body);
-  //       // debugPrint(responseBody);
-
-  //       return responseBody['isSuccess'] == true;
-  //     } else {
-  //       return false;
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Registration exception: $e');
-  //     return false;
-  //   }
-  // }
-
+  
   Future<Map<String, dynamic>> registerUser(RegistrationData data) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/Auth/register');
     debugPrint("Payload sent to API:");
@@ -60,17 +40,19 @@ class _PreviewPageState extends State<PreviewPage> {
       );
 
       debugPrint('Response body: ${response.body}');
+      final responseBody = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        final responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return {
           'success': responseBody['isSuccess'] == true,
-          'message': responseBody['message'] ?? 'Something went wrong',
+          'message': responseBody['message'] ?? 'Registration successful!',
+          'data': responseBody['data'],
         };
       } else {
         return {
           'success': false,
-          'message': 'Server error: ${response.statusCode}',
+          'message':
+              responseBody['message'] ?? 'Server error: ${response.statusCode}',
         };
       }
     } catch (e) {
@@ -79,19 +61,6 @@ class _PreviewPageState extends State<PreviewPage> {
     }
   }
 
-  // void _onConfirm() async {
-  //   setState(() => _isLoading = true);
-
-  //   final success = await registerUser(widget.registrationData);
-  //   setState(() => _isLoading = false);
-
-  //   if (success) {
-  //     Navigator.pushReplacement(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => LoginScreen()),
-  //     );
-  //   }
-  // }
   void _onConfirm() async {
     setState(() {
       _isLoading = true;
@@ -112,33 +81,71 @@ class _PreviewPageState extends State<PreviewPage> {
 
     setState(() {
       _isLoading = false;
-      _errorMessage = result['success'] ? '' : result['message'];
+      _errorMessage = result['success']
+          ? ''
+          : (result['message'] ?? 'Registration failed');
     });
 
     if (result['success']) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
+      // ✅ Show success snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Registered successfully.'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // ⏳ Optional wait before navigation
+      await Future.delayed(const Duration(seconds: 2));
+
+      // ✅ Navigate to login
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      }
     }
   }
 
-  Widget buildRow(String label, String value) {
+  Widget buildPreviewField(String label, String? value) {
+    if (value == null || value.trim().isEmpty) return SizedBox.shrink();
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 2,
+          // Label
+          SizedBox(
+            width: 120, // fixed width for labels
             child: Text(
               "$label:",
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
           ),
+
+          // Value styled like a read-only text field
           Expanded(
-            flex: 3,
-            child: Text(value, style: const TextStyle(fontSize: 16)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey[400]!),
+              ),
+              child: Text(
+                value,
+                style: const TextStyle(fontSize: 16, color: Colors.black87),
+              ),
+            ),
           ),
         ],
       ),
@@ -198,21 +205,41 @@ class _PreviewPageState extends State<PreviewPage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              buildRow("First Name", d.firstName),
-                              buildRow("Last Name", d.lastName ?? ''),
-                              buildRow("Email", d.email),
-                              buildRow("Mobile", d.mobile),
-                              buildRow("Gender", d.gender),
-                              buildRow("Birth Year", d.birthYear.toString()),
-                              const SizedBox(height: 10),
-                              buildRow("Address 1", d.addressOne),
-                              buildRow("Address 2", d.addressTwo ?? ''),
-                              buildRow("Country", d.countryLabel),
-                              buildRow("Division 1", d.divisionOneLabel),
-                              buildRow("Division 2", d.divisionTwoLabel),
-                              buildRow("Division 3", d.divisionThreeLabel),
-                              buildRow("Place", d.place),
-                              buildRow("Zip Code", d.zipCode),
+                             
+                              buildPreviewField("First Name", d.firstName),
+                              buildPreviewField("Last Name", d.lastName),
+                              buildPreviewField("Email", d.email),
+                              buildPreviewField(
+                                "Mobile",
+                                '${d.countryCodeLabel} ${d.mobile}',
+                              ),
+                              buildPreviewField("Gender", d.gender),
+                              buildPreviewField(
+                                "Birth Year",
+                                d.birthYear.toString(),
+                              ),
+                              buildPreviewField("Address 1", d.addressOne),
+                              buildPreviewField("Address 2", d.addressTwo),
+                              buildPreviewField("Country", d.countryLabel),
+
+                              buildPreviewField(
+                                widget.selectedCountry.divisionOneLabel ??
+                                    "Division 1",
+                                widget.registrationData.divisionOneLabel,
+                              ),
+                              buildPreviewField(
+                                widget.selectedCountry.divisionTwoLabel ??
+                                    "Division 2",
+                                widget.registrationData.divisionTwoLabel,
+                              ),
+                              buildPreviewField(
+                                widget.selectedCountry.divisionThreeLabel ??
+                                    "Division 3",
+                                widget.registrationData.divisionThreeLabel,
+                              ),
+
+                              buildPreviewField("Place", d.place),
+                              buildPreviewField("Zip Code", d.zipCode),
 
                               if (_errorMessage.isNotEmpty) ...[
                                 const SizedBox(height: 10),

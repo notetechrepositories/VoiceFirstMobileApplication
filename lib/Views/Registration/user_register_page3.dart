@@ -1,5 +1,6 @@
 import 'dart:core';
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Models/registration_model.dart';
 import 'package:voicefirst/Views/LoginPage/login_page.dart';
 import 'package:voicefirst/Views/Registration/preview_page.dart';
@@ -12,8 +13,13 @@ class PasswordPage extends StatefulWidget {
   // const PasswordPage({Key? key}) : super(key: key);
 
   final RegistrationData registrationData;
+  final CountryModel selectedCountry;
 
-  const PasswordPage({super.key, required this.registrationData});
+  const PasswordPage({
+    super.key,
+    required this.registrationData,
+    required this.selectedCountry,
+  });
 
   @override
   _PasswordPageState createState() => _PasswordPageState();
@@ -280,6 +286,8 @@ class _PasswordPageState extends State<PasswordPage> {
                                                       PreviewPage(
                                                         registrationData:
                                                             updatedData,
+                                                        selectedCountry: widget
+                                                            .selectedCountry,
                                                       ),
                                                 ),
                                               );

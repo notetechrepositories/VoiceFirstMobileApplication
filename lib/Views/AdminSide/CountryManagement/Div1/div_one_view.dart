@@ -47,7 +47,7 @@ class _Division1ViewState extends State<Division1View> {
 
   List<DivisionOneModel> divisionOneList = [];
   List<DivisionOneModel> filteredDivOne = [];
-  final query = "";  
+  final query = "";
   final TextEditingController _searchController = TextEditingController();
 
   void _enterSelectionMode({bool selectAll = false}) {
@@ -326,10 +326,7 @@ class _Division1ViewState extends State<Division1View> {
         children: [
           //breadcrumb
           ArrowBreadcrumb(
-            steps: [
-              "Country",
-              widget.country.divisionOneLabel ?? 'divisuion 1',
-            ],
+            steps: ["Country", widget.country.divisionOneLabel ?? 'division 1'],
             currentIndex: 1,
             onTap: (index) {
               // Handle navigation based on index
@@ -683,12 +680,9 @@ class _Division1ViewState extends State<Division1View> {
                           },
                         )
                 : Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 0, bottom: 250),
-                      child: Text(
-                        'No ${widget.country.divisionOneLabel} to show',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                    child: Text(
+                      'No divisions found',
+                      style: TextStyle(color: _textSecondary),
                     ),
                   ),
           ),
