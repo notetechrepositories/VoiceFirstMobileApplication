@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Views/AdminSide/AdminHome/admin_home.dart';
 import 'package:voicefirst/Views/CompanySide/BusinessActivity/company_home.dart';
@@ -31,28 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final username = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    // Dummy Admin Login
-    if (username == "admin" && password == "admin123") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AdminHome()),
-      );
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    // Dummy Company Login
-    if (username == "company" && password == "company123") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const CompanyHome()),
-      );
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    // Actual API login for real users
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/auth/login');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/Auth/login');
 
     try {
       final response = await http.post(
@@ -62,12 +42,36 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       final responseBody = jsonDecode(response.body);
+      setState(() => _isLoading = false);
 
-      if (response.statusCode == 200 && responseBody['status'] == 200) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Bottomnavbar()),
-        );
+      if (response.statusCode == 200 && responseBody['isSuccess'] == true) {
+        final data = responseBody['data'];
+        final accessToken = data['accessToken'];
+        final isUser = data['user'] == true;
+        final isCompany = data['company'] == true;
+
+        // Store the accessToken if needed using SharedPreferences, etc.
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', accessToken);
+
+        if (isUser && isCompany) {
+          // Show popup to choose between User or Company
+          _showUserRoleSelectionDialog();
+        } else if (isUser) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const Bottomnavbar()),
+          );
+        } else if (isCompany) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const CompanyHome()),
+          );
+        } else {
+          setState(() {
+            _errorMessage = 'No valid role assigned to this account.';
+          });
+        }
       } else {
         setState(() {
           _errorMessage = responseBody['message'] ?? 'Login failed';
@@ -75,11 +79,42 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       setState(() {
+        _isLoading = false;
         _errorMessage = 'An error occurred. Please try again.';
       });
     }
+  }
 
-    setState(() => _isLoading = false);
+  void _showUserRoleSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Select Role'),
+        content: const Text('You have access to both User and Company roles.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx); // Close dialog
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const Bottomnavbar()),
+              );
+            },
+            child: const Text('User'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx); // Close dialog
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const CompanyHome()),
+              );
+            },
+            child: const Text('Company'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
