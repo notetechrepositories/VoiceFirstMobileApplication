@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/business_activity_model.dart';
-import 'package:voicefirst/Views/CompanySide/BusinessActivity/add_activity.dart';
+import 'package:voicefirst/Views/CompanySide/BusinessActivity/add_activity_dialog.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
 
 class AddBusiness extends StatefulWidget {
@@ -365,6 +365,8 @@ class AddBusinessState extends State<AddBusiness> {
               ),
               onTap: () {
                 Navigator.of(ctx).pop();
+                // ignore: avoid_types_as_parameter_names
+                // AddActivityDialog(bgColor: _bgColor, accentColor: _accentColor, textPrimary: _textPrimary, textSecondary: _textSecondary, onAdd: (Map<String, dynamic> ) {  }, );
                 // add(onActivitiesAdded: _addNewActivities);
               },
             ),
@@ -441,7 +443,7 @@ class AddBusinessState extends State<AddBusiness> {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              _showEditDialog(ctx, activity);
+              // _showEditDialog(ctx, activity);
             },
             child: Text('Edit', style: TextStyle(color: _accentColor)),
           ),
@@ -454,190 +456,5 @@ class AddBusinessState extends State<AddBusiness> {
     );
   }
 
-  void _showEditDialog(BuildContext ctx, Map<String, dynamic> activity) {
-    // Prefill the controllers & flags
-    _newNameController.text = activity['business_activity_name'];
-    _newCompany = activity['company'] == 'y';
-    _newBranch = activity['branch'] == 'y';
-    _newSection = activity['section'] == 'y';
-    _newSubSection = activity['sub_section'] == 'y';
 
-    showDialog(
-      context: ctx,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: _cardColor,
-          title: Text('Edit Activity', style: TextStyle(color: _accentColor)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Name field
-                TextField(
-                  controller: _newNameController,
-                  style: TextStyle(color: _textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'Activity Name',
-                    labelStyle: TextStyle(color: _textSecondary),
-                  ),
-                ),
-                SizedBox(height: 16),
-
-                // Checkboxes
-                CheckboxListTile(
-                  value: _newCompany,
-                  onChanged: (v) => setState(() => _newCompany = v!),
-                  title: Text(
-                    'Company',
-                    style: TextStyle(color: _textSecondary),
-                  ),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  value: _newBranch,
-                  onChanged: (v) => setState(() => _newBranch = v!),
-                  title: Text(
-                    'Branch',
-                    style: TextStyle(color: _textSecondary),
-                  ),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  value: _newSection,
-                  onChanged: (v) => setState(() => _newSection = v!),
-                  title: Text(
-                    'Section',
-                    style: TextStyle(color: _textSecondary),
-                  ),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  value: _newSubSection,
-                  onChanged: (v) => setState(() => _newSubSection = v!),
-                  title: Text(
-                    'Sub-section',
-                    style: TextStyle(color: _textSecondary),
-                  ),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: TextStyle(color: _textSecondary)),
-            ),
-            TextButton(
-              onPressed: () {
-                final newName = _newNameController.text.trim();
-                if (newName.isEmpty) return;
-
-                setState(() {
-                  activity['business_activity_name'] = newName;
-                  activity['company'] = _newCompany ? 'y' : 'n';
-                  activity['branch'] = _newBranch ? 'y' : 'n';
-                  activity['section'] = _newSection ? 'y' : 'n';
-                  activity['sub_section'] = _newSubSection ? 'y' : 'n';
-                  _filterActivities();
-                });
-
-                Navigator.of(ctx).pop();
-              },
-              child: Text('Save', style: TextStyle(color: _accentColor)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAddDialog(BuildContext ctx) {
-    showDialog(
-      context: ctx,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: _cardColor,
-          title: Text('Add Activity', style: TextStyle(color: _accentColor)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                //activity name
-                TextField(
-                  controller: _newNameController,
-                  style: TextStyle(color: _textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'Activity Name',
-                    labelStyle: TextStyle(color: _textSecondary),
-                  ),
-                ),
-                SizedBox(height: 16),
-
-                // checkboxes
-                CheckboxListTile(
-                  value: _newCompany,
-                  onChanged: (v) => setState(() => _newCompany = v!),
-                  title: Text(
-                    'Company',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  value: _newBranch,
-                  onChanged: (v) => setState(() => _newBranch = v!),
-                  title: Text('Branch', style: TextStyle(color: Colors.white)),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  value: _newSection,
-                  onChanged: (v) => setState(() => _newSection = v!),
-                  title: Text('Section', style: TextStyle(color: Colors.white)),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  value: _newSubSection,
-                  onChanged: (v) => setState(() => _newSubSection = v!),
-                  title: Text(
-                    'Sub-section',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-              },
-              child: Text('Cancel', style: TextStyle(color: _textSecondary)),
-            ),
-            TextButton(
-              onPressed: () {
-                final newType = _newNameController.text.trim();
-                if (newType.isEmpty) return;
-                setState(() {
-                  final newActivity = {
-                    'id': DateTime.now().millisecondsSinceEpoch.toString(),
-                    'business_activity_name': newType,
-                    'company': _newCompany ? 'y' : 'n',
-                    'branch': _newBranch ? 'y' : 'n',
-                    'section': _newSection ? 'y' : 'n',
-                    'sub_section': _newSubSection ? 'y' : 'n',
-                  };
-                  activities.add(newActivity);
-                  _filterActivities();
-                });
-                Navigator.of(ctx).pop();
-              },
-              child: Text('Add', style: TextStyle(color: _accentColor)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

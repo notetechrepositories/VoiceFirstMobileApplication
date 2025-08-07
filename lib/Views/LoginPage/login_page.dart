@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Views/AdminSide/AdminHome/admin_home.dart';
-import 'package:voicefirst/Views/CompanySide/BusinessActivity/company_home.dart';
+import 'package:voicefirst/Views/CompanySide/CompanyHome/company_home.dart';
 import 'package:voicefirst/Views/Dashboard/bottom_bar.dart';
 import 'package:voicefirst/Views/Registration/user_register_page1.dart';
 
