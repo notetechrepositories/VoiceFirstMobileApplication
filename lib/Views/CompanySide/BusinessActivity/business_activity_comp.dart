@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/business_activity_model.dart';
-import 'package:voicefirst/Views/CompanySide/BusinessActivity/add_activity_dialog.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
+import 'package:voicefirst/Views/CompanySide/BusinessActivity/existing_activity.dart';
 
 class AddBusiness extends StatefulWidget {
   const AddBusiness({super.key});
@@ -16,12 +16,6 @@ class AddBusiness extends StatefulWidget {
 
 class AddBusinessState extends State<AddBusiness> {
   List<Map<String, dynamic>> activities = [];
-
-  void _addNewActivities(List<Map<String, dynamic>> newActivities) {
-    setState(() {
-      activities.addAll(newActivities); // Add all new activities to the list
-    });
-  }
 
   // ──────────────────────────────────────
   // Page-specific colour palette
@@ -42,97 +36,6 @@ class AddBusinessState extends State<AddBusiness> {
   bool _newBranch = false;
   bool _newSection = false;
   bool _newSubSection = false;
-
-  final List<Map<String, dynamic>> systemactivities = [
-    {
-      "id": "010110101",
-      "business_activity_name": "jwellary",
-      "company": "y",
-      "branch": "y",
-      "section": "y",
-      "sub_section": "y",
-    },
-    {
-      "id": "010110112",
-      "business_activity_name": "warehouse",
-      "company": "y",
-      "branch": "y",
-      "section": "y",
-      "sub_section": "y",
-    },
-    {
-      "id": "010110013",
-      "business_activity_name": "service center",
-      "company": "y",
-      "branch": "y",
-      "section": "n",
-      "sub_section": "n",
-    },
-    {
-      "id": "010110104",
-      "business_activity_name": "Restaurant",
-      "company": "y",
-      "branch": "y",
-      "section": "y",
-      "sub_section": "y",
-    },
-    {
-      "id": "010110115",
-      "business_activity_name": "Washroom",
-      "company": "y",
-      "branch": "y",
-      "section": "y",
-      "sub_section": "y",
-    },
-    {
-      "id": "010110016",
-      "business_activity_name": "HeadOffice",
-      "company": "y",
-      "branch": "y",
-      "section": "n",
-      "sub_section": "n",
-    },
-  ];
-  Future<void> fetchBusinessActivities() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities/all');
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final model = BusinessActivityModel.fromJson(json);
-
-        if (model.isSuccess) {
-          final fetched = model.data.map((activity) {
-            return {
-              'id': activity.id,
-              'business_activity_name': activity.activityName,
-              'company': activity.company ? 'y' : 'n',
-              'branch': activity.branch ? 'y' : 'n',
-              'section': activity.section ? 'y' : 'n',
-              'sub_section': activity.subSection ? 'y' : 'n',
-              'status': activity.status == true ? 'active' : 'inactive',
-
-              // 'status': activity.status,
-            };
-          }).toList();
-
-          setState(() {
-            activities = fetched;
-            filteredActivities = List.from(fetched);
-            // isdataLoaded = true;
-          });
-        } else {
-          debugPrint('Error: ${model.message}');
-        }
-      } else {
-        debugPrint('Failed to fetch activities: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Exception occurred: $e');
-    }
-  }
 
   @override
   void initState() {
@@ -275,68 +178,6 @@ class AddBusinessState extends State<AddBusiness> {
     );
   }
 
-  void _showSelectExistingDialog(BuildContext ctx) {
-    // track selections in a local map
-    final Map<String, bool> selected = {
-      for (var sys in systemactivities) sys['id'] as String: false,
-    };
-
-    showDialog(
-      context: ctx,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: _cardColor,
-          title: Text(
-            'Select System Activities',
-            style: TextStyle(color: _accentColor),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              children: systemactivities.map((sys) {
-                final id = sys['id'] as String;
-                final name = sys['business_activity_name'] as String;
-                final alreadyin = activities.any((a) => a['id'] == id);
-                return CheckboxListTile(
-                  value: alreadyin || selected[id]!,
-                  onChanged: alreadyin
-                      ? null
-                      : (v) => setState(() => selected[id] = v!),
-                  title: Text(name, style: TextStyle(color: _textPrimary)),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: _accentColor,
-                  // ← NEW: grays out the tile entirely
-                  enabled: !alreadyin,
-                );
-              }).toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: TextStyle(color: _textSecondary)),
-            ),
-            TextButton(
-              onPressed: () {
-                // add every checked systemactivity into your activities list
-                selected.forEach((id, isChecked) {
-                  if (!isChecked) return;
-                  final sys = systemactivities.firstWhere((s) => s['id'] == id);
-                  // avoid duplicates?
-                  if (!activities.any((a) => a['id'] == id)) {
-                    activities.add(Map<String, dynamic>.from(sys));
-                  }
-                });
-                _filterActivities();
-                Navigator.of(ctx).pop();
-              },
-              child: Text('OK', style: TextStyle(color: _accentColor)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showChoiceDialog(BuildContext ctx) {
     showDialog(
       context: ctx,
@@ -353,8 +194,12 @@ class AddBusinessState extends State<AddBusiness> {
                 style: TextStyle(color: _textPrimary),
               ),
               onTap: () {
-                Navigator.of(ctx).pop();
-                _showSelectExistingDialog(ctx);
+                // Navigator.of(ctx).pop();
+                // // _showSelectExistingDialog(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ExistingActivity()),
+                );
               },
             ),
             ListTile(
@@ -455,6 +300,4 @@ class AddBusinessState extends State<AddBusiness> {
       ),
     );
   }
-
-
 }

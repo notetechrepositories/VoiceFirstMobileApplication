@@ -7,7 +7,6 @@ import 'package:voicefirst/Models/business_activity_model.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/add_activity_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/edit_activity_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/view_activity_dialog.dart';
-
 import '../../../Core/Constants/api_endpoins.dart';
 
 class AddBusinessactivity extends StatefulWidget {
