@@ -263,33 +263,7 @@ class _ExistingActivityState extends State<ExistingActivity> {
                               }
                             });
                           } else {
-                            // showDialog(
-                            //   context: context,
-                            //   builder: (_) => ViewActivityDialog(
-                            //     activity:
-                            //         a, // <- this is correct, 'a' from your list item
-                            //     onEdit: () => showDialog(
-                            //       context: context,
-                            //       builder: (_) => EditActivityDialog(
-                            //         activity: a,
-                            //         cardColor: _cardColor,
-                            //         textPrimary: _textPrimary,
-                            //         textSecondary: _textSecondary,
-                            //         accentColor: _accentColor,
-                            //         onUpdate: _updateActivityOnServer,
-                            //         onUpdated: () => setState(() {
-                            //           _filterActivities();
-                            //         }),
-                            //         onCancel: () {},
-                            //       ),
-                            //     ),
-                            //     cardColor: _cardColor,
-                            //     chipColor: _chipColor,
-                            //     textPrimary: _textPrimary,
-                            //     textSecondary: _textSecondary,
-                            //     accentColor: _accentColor,
-                            //   ),
-                            // );
+                        
                           }
                         },
                         child: Card(
@@ -327,138 +301,24 @@ class _ExistingActivityState extends State<ExistingActivity> {
                                   ),
                                 ),
 
-                                // // ─ Right: eye, edit, delete ─────
-                                // if (!isMultiSelectMode) ...[
-                                //   Row(
-                                //     children: [
-                                //       Transform.scale(
-                                //         scale: 0.60,
-                                //         child: Switch(
-                                //           value: a['status'] == 'active',
-                                //           activeColor: Colors.green,
-                                //           onChanged: (val) async {
-                                //             final confirm = await showDialog<bool>(
-                                //               context: context,
-                                //               builder: (context) => AlertDialog(
-                                //                 title: Text('Confirm'),
-                                //                 content: Text(
-                                //                   'Are you sure you want to ${val ? 'activate' : 'deactivate'} this activity?',
-                                //                 ),
-                                //                 actions: [
-                                //                   TextButton(
-                                //                     onPressed: () =>
-                                //                         Navigator.of(
-                                //                           context,
-                                //                         ).pop(false),
-                                //                     child: Text('Cancel'),
-                                //                   ),
-                                //                   TextButton(
-                                //                     onPressed: () =>
-                                //                         Navigator.of(
-                                //                           context,
-                                //                         ).pop(true),
-                                //                     child: Text('Yes'),
-                                //                   ),
-                                //                 ],
-                                //               ),
-                                //             );
-
-                                //             if (confirm == true) {
-                                //               final success =
-                                //                   await _updateStatusOnServer(
-                                //                     a['id'],
-                                //                     val,
-                                //                   );
-                                //               if (success) {
-                                //                 setState(() {
-                                //                   a['status'] = val
-                                //                       ? 'active'
-                                //                       : 'inactive';
-                                //                 });
-                                //                 SnackbarHelper.showSuccess(
-                                //                   'Status Updated',
-                                //                 );
-                                //               } else {
-                                //                 SnackbarHelper.showError(
-                                //                   'Failed to update Status',
-                                //                 );
-                                //               }
-                                //             }
-                                //           },
-                                //         ),
-                                //       ),
-                                //     ],
-                                //   ),
-
-                                // IconButton(
-                                //   icon: Icon(
-                                //     Icons.delete_outline,
-                                //     color: Colors.redAccent,
-                                //   ),
-                                //   onPressed: () async {
-                                //     final confirm = await showDialog<bool>(
-                                //       context: context,
-                                //       builder: (context) => AlertDialog(
-                                //         title: Text('Confirm'),
-                                //         content: Text(
-                                //           'Are you sure you want to delete this activity?',
-                                //         ),
-                                //         actions: [
-                                //           TextButton(
-                                //             onPressed: () => Navigator.of(
-                                //               context,
-                                //             ).pop(false),
-                                //             child: Text('Cancel'),
-                                //           ),
-                                //           TextButton(
-                                //             onPressed: () => Navigator.of(
-                                //               context,
-                                //             ).pop(true),
-                                //             child: Text('Yes'),
-                                //           ),
-                                //         ],
-                                //       ),
-                                //     );
-
-                                //     if (confirm == true) {
-                                //       final success = await deleteactivities([
-                                //         a['id'],
-                                //       ]);
-                                //       if (success) {
-                                //         setState(() {
-                                //           activities.removeWhere(
-                                //             (x) => x['id'] == a['id'],
-                                //           );
-                                //           fetchBusinessActivities(); // optional
-                                //         });
-                                //         SnackbarHelper.showSuccess(
-                                //           'Activity Deleted',
-                                //         );
-                                //       } else {
-                                //         SnackbarHelper.showError(
-                                //           'Failed to delete activity',
-                                //         );
-                                //       }
-                                //     }
-                                //   },
-                                // ),
-                                // ] else
-                                //   Checkbox(
-                                //     value: isSelected,
-                                //     onChanged: (val) {
-                                //       setState(() {
-                                //         if (val == true) {
-                                //           selectedIds.add(a['id']);
-                                //         } else {
-                                //           selectedIds.remove(a['id']);
-                                //           if (selectedIds.isEmpty) {
-                                //             isMultiSelectMode = false;
-                                //           }
-                                //         }
-                                //       });
-                                //     },
-                                //     activeColor: _accentColor,
-                                //   ),
+                                
+                                // if (!isMultiSelectMode)
+                                Checkbox(
+                                  value: isSelected,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      if (val == true) {
+                                        selectedIds.add(a['id']);
+                                      } else {
+                                        selectedIds.remove(a['id']);
+                                        if (selectedIds.isEmpty) {
+                                          isMultiSelectMode = false;
+                                        }
+                                      }
+                                    });
+                                  },
+                                  activeColor: _accentColor,
+                                ),
                               ],
                             ),
                           ),

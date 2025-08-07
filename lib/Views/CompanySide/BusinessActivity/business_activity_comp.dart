@@ -31,11 +31,58 @@ class AddBusinessState extends State<AddBusiness> {
   List<Map<String, dynamic>> filteredActivities = [];
   List<MenuItem> menuItems = [];
   // final TextEditingController _newIdController = TextEditingController();
-  final TextEditingController _newNameController = TextEditingController();
-  bool _newCompany = false;
-  bool _newBranch = false;
-  bool _newSection = false;
-  bool _newSubSection = false;
+  // final TextEditingController _newNameController = TextEditingController();
+  // bool _newCompany = false;
+  // bool _newBranch = false;
+  // bool _newSection = false;
+  // bool _newSubSection = false;
+
+  //get existing activities
+
+  bool isDataLoaded = false;
+
+  Future<void> fetchBusinessActivities() async {
+    final url = Uri.parse(
+      '${ApiEndpoints.baseUrl}/company-business-activities/for-company',
+    );
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final model = BusinessActivityModel.fromJson(json);
+
+        if (model.isSuccess) {
+          final fetched = model.data.map((activity) {
+            return {
+              'id': activity.id,
+              'business_activity_name': activity.activityName,
+              'company': activity.company ? 'y' : 'n',
+              'branch': activity.branch ? 'y' : 'n',
+              'section': activity.section ? 'y' : 'n',
+              'sub_section': activity.subSection ? 'y' : 'n',
+              'status': activity.status == true ? 'active' : 'inactive',
+
+              // 'status': activity.status,
+            };
+          }).toList();
+
+          setState(() {
+            activities = fetched;
+            filteredActivities = List.from(fetched);
+            isDataLoaded = true;
+          });
+        } else {
+          debugPrint('Error: ${model.message}');
+        }
+      } else {
+        debugPrint('Failed to fetch activities: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Exception occurred: $e');
+    }
+  }
 
   @override
   void initState() {
