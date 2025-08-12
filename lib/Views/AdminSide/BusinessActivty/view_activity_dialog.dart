@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Models/business_activity.dart';
 
 class ViewActivityDialog extends StatelessWidget {
-  final Map<String, dynamic> activity;
+  final BusinessActivity activity;
   final VoidCallback onEdit;
 
   final Color cardColor;
@@ -24,10 +25,11 @@ class ViewActivityDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final labels = <String>[];
-    if (activity['company'] == 'y') labels.add('Company');
-    if (activity['branch'] == 'y') labels.add('Branch');
-    if (activity['section'] == 'y') labels.add('Section');
-    if (activity['sub_section'] == 'y') labels.add('Sub-section');
+    if (activity.isForCompany) labels.add('Company');
+    if (activity.isForBranch) labels.add('Branch');
+    // if (activity['section'] == 'y') labels.add('Section');
+    // if (activity['sub_section'] == 'y') labels.add('Sub-section');
+    final isActive = activity.status;
 
     return AlertDialog(
       backgroundColor: cardColor,
@@ -37,7 +39,7 @@ class ViewActivityDialog extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Name: ${activity['business_activity_name'] ?? ''}',
+            'Name: ${activity.activityName}',
             style: TextStyle(
               color: textPrimary,
               fontSize: 18,
@@ -104,11 +106,9 @@ class ViewActivityDialog extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
 
                 child: Text(
-                  activity['status']?.toString().toUpperCase() ?? '',
+                  isActive ? 'ACTIVE' : 'INACTIVE',
                   style: TextStyle(
-                    color: activity['status'] == 'active'
-                        ? Colors.greenAccent
-                        : Colors.redAccent,
+                    color: isActive ? Colors.greenAccent : Colors.redAccent,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

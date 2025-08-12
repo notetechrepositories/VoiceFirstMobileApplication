@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
 import 'package:voicefirst/Models/business_activity_model.dart';
-import 'package:voicefirst/Views/CompanySide/BusinessActivity/add_activity_dialog.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
+import 'package:voicefirst/Views/CompanySide/BusinessActivity/add_activity_dialog.dart';
+import 'package:voicefirst/Views/CompanySide/BusinessActivity/edit_activity_dialog.dart';
+import 'package:voicefirst/Views/CompanySide/BusinessActivity/existing_activity.dart';
 
 class AddBusiness extends StatefulWidget {
   const AddBusiness({super.key});
@@ -16,12 +18,6 @@ class AddBusiness extends StatefulWidget {
 
 class AddBusinessState extends State<AddBusiness> {
   List<Map<String, dynamic>> activities = [];
-
-  void _addNewActivities(List<Map<String, dynamic>> newActivities) {
-    setState(() {
-      activities.addAll(newActivities); // Add all new activities to the list
-    });
-  }
 
   // ──────────────────────────────────────
   // Page-specific colour palette
@@ -37,64 +33,20 @@ class AddBusinessState extends State<AddBusiness> {
   List<Map<String, dynamic>> filteredActivities = [];
   List<MenuItem> menuItems = [];
   // final TextEditingController _newIdController = TextEditingController();
-  final TextEditingController _newNameController = TextEditingController();
-  bool _newCompany = false;
-  bool _newBranch = false;
-  bool _newSection = false;
-  bool _newSubSection = false;
+  // final TextEditingController _newNameController = TextEditingController();
+  // bool _newCompany = false;
+  // bool _newBranch = false;
+  // bool _newSection = false;
+  // bool _newSubSection = false;
 
-  final List<Map<String, dynamic>> systemactivities = [
-    {
-      "id": "010110101",
-      "business_activity_name": "jwellary",
-      "company": "y",
-      "branch": "y",
-      "section": "y",
-      "sub_section": "y",
-    },
-    {
-      "id": "010110112",
-      "business_activity_name": "warehouse",
-      "company": "y",
-      "branch": "y",
-      "section": "y",
-      "sub_section": "y",
-    },
-    {
-      "id": "010110013",
-      "business_activity_name": "service center",
-      "company": "y",
-      "branch": "y",
-      "section": "n",
-      "sub_section": "n",
-    },
-    {
-      "id": "010110104",
-      "business_activity_name": "Restaurant",
-      "company": "y",
-      "branch": "y",
-      "section": "y",
-      "sub_section": "y",
-    },
-    {
-      "id": "010110115",
-      "business_activity_name": "Washroom",
-      "company": "y",
-      "branch": "y",
-      "section": "y",
-      "sub_section": "y",
-    },
-    {
-      "id": "010110016",
-      "business_activity_name": "HeadOffice",
-      "company": "y",
-      "branch": "y",
-      "section": "n",
-      "sub_section": "n",
-    },
-  ];
+  //get existing activities
+
+  bool isDataLoaded = false;
+
   Future<void> fetchBusinessActivities() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities/all');
+    final url = Uri.parse(
+      '${ApiEndpoints.baseUrl}/company-business-activities/for-company',
+    );
 
     try {
       final response = await http.get(url);
@@ -108,10 +60,10 @@ class AddBusinessState extends State<AddBusiness> {
             return {
               'id': activity.id,
               'business_activity_name': activity.activityName,
-              'company': activity.company ? 'y' : 'n',
-              'branch': activity.branch ? 'y' : 'n',
-              'section': activity.section ? 'y' : 'n',
-              'sub_section': activity.subSection ? 'y' : 'n',
+              // 'company': activity.company ? 'y' : 'n',
+              // 'branch': activity.branch ? 'y' : 'n',
+              // 'section': activity.section ? 'y' : 'n',
+              // 'sub_section': activity.subSection ? 'y' : 'n',
               'status': activity.status == true ? 'active' : 'inactive',
 
               // 'status': activity.status,
@@ -121,7 +73,7 @@ class AddBusinessState extends State<AddBusiness> {
           setState(() {
             activities = fetched;
             filteredActivities = List.from(fetched);
-            // isdataLoaded = true;
+            isDataLoaded = true;
           });
         } else {
           debugPrint('Error: ${model.message}');
@@ -131,6 +83,45 @@ class AddBusinessState extends State<AddBusiness> {
       }
     } catch (e) {
       debugPrint('Exception occurred: $e');
+    }
+  }
+
+  Future<void> _submitNewCompanyActivity(Map<String, dynamic> activity) async {
+    final url = Uri.parse(
+      '${ApiEndpoints.baseUrl}/company-business-activities/custom',
+    );
+    final body = {
+      "activityName": activity['business_activity_name'],
+      "company": activity['company'] == 'y',
+      "branch": activity['branch'] == 'y',
+      "section": activity['section'] == 'y',
+      "subSection": activity['sub_section'] == 'y',
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      final json = jsonDecode(response.body);
+      if (json['isSuccess'] == true) {
+        await fetchBusinessActivities(); // Refresh list
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Activity added successfully')));
+      } else {
+        final message = json['message'] ?? 'Failed to add activity';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+    } catch (e) {
+      debugPrint('Error adding activity: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Something went wrong.')));
     }
   }
 
@@ -191,6 +182,79 @@ class AddBusinessState extends State<AddBusiness> {
           ),
 
           // ─── List ────────────────────────────────────
+          // Expanded(
+          //   child: filteredActivities.isEmpty
+          //       ? Center(
+          //           child: Text(
+          //             'No activities found',
+          //             style: TextStyle(color: _textSecondary),
+          //           ),
+          //         )
+          //       : ListView.builder(
+          //           itemCount: filteredActivities.length,
+          //           itemBuilder: (ctx, i) {
+          //             final a = filteredActivities[i];
+          //             final labels = <String>[];
+          //             if (a['company'] == 'y') labels.add('Company');
+          //             if (a['branch'] == 'y') labels.add('Branch');
+          //             if (a['section'] == 'y') labels.add('Section');
+          //             if (a['sub_section'] == 'y') labels.add('Sub-section');
+
+          //             return Card(
+          //               color: _cardColor,
+          //               margin: EdgeInsets.symmetric(
+          //                 horizontal: 16,
+          //                 vertical: 8,
+          //               ),
+          //               shape: RoundedRectangleBorder(
+          //                 borderRadius: BorderRadius.circular(12),
+          //               ),
+          //               child: Padding(
+          //                 padding: EdgeInsets.all(12),
+          //                 child: Row(
+          //                   children: [
+          //                     // ─ Left: just the name ───────────
+          //                     Expanded(
+          //                       child: Text(
+          //                         a['business_activity_name'] ?? '',
+          //                         style: TextStyle(
+          //                           color: _textPrimary,
+          //                           fontSize: 16,
+          //                           fontWeight: FontWeight.bold,
+          //                         ),
+          //                       ),
+          //                     ),
+
+          //                     // ─ Right: eye, edit, delete ─────
+          //                     IconButton(
+          //                       icon: Icon(
+          //                         Icons.remove_red_eye_outlined,
+          //                         color: Colors.white,
+          //                       ),
+          //                       onPressed: () => _showDetailDialog(context, a),
+          //                     ),
+
+          //                     IconButton(
+          //                       icon: Icon(
+          //                         Icons.delete_outline,
+          //                         color: Colors.redAccent,
+          //                       ),
+          //                       onPressed: () {
+          //                         setState(() {
+          //                           activities.removeWhere(
+          //                             (x) => x['id'] == a['id'],
+          //                           );
+          //                           _filterActivities();
+          //                         });
+          //                       },
+          //                     ),
+          //                   ],
+          //                 ),
+          //               ),
+          //             );
+          //           },
+          //         ),
+          // ),
           Expanded(
             child: filteredActivities.isEmpty
                 ? Center(
@@ -201,8 +265,8 @@ class AddBusinessState extends State<AddBusiness> {
                   )
                 : ListView.builder(
                     itemCount: filteredActivities.length,
-                    itemBuilder: (ctx, i) {
-                      final a = filteredActivities[i];
+                    itemBuilder: (context, index) {
+                      final a = filteredActivities[index];
                       final labels = <String>[];
                       if (a['company'] == 'y') labels.add('Company');
                       if (a['branch'] == 'y') labels.add('Branch');
@@ -218,46 +282,17 @@ class AddBusinessState extends State<AddBusiness> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              // ─ Left: just the name ───────────
-                              Expanded(
-                                child: Text(
-                                  a['business_activity_name'] ?? '',
-                                  style: TextStyle(
-                                    color: _textPrimary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-
-                              // ─ Right: eye, edit, delete ─────
-                              IconButton(
-                                icon: Icon(
-                                  Icons.remove_red_eye_outlined,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () => _showDetailDialog(context, a),
-                              ),
-
-                              IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.redAccent,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    activities.removeWhere(
-                                      (x) => x['id'] == a['id'],
-                                    );
-                                    _filterActivities();
-                                  });
-                                },
-                              ),
-                            ],
+                        child: ListTile(
+                          title: Text(
+                            a['business_activity_name'],
+                            style: TextStyle(color: _textPrimary),
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(
+                              Icons.remove_red_eye_outlined,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => _showDetailDialog(context, a),
                           ),
                         ),
                       );
@@ -271,68 +306,6 @@ class AddBusinessState extends State<AddBusiness> {
         backgroundColor: _accentColor,
         child: Icon(Icons.add, color: _bgColor),
         onPressed: () => _showChoiceDialog(context),
-      ),
-    );
-  }
-
-  void _showSelectExistingDialog(BuildContext ctx) {
-    // track selections in a local map
-    final Map<String, bool> selected = {
-      for (var sys in systemactivities) sys['id'] as String: false,
-    };
-
-    showDialog(
-      context: ctx,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: _cardColor,
-          title: Text(
-            'Select System Activities',
-            style: TextStyle(color: _accentColor),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              children: systemactivities.map((sys) {
-                final id = sys['id'] as String;
-                final name = sys['business_activity_name'] as String;
-                final alreadyin = activities.any((a) => a['id'] == id);
-                return CheckboxListTile(
-                  value: alreadyin || selected[id]!,
-                  onChanged: alreadyin
-                      ? null
-                      : (v) => setState(() => selected[id] = v!),
-                  title: Text(name, style: TextStyle(color: _textPrimary)),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: _accentColor,
-                  // ← NEW: grays out the tile entirely
-                  enabled: !alreadyin,
-                );
-              }).toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: TextStyle(color: _textSecondary)),
-            ),
-            TextButton(
-              onPressed: () {
-                // add every checked systemactivity into your activities list
-                selected.forEach((id, isChecked) {
-                  if (!isChecked) return;
-                  final sys = systemactivities.firstWhere((s) => s['id'] == id);
-                  // avoid duplicates?
-                  if (!activities.any((a) => a['id'] == id)) {
-                    activities.add(Map<String, dynamic>.from(sys));
-                  }
-                });
-                _filterActivities();
-                Navigator.of(ctx).pop();
-              },
-              child: Text('OK', style: TextStyle(color: _accentColor)),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -353,8 +326,12 @@ class AddBusinessState extends State<AddBusiness> {
                 style: TextStyle(color: _textPrimary),
               ),
               onTap: () {
-                Navigator.of(ctx).pop();
-                _showSelectExistingDialog(ctx);
+                // Navigator.of(ctx).pop();
+                // // _showSelectExistingDialog(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ExistingActivity()),
+                );
               },
             ),
             ListTile(
@@ -365,6 +342,18 @@ class AddBusinessState extends State<AddBusiness> {
               ),
               onTap: () {
                 Navigator.of(ctx).pop();
+                showDialog(
+                  context: context,
+                  builder: (_) => AddActivityDialog(
+                    bgColor: _bgColor,
+                    accentColor: _accentColor,
+                    textPrimary: _textPrimary,
+                    textSecondary: _textSecondary,
+                    onAdd: (activity) async {
+                      await _submitNewCompanyActivity(activity);
+                    },
+                  ),
+                );
                 // ignore: avoid_types_as_parameter_names
                 // AddActivityDialog(bgColor: _bgColor, accentColor: _accentColor, textPrimary: _textPrimary, textSecondary: _textSecondary, onAdd: (Map<String, dynamic> ) {  }, );
                 // add(onActivitiesAdded: _addNewActivities);
@@ -442,7 +431,11 @@ class AddBusinessState extends State<AddBusiness> {
           // ),
           TextButton(
             onPressed: () {
-              Navigator.of(ctx).pop();
+              // Navigator.of(ctx).pop();
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(builder: (context) => EditActivityDialog(activity: {},, onSave: (Map<String, dynamic> ) {  },)),
+              // );
               // _showEditDialog(ctx, activity);
             },
             child: Text('Edit', style: TextStyle(color: _accentColor)),
@@ -455,6 +448,4 @@ class AddBusinessState extends State<AddBusiness> {
       ),
     );
   }
-
-
 }
