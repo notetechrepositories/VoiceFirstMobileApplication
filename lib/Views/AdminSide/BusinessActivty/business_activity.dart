@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voicefirst/Core/Services/api_client.dart';
 import 'package:voicefirst/Models/business_activity.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
@@ -18,6 +20,8 @@ class AddBusinessactivity extends StatefulWidget {
 }
 
 class _AddBusinessactivityState extends State<AddBusinessactivity> {
+  final Dio _dio = ApiClient().dio;
+
   Future<bool> deleteactivities(List<String> id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
 
@@ -41,7 +45,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
     }
   }
 
-  Future<void> _submitActivityToApi({
+  Future<void> _addActivity({
     required String name,
     required bool isForCompany,
     required bool isForBranch,
@@ -78,6 +82,41 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
       SnackbarHelper.showError('Something went wrong. Please try again.');
     }
   }
+
+  // Future<void> _addActivity({
+  //   required String name,
+  //   required bool isForCompany,
+  //   required bool isForBranch,
+  // }) async {
+  //   final body = {
+  //     "activityName": name,
+  //     "isForCompany": isForCompany,
+  //     "isForBranch": isForBranch,
+  //   };
+
+  //   try {
+  //     final res = await _dio.post('/business-activities', data: body);
+
+  //     if (res.statusCode == 200 &&
+  //         res.data is Map<String, dynamic> &&
+  //         res.data['isSuccess'] == true) {
+  //       fetchBusinessActivities();
+  //       SnackbarHelper.showSuccess('Activity added successfully');
+  //     } else {
+  //       final msg = (res.data is Map && res.data['message'] != null)
+  //           ? res.data['message'].toString()
+  //           : 'failed to add activity';
+  //       SnackbarHelper.showError(msg);
+  //     }
+  //   } on DioException catch (e) {
+  //     final msg = e.response?.data is Map<String, dynamic>
+  //         ? (e.response!.data['message']?.toString() ?? e.message)
+  //         : e.message;
+  //     SnackbarHelper.showError('Failed to add activity: $msg');
+  //   } catch (e) {
+  //     SnackbarHelper.showError('Something went wrong. Please try again.');
+  //   }
+  // }
 
   Future<Map<String, dynamic>?> _updateActivityOnServer(
     Map<String, dynamic> body,
@@ -626,7 +665,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
             context: context,
             builder: (_) => AddBusinessActivityDialog(
               onSubmit: (activity) async {
-                await _submitActivityToApi(
+                await _addActivity(
                   name: activity.activityName,
                   isForCompany: activity.isForCompany,
                   isForBranch: activity.isForBranch,

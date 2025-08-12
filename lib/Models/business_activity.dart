@@ -3,8 +3,6 @@ class BusinessActivity {
   final String activityName;
   final bool isForCompany;
   final bool isForBranch;
-  // final bool section;
-  // final bool subSection;
   final bool status;
 
   BusinessActivity({
@@ -12,8 +10,6 @@ class BusinessActivity {
     required this.activityName,
     required this.isForCompany,
     required this.isForBranch,
-    // required this.section,
-    // required this.subSection,
     required this.status,
   });
 
@@ -23,8 +19,6 @@ class BusinessActivity {
       activityName: json['activityName'],
       isForCompany: json['isForCompany'],
       isForBranch: json['isForBranch'],
-      // section: json['section'],
-      // subSection: json['subSection'],
       status: json['status'],
     );
   }
@@ -34,8 +28,6 @@ class BusinessActivity {
     'activityName': activityName,
     'isForCompany': isForCompany,
     'isForBranch': isForBranch,
-    // 'section': section,
-    // 'subSection': subSection,
     'status': status,
   };
 }
