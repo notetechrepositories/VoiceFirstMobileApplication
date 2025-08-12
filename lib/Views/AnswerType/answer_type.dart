@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../Core/Constants/api_endpoins.dart';
+import 'package:dio/dio.dart';
+import '../../Core/Services/api_client.dart'; // <- your Dio singleton with interceptor
 import '../../Models/answer_model.dart';
 
 class ManageAnswerTypePage extends StatefulWidget {
@@ -10,6 +9,8 @@ class ManageAnswerTypePage extends StatefulWidget {
 }
 
 class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
+  final Dio _dio = ApiClient().dio;
+
   List<AnswerTypeModel> _answerTypes = [];
   List<AnswerTypeModel> _filtered = [];
   final Set<String> _selectedIds = {};
@@ -24,16 +25,18 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
   }
 
   Future<void> _fetchAnswerTypes() async {
-    final res = await http.get(
-      Uri.parse('http://192.168.0.202:8022/api/answer-type/all'),
-    );
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      final List list = data['data'];
-      setState(() {
-        _answerTypes = list.map((e) => AnswerTypeModel.fromJson(e)).toList();
-        _applyFilters();
-      });
+    try {
+      final res = await _dio.get('/answer-type/all');
+      if (res.statusCode == 200) {
+        final List list = res.data['data'] as List? ?? [];
+        setState(() {
+          _answerTypes = list.map((e) => AnswerTypeModel.fromJson(e)).toList();
+          _applyFilters();
+        });
+      }
+    } on DioException catch (e) {
+      debugPrint('AnswerType load error: ${e.response?.data ?? e.message}');
+      // Optionally show a snackbar
     }
   }
 
@@ -63,57 +66,59 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
           backgroundColor: Colors.grey[900],
           title: Text(
             isEditing ? 'Edit Answer Type' : 'Add Answer Type',
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           ),
           content: TextField(
             controller: controller,
-            style: TextStyle(color: Colors.white),
-            decoration: InputDecoration(
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
               hintText: "Enter Answer Type Name",
-              hintStyle: TextStyle(color: Colors.white70),
-              filled: true,
-              fillColor: Colors.grey[850],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text("Cancel", style: TextStyle(color: Colors.white70)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white70),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFFCC737),
+                backgroundColor: const Color(0xFFFCC737),
                 foregroundColor: Colors.black,
               ),
               onPressed: () async {
                 final name = controller.text.trim();
                 if (name.isEmpty) return;
 
-                final body = jsonEncode({'answerTypeName': name});
-                final url = Uri.parse('${ApiEndpoints.baseUrl}/answer-type');
-
-                final res = isEditing
-                    ? await http.put(
-                        url,
-                        headers: {'Content-Type': 'application/json'},
-                        body: jsonEncode({
-                          'id': existing.id,
-                          'answerTypeName': name,
-                          'status': existing.status,
-                        }),
-                      )
-                    : await http.post(
-                        url,
-                        headers: {'Content-Type': 'application/json'},
-                        body: body,
-                      );
-
-                if (res.statusCode == 200 || res.statusCode == 201) {
-                  Navigator.pop(ctx);
+                try {
+                  if (isEditing) {
+                    await _dio.put(
+                      '/answer-type',
+                      data: {
+                        'id': existing!.id,
+                        'answerTypeName': name,
+                        'status': existing.status,
+                      },
+                    );
+                  } else {
+                    await _dio.post(
+                      '/answer-type',
+                      data: {'answerTypeName': name},
+                    );
+                  }
+                  if (mounted) Navigator.pop(ctx);
                   await _fetchAnswerTypes();
+                } on DioException catch (e) {
+                  final msg =
+                      e.response?.data?['message'] ??
+                      e.message ??
+                      'Save failed';
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(msg)));
                 }
               },
               child: Text(isEditing ? 'Save Changes' : 'Add'),
@@ -126,26 +131,25 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
 
   Future<void> _toggleAnswerStatus(AnswerTypeModel answer) async {
     final newStatus = !answer.status;
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/answer-type');
-    final body = jsonEncode({"id": answer.id, "status": newStatus});
-
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    );
-
-    if (response.statusCode == 200) {
-      final result = jsonDecode(response.body);
-      if (result['isSuccess']) {
+    try {
+      final res = await _dio.patch(
+        '/answer-type',
+        data: {"id": answer.id, "status": newStatus},
+      );
+      if (res.statusCode == 200 && (res.data?['isSuccess'] == true)) {
         setState(() {
-          answer.status = newStatus;
+          answer.status = newStatus; // mutable in your model
           _applyFilters();
         });
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Status updated")));
+        ).showSnackBar(const SnackBar(content: Text("Status updated")));
       }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? 'Failed to update status';
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -155,15 +159,22 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Confirm Bulk Delete"),
-        content: Text("Are you sure you want to delete selected items?"),
+        backgroundColor: Colors.grey[900],
+        title: const Text(
+          "Confirm Bulk Delete",
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          "Are you sure you want to delete selected items?",
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
-            child: Text("Cancel"),
+            child: const Text("Cancel"),
             onPressed: () => Navigator.pop(ctx, false),
           ),
           ElevatedButton(
-            child: Text("Delete"),
+            child: const Text("Delete"),
             onPressed: () => Navigator.pop(ctx, true),
           ),
         ],
@@ -172,22 +183,25 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
 
     if (confirm != true) return;
 
-    final url = Uri.parse('http://192.168.0.202:8022/api/answer-type');
-    final res = await http.delete(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(_selectedIds.toList()),
-    );
+    try {
+      await _dio.delete(
+        '/answer-type',
+        data: _selectedIds.toList(), // backend expects JSON array of IDs
+      );
 
-    if (res.statusCode == 200) {
       setState(() {
         _answerTypes.removeWhere((e) => _selectedIds.contains(e.id));
         _selectedIds.clear();
         _applyFilters();
       });
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Items deleted")));
+      ).showSnackBar(const SnackBar(content: Text("Items deleted")));
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? 'Delete failed';
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -196,22 +210,22 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text('Manage Answer Type'),
+        title: const Text('Manage Answer Type'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
           if (_selectedIds.isNotEmpty)
             IconButton(
-              icon: Icon(Icons.delete_forever),
+              icon: const Icon(Icons.delete_forever),
               onPressed: _deleteSelected,
             ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditDialog(),
-        backgroundColor: Color(0xFFFCC737),
+        backgroundColor: const Color(0xFFFCC737),
         foregroundColor: Colors.black,
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
       body: Padding(
         padding: const EdgeInsets.all(12),
@@ -222,12 +236,15 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    style: TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white),
                     onChanged: (_) => _applyFilters(),
                     decoration: InputDecoration(
                       hintText: "Search",
-                      hintStyle: TextStyle(color: Colors.white70),
-                      prefixIcon: Icon(Icons.search, color: Colors.white70),
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: Colors.white70,
+                      ),
                       filled: true,
                       fillColor: Colors.grey[850],
                       border: OutlineInputBorder(
@@ -236,12 +253,12 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
                     ),
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 DropdownButton<String>(
                   dropdownColor: Colors.grey[900],
                   value: _statusFilter,
                   iconEnabledColor: Colors.white,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                   items: ['All', 'Active', 'Inactive']
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                       .toList(),
@@ -255,7 +272,7 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
             const SizedBox(height: 12),
             Expanded(
               child: _filtered.isEmpty
-                  ? Center(
+                  ? const Center(
                       child: Text(
                         'No Answer Types Found',
                         style: TextStyle(color: Colors.white70),
@@ -283,7 +300,7 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
                             ),
                             title: Text(
                               answer.name,
-                              style: TextStyle(color: Colors.white),
+                              style: const TextStyle(color: Colors.white),
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -295,7 +312,10 @@ class _ManageAnswerTypePageState extends State<ManageAnswerTypePage> {
                                   inactiveThumbColor: Colors.redAccent,
                                 ),
                                 IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.amber),
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.amber,
+                                  ),
                                   onPressed: () =>
                                       _showAddEditDialog(existing: answer),
                                 ),
