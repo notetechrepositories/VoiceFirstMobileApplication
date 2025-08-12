@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../Core/Constants/api_endpoins.dart';
+import 'package:dio/dio.dart';
+import '../../Core/Services/api_client.dart';
 
 class AddIssueTypePage extends StatefulWidget {
   final Map<String, dynamic>? existingIssue;
@@ -13,6 +12,8 @@ class AddIssueTypePage extends StatefulWidget {
 }
 
 class _AddIssueTypePageState extends State<AddIssueTypePage> {
+  final Dio _dio = ApiClient().dio;
+
   final _issueTypeController = TextEditingController();
   final _newAnswerTypeController = TextEditingController();
 
@@ -23,6 +24,12 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
   List<String> selectedAttachmentTypes = [];
 
   List<dynamic> mediaTypes = [];
+
+  /// mediaData[attachmentTypeId] = {
+  ///   'max': '3',
+  ///   'maxSize': '10',
+  ///   'media': [{'mediaTypeId': '...', 'mandatory': true}, ...]
+  /// }
   Map<String, Map<String, dynamic>> mediaData = {};
 
   bool isLoading = true;
@@ -40,29 +47,29 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
   }
 
   Future<void> _loadDropdownData() async {
+    setState(() {
+      isLoading = true;
+      error = '';
+    });
     try {
-      final answerRes = await http.get(
-        Uri.parse('${ApiEndpoints.baseUrl}/answer-type'),
-      );
-      final attachRes = await http.get(
-        Uri.parse('${ApiEndpoints.baseUrl}/attachment-type'),
-      );
-      final mediaRes = await http.get(
-        Uri.parse('${ApiEndpoints.baseUrl}/media-type'),
-      );
+      final f1 = _dio.get('/answer-type');
+      final f2 = _dio.get('/attachment-type');
+      final f3 = _dio.get('/media-type');
 
-      if (answerRes.statusCode == 200 &&
-          attachRes.statusCode == 200 &&
-          mediaRes.statusCode == 200) {
-        setState(() {
-          answerTypes = jsonDecode(answerRes.body)['data'];
-          attachmentTypes = jsonDecode(attachRes.body)['data'];
-          mediaTypes = jsonDecode(mediaRes.body)['data'];
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load dropdown data');
-      }
+      final results = await Future.wait([f1, f2, f3]);
+
+      setState(() {
+        answerTypes = (results[0].data?['data'] as List?) ?? [];
+        attachmentTypes = (results[1].data?['data'] as List?) ?? [];
+        mediaTypes = (results[2].data?['data'] as List?) ?? [];
+        isLoading = false;
+      });
+    } on DioException catch (e) {
+      setState(() {
+        error =
+            'Failed to load data: ${e.response?.data?['message'] ?? e.message}';
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         error = 'Failed to load data: $e';
@@ -77,21 +84,32 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
 
     _issueTypeController.text = issue['issueType'] ?? '';
 
-    selectedAnswerTypeIds = (issue['issueAnswerTypes'] as List)
-        .map<String>((a) => a['answerTypeId'] as String)
+    // Answer types (existing)
+    final issueAns = (issue['issueAnswerTypes'] as List?) ?? [];
+    selectedAnswerTypeIds = issueAns
+        .map((a) => (a['answerTypeId'] as String?) ?? '')
+        .where((s) => s.isNotEmpty)
         .toList();
 
-    selectedAttachmentTypes = (issue['mediaRequired'] as List)
-        .map<String>((m) => m['attachmentTypeId'] as String)
+    // Attachment types + media details
+    final medReq = (issue['mediaRequired'] as List?) ?? [];
+    selectedAttachmentTypes = medReq
+        .map((m) => (m['attachmentTypeId'] as String?) ?? '')
+        .where((s) => s.isNotEmpty)
         .toList();
 
-    for (final media in issue['mediaRequired']) {
-      final attachId = media['attachmentTypeId'];
+    for (final m in medReq) {
+      final attachId = m['attachmentTypeId'];
       mediaData[attachId] = {
-        'max': media['maximum'].toString(),
-        'maxSize': media['maximumSize'].toString(),
-        'media': (media['issueMediaType'] as List).map((m) {
-          return {"mediaTypeId": m['mediaTypeId'], "mandatory": m['mandatory']};
+        'max': (m['maximum'] ?? '').toString(),
+        'maxSize': (m['maximumSize'] ?? '').toString(),
+        'media': ((m['issueMediaType'] as List?) ?? []).map((x) {
+          return {
+            "mediaTypeId": x['mediaTypeId'],
+            "mandatory": x['mandatory'] ?? false,
+            // keep the id so PUT can send it back if needed
+            "issueMediaTypeId": x['issueMediaTypeId'],
+          };
         }).toList(),
       };
     }
@@ -114,9 +132,14 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Add New Answer Type"),
+        backgroundColor: Colors.grey[900],
+        title: const Text(
+          "Add New Answer Type",
+          style: TextStyle(color: Colors.white),
+        ),
         content: TextField(
           controller: _newAnswerTypeController,
+          style: const TextStyle(color: Colors.white),
           decoration: const InputDecoration(hintText: "Enter answer type name"),
         ),
         actions: [
@@ -125,18 +148,23 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
             child: const Text("Cancel"),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFCC737),
+              foregroundColor: Colors.black,
+            ),
             onPressed: () async {
               final name = _newAnswerTypeController.text.trim();
               if (name.isEmpty) return;
-              final res = await http.post(
-                Uri.parse('${ApiEndpoints.baseUrl}/answer-type'),
-                headers: {'Content-Type': 'application/json'},
-                body: jsonEncode({"answerTypeName": name}),
-              );
-              if (res.statusCode == 200) {
-                Navigator.pop(ctx);
-                await _loadDropdownData();
-              }
+              try {
+                final res = await _dio.post(
+                  '/answer-type',
+                  data: {"answerTypeName": name},
+                );
+                if (res.statusCode == 200) {
+                  Navigator.pop(ctx);
+                  await _loadDropdownData();
+                }
+              } catch (_) {}
             },
             child: const Text("Add"),
           ),
@@ -156,41 +184,47 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
     }
 
     final isEditing = widget.existingIssue != null;
+
     final filteredAnswerTypeIds = selectedAnswerTypeIds
         .where((id) => id.isNotEmpty)
         .toList();
 
-    List<Map<String, dynamic>> mediaRequiredList = [];
-
+    // Build mediaRequired payload
+    final List<Map<String, dynamic>> mediaRequiredList = [];
     for (var typeId in selectedAttachmentTypes) {
-      final mediaList = mediaData[typeId]?['media'] ?? [];
-
+      final mediaList = (mediaData[typeId]?['media'] as List?) ?? [];
       if (mediaList.isEmpty) continue;
 
       final existingMediaRequired = isEditing
-          ? (widget.existingIssue!['mediaRequired'] as List).firstWhere(
-              (m) => m['attachmentTypeId'] == typeId,
-              orElse: () => <String, dynamic>{},
-            )
+          ? ((widget.existingIssue!['mediaRequired'] as List?) ?? [])
+                .firstWhere(
+                  (m) => m['attachmentTypeId'] == typeId,
+                  orElse: () => <String, dynamic>{},
+                )
           : <String, dynamic>{};
 
       mediaRequiredList.add({
-        "mediaRequiredId": existingMediaRequired['mediaRequiredId'],
+        // Only include ID for PUT when it exists
+        if (isEditing && (existingMediaRequired['mediaRequiredId'] != null))
+          "mediaRequiredId": existingMediaRequired['mediaRequiredId'],
         "attachmentTypeId": typeId,
-        "maximum": int.tryParse(mediaData[typeId]?['max'] ?? '') ?? 0,
-        "maximumSize": int.tryParse(mediaData[typeId]?['maxSize'] ?? '') ?? 0,
-        "issueMediaType": mediaList.map((m) {
+        "maximum":
+            int.tryParse((mediaData[typeId]?['max'] ?? '').toString()) ?? 0,
+        "maximumSize":
+            int.tryParse((mediaData[typeId]?['maxSize'] ?? '').toString()) ?? 0,
+        "issueMediaType": mediaList.map<Map<String, dynamic>>((m) {
           final existingMediaItem =
-              (existingMediaRequired['issueMediaType'] as List?)?.firstWhere(
-                (x) => x['mediaTypeId'] == m['mediaTypeId'],
-                orElse: () => <String, dynamic>{},
-              ) ??
-              <String, dynamic>{};
+              ((existingMediaRequired['issueMediaType'] as List?) ?? [])
+                  .firstWhere(
+                    (x) => x['mediaTypeId'] == m['mediaTypeId'],
+                    orElse: () => <String, dynamic>{},
+                  );
 
           return {
             "mediaTypeId": m["mediaTypeId"],
             "mandatory": m["mandatory"] ?? false,
-            "issueMediaTypeId": existingMediaItem['issueMediaTypeId'],
+            if (isEditing && (existingMediaItem['issueMediaTypeId'] != null))
+              "issueMediaTypeId": existingMediaItem['issueMediaTypeId'],
           };
         }).toList(),
       });
@@ -202,7 +236,7 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
             "issueType": issueType,
             "issueAnswerTypes": filteredAnswerTypeIds.map((id) {
               final existingAnswer =
-                  (widget.existingIssue!['issueAnswerTypes'] as List)
+                  ((widget.existingIssue!['issueAnswerTypes'] as List?) ?? [])
                       .firstWhere(
                         (e) => e['answerTypeId'] == id,
                         orElse: () => <String, dynamic>{},
@@ -210,7 +244,8 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
 
               return {
                 "answerTypeId": id,
-                "issueAnswerTypeId": existingAnswer['issueAnswerTypeId'],
+                if (existingAnswer['issueAnswerTypeId'] != null)
+                  "issueAnswerTypeId": existingAnswer['issueAnswerTypeId'],
               };
             }).toList(),
             "mediaRequired": mediaRequiredList,
@@ -221,39 +256,51 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
             "mediaRequired": mediaRequiredList,
           };
 
-    final uri = Uri.parse('${ApiEndpoints.baseUrl}/issue-type');
-    final res = isEditing
-        ? await http.put(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(body),
-          )
-        : await http.post(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(body),
-          );
+    try {
+      final res = isEditing
+          ? await _dio.put('/issue-type', data: body)
+          : await _dio.post('/issue-type', data: body);
 
-    if (res.statusCode == 200) {
-      Navigator.pop(context, true);
-    } else {
-      final response = jsonDecode(res.body);
-      final msg = response['message'] ?? 'Submission Failed';
+      if (res.statusCode == 200) {
+        Navigator.pop(context, true);
+      } else {
+        final msg = (res.data is Map && res.data['message'] != null)
+            ? res.data['message']
+            : 'Submission Failed';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } on DioException catch (e) {
+      final msg =
+          e.response?.data?['message'] ??
+          e.response?.data?.toString() ??
+          e.message ??
+          'Submission Failed';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Submission Failed: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading)
+    if (isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (error.isNotEmpty) return Scaffold(body: Center(child: Text(error)));
+    }
+    if (error.isNotEmpty) {
+      return Scaffold(body: Center(child: Text(error)));
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.existingIssue != null ? "Edit Issue Type" : "Add Issue Type",
         ),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -287,14 +334,14 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                           child: DropdownButton<String>(
                             isExpanded: true,
                             hint: const Text("Select Answer Types"),
-                            items: answerTypes.map<DropdownMenuItem<String>>((
-                              a,
-                            ) {
-                              return DropdownMenuItem<String>(
-                                value: a['id'],
-                                child: Text(a['answerTypeName']),
-                              );
-                            }).toList(),
+                            items: answerTypes
+                                .map<DropdownMenuItem<String>>(
+                                  (a) => DropdownMenuItem<String>(
+                                    value: a['id'],
+                                    child: Text(a['answerTypeName']),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: (id) {
                               if (id != null &&
                                   !selectedAnswerTypeIds.contains(id)) {
@@ -310,6 +357,7 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                         children: selectedAnswerTypeIds.map((id) {
                           final name = answerTypes.firstWhere(
                             (e) => e['id'] == id,
+                            orElse: () => {'answerTypeName': 'Unknown'},
                           )['answerTypeName'];
                           return Chip(
                             label: Text(name),
@@ -325,6 +373,7 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
                 IconButton(
                   icon: const Icon(Icons.add_circle, color: Colors.blue),
                   onPressed: _addNewAnswerType,
+                  tooltip: 'Add new answer type',
                 ),
               ],
             ),
@@ -352,89 +401,105 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
             ...selectedAttachmentTypes.map((id) {
               final label = attachmentTypes.firstWhere(
                 (e) => e['id'] == id,
+                orElse: () => {'attachmentType': 'Unknown'},
               )['attachmentType'];
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 10),
+                color: Colors.grey[900],
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '$label Attachment',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                labelText: 'Max Size (MB)',
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (v) => mediaData[id]?['maxSize'] = v,
-                              controller: TextEditingController(
-                                text: mediaData[id]?['maxSize'],
-                              ),
-                            ),
+                  child: DefaultTextStyle(
+                    style: const TextStyle(color: Colors.white),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$label Attachment',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                labelText: 'Max Number',
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (v) => mediaData[id]?['max'] = v,
-                              controller: TextEditingController(
-                                text: mediaData[id]?['max'],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: "Select Media Type",
-                          border: OutlineInputBorder(),
                         ),
-                        items: mediaTypes.map<DropdownMenuItem<String>>((m) {
-                          return DropdownMenuItem<String>(
-                            value: m['id'],
-                            child: Text(m['description']),
-                          );
-                        }).toList(),
-                        onChanged: (selectedId) {
-                          if (selectedId == null) return;
-                          final alreadyExists = mediaData[id]?['media'].any(
-                            (item) => item['mediaTypeId'] == selectedId,
-                          );
-                          if (!alreadyExists) {
-                            setState(() {
-                              mediaData[id]?['media'].add({
-                                "mediaTypeId": selectedId,
-                                "mandatory": false,
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: mediaData[id]?['maxSize'] ?? '',
+                                decoration: const InputDecoration(
+                                  labelText: 'Max Size (MB)',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                                onChanged: (v) => mediaData[id]?['maxSize'] = v,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: mediaData[id]?['max'] ?? '',
+                                decoration: const InputDecoration(
+                                  labelText: 'Max Number',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                                onChanged: (v) => mediaData[id]?['max'] = v,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: "Select Media Type",
+                            border: OutlineInputBorder(),
+                          ),
+                          items: mediaTypes
+                              .map<DropdownMenuItem<String>>(
+                                (m) => DropdownMenuItem<String>(
+                                  value: m['id'],
+                                  child: Text(m['description']),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (selectedId) {
+                            if (selectedId == null) return;
+                            final alreadyExists =
+                                (mediaData[id]?['media'] as List).any(
+                                  (item) => item['mediaTypeId'] == selectedId,
+                                );
+                            if (!alreadyExists) {
+                              setState(() {
+                                (mediaData[id]?['media'] as List).add({
+                                  "mediaTypeId": selectedId,
+                                  "mandatory": false,
+                                });
                               });
-                            });
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      ...mediaData[id]?['media'].map<Widget>((m) {
-                        final mediaType = mediaTypes.firstWhere(
-                          (e) => e['id'] == m['mediaTypeId'],
-                          orElse: () => {'description': 'Unknown'},
-                        );
-                        return CheckboxListTile(
-                          title: Text('Mandatory: ${mediaType['description']}'),
-                          value: m['mandatory'],
-                          onChanged: (val) =>
-                              setState(() => m['mandatory'] = val),
-                        );
-                      }).toList(),
-                    ],
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        ...((mediaData[id]?['media'] as List).map<Widget>((m) {
+                          final mediaType = mediaTypes.firstWhere(
+                            (e) => e['id'] == m['mediaTypeId'],
+                            orElse: () => {'description': 'Unknown'},
+                          );
+                          return CheckboxListTile(
+                            title: Text(
+                              'Mandatory: ${mediaType['description']}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            value: m['mandatory'] == true,
+                            onChanged: (val) =>
+                                setState(() => m['mandatory'] = val ?? false),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            activeColor: const Color(0xFFFCC737),
+                          );
+                        })).toList(),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -446,6 +511,8 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
               child: ElevatedButton(
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFCC737),
+                  foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: Text(
@@ -457,6 +524,7 @@ class _AddIssueTypePageState extends State<AddIssueTypePage> {
           ],
         ),
       ),
+      backgroundColor: Colors.black,
     );
   }
 }
