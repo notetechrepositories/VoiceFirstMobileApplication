@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Models/business_activity.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 
 class EditActivityDialog extends StatefulWidget {
-  final Map<String, dynamic> activity;
+  final BusinessActivity activity;
   final Color cardColor;
   final Color textPrimary;
   final Color textSecondary;
@@ -29,18 +30,16 @@ class EditActivityDialog extends StatefulWidget {
 
 class _EditActivityDialogState extends State<EditActivityDialog> {
   late TextEditingController _nameController;
-  late bool _company, _branch, _section, _subSection;
+  late bool _isForCompany, _isForBranch;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.activity['business_activity_name'],
-    );
-    _company = widget.activity['company'] == 'y';
-    _branch = widget.activity['branch'] == 'y';
-    _section = widget.activity['section'] == 'y';
-    _subSection = widget.activity['sub_section'] == 'y';
+    _nameController = TextEditingController(text: widget.activity.activityName);
+    _isForCompany = widget.activity.isForCompany;
+    _isForBranch = widget.activity.isForBranch;
+    // _section = widget.activity['section'] == 'y';
+    // _subSection = widget.activity['sub_section'] == 'y';
   }
 
   @override
@@ -53,22 +52,16 @@ class _EditActivityDialogState extends State<EditActivityDialog> {
     final newName = _nameController.text.trim();
     if (newName.isEmpty) return;
 
-    final updatedData = {"id": widget.activity['id']};
+    final updatedData = <String, dynamic>{"id": widget.activity.id};
 
-    if (widget.activity['business_activity_name'] != newName) {
+    if (widget.activity.activityName != newName) {
       updatedData['activityName'] = newName;
     }
-    if ((_company ? 'y' : 'n') != widget.activity['company']) {
-      updatedData['company'] = _company;
+    if (_isForCompany != widget.activity.isForCompany) {
+      updatedData['isForCompany'] = _isForCompany;
     }
-    if ((_branch ? 'y' : 'n') != widget.activity['branch']) {
-      updatedData['branch'] = _branch;
-    }
-    if ((_section ? 'y' : 'n') != widget.activity['section']) {
-      updatedData['section'] = _section;
-    }
-    if ((_subSection ? 'y' : 'n') != widget.activity['sub_section']) {
-      updatedData['subSection'] = _subSection;
+    if (_isForBranch != widget.activity.isForBranch) {
+      updatedData['isForBranch'] = _isForBranch;
     }
 
     if (updatedData.length == 1) {
@@ -80,25 +73,30 @@ class _EditActivityDialogState extends State<EditActivityDialog> {
     final updatedActivity = await widget.onUpdate(updatedData);
 
     if (updatedActivity != null) {
-      widget.activity['business_activity_name'] =
-          updatedActivity['activityName'];
-      widget.activity['company'] = updatedActivity['company'] ? 'y' : 'n';
-      widget.activity['branch'] = updatedActivity['branch'] ? 'y' : 'n';
-      widget.activity['section'] = updatedActivity['section'] ? 'y' : 'n';
-      widget.activity['sub_section'] = updatedActivity['subSection']
-          ? 'y'
-          : 'n';
-      widget.activity['status'] = updatedActivity['status']
-          ? 'active'
-          : 'inactive';
+      // widget.activity['business_activity_name'] =
+      //     updatedActivity['activityName'];
+      // widget.activity['company'] = updatedActivity['company'] ? 'y' : 'n';
+      // widget.activity['branch'] = updatedActivity['branch'] ? 'y' : 'n';
+      // widget.activity['section'] = updatedActivity['section'] ? 'y' : 'n';
+      // widget.activity['sub_section'] = updatedActivity['subSection']
+      //     ? 'y'
+      //     : 'n';
+      // widget.activity['status'] = updatedActivity['status']
+      //     ? 'active'
+      //     : 'inactive';
 
       widget.onUpdated();
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+        SnackbarHelper.showSuccess('Activity Updated');
+      }
 
-      SnackbarHelper.showSuccess('Activity updated');
+      // SnackbarHelper.showSuccess('Activity updated');
     } else {
-      Navigator.of(context).pop();
-      SnackbarHelper.showError('Failed to update activity');
+      if (mounted) {
+        Navigator.of(context).pop();
+        SnackbarHelper.showError('Failed to update activity');
+      }
     }
   }
 
@@ -121,8 +119,8 @@ class _EditActivityDialogState extends State<EditActivityDialog> {
             ),
             const SizedBox(height: 16),
             CheckboxListTile(
-              value: _company,
-              onChanged: (v) => setState(() => _company = v!),
+              value: _isForCompany,
+              onChanged: (v) => setState(() => _isForCompany = v ?? false),
               title: Text(
                 'Company',
                 style: TextStyle(color: widget.textPrimary),
@@ -130,32 +128,32 @@ class _EditActivityDialogState extends State<EditActivityDialog> {
               controlAffinity: ListTileControlAffinity.leading,
             ),
             CheckboxListTile(
-              value: _branch,
-              onChanged: (v) => setState(() => _branch = v!),
+              value: _isForBranch,
+              onChanged: (v) => setState(() => _isForBranch = v ?? false),
               title: Text(
                 'Branch',
                 style: TextStyle(color: widget.textPrimary),
               ),
               controlAffinity: ListTileControlAffinity.leading,
             ),
-            CheckboxListTile(
-              value: _section,
-              onChanged: (v) => setState(() => _section = v!),
-              title: Text(
-                'Section',
-                style: TextStyle(color: widget.textPrimary),
-              ),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            CheckboxListTile(
-              value: _subSection,
-              onChanged: (v) => setState(() => _subSection = v!),
-              title: Text(
-                'Sub-section',
-                style: TextStyle(color: widget.textPrimary),
-              ),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
+            // CheckboxListTile(
+            //   value: _section,
+            //   onChanged: (v) => setState(() => _section = v!),
+            //   title: Text(
+            //     'Section',
+            //     style: TextStyle(color: widget.textPrimary),
+            //   ),
+            //   controlAffinity: ListTileControlAffinity.leading,
+            // ),
+            // CheckboxListTile(
+            //   value: _subSection,
+            //   onChanged: (v) => setState(() => _subSection = v!),
+            //   title: Text(
+            //     'Sub-section',
+            //     style: TextStyle(color: widget.textPrimary),
+            //   ),
+            //   controlAffinity: ListTileControlAffinity.leading,
+            // ),
           ],
         ),
       ),

@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voicefirst/Models/business_activity.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
 import 'package:voicefirst/Models/business_activity_model.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/add_activity_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/edit_activity_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/view_activity_dialog.dart';
-
 import '../../../Core/Constants/api_endpoins.dart';
 
 class AddBusinessactivity extends StatefulWidget {
@@ -43,18 +43,18 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
 
   Future<void> _submitActivityToApi({
     required String name,
-    required bool company,
-    required bool branch,
-    required bool section,
-    required bool subSection,
+    required bool isForCompany,
+    required bool isForBranch,
+    // required bool section,
+    // required bool subSection,
   }) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
     final body = {
       "activityName": name,
-      "company": company,
-      "branch": branch,
-      "section": section,
-      "subSection": subSection,
+      "isForCompany": isForCompany,
+      "isForBranch": isForBranch,
+      // "section": section,
+      // "subSection": subSection,
     };
 
     try {
@@ -158,23 +158,9 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
         final model = BusinessActivityModel.fromJson(json);
 
         if (model.isSuccess) {
-          final fetched = model.data.map((activity) {
-            return {
-              'id': activity.id,
-              'business_activity_name': activity.activityName,
-              'company': activity.company ? 'y' : 'n',
-              'branch': activity.branch ? 'y' : 'n',
-              'section': activity.section ? 'y' : 'n',
-              'sub_section': activity.subSection ? 'y' : 'n',
-              'status': activity.status == true ? 'active' : 'inactive',
-
-              // 'status': activity.status,
-            };
-          }).toList();
-
           setState(() {
-            activities = fetched;
-            filteredActivities = List.from(fetched);
+            activities = model.data;
+            filteredActivities = List.from(activities);
             isdataLoaded = true;
           });
         } else {
@@ -194,7 +180,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
       selectedIds.clear();
       if (selectAll) {
         // Select only the currently *visible* (filtered) items.
-        selectedIds.addAll(filteredActivities.map((e) => e['id'] as String));
+        selectedIds.addAll(filteredActivities.map((e) => e.id));
       }
     });
   }
@@ -222,8 +208,8 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
   // ──────────────────────────────────────
 
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> filteredActivities = [];
-  List<Map<String, dynamic>> activities = [];
+  List<BusinessActivity> filteredActivities = [];
+  List<BusinessActivity> activities = [];
 
   List<MenuItem> menuItems = [];
 
@@ -253,8 +239,8 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
         filteredActivities = List.from(activities);
       } else {
         filteredActivities = activities.where((activity) {
-          final name = (activity['business_activity_name'] ?? '').toLowerCase();
-          return name.contains(query);
+          // final name = (activity['business_activity_name'] ?? '').toLowerCase();
+          return activity.activityName.toLowerCase().contains(query);
         }).toList();
       }
       debugPrint("Searching in ${activities.length} items");
@@ -287,7 +273,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                     if (confirmed) {
                       setState(() {
                         activities.removeWhere(
-                          (x) => selectedIds.contains(x['id']),
+                          (x) => selectedIds.contains(x.id),
                         );
                         // _filterActivities();
                         fetchBusinessActivities();
@@ -371,38 +357,37 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                     itemCount: filteredActivities.length,
                     itemBuilder: (ctx, i) {
                       final a = filteredActivities[i];
-                      final isSelected = selectedIds.contains(a['id']);
+                      final isSelected = selectedIds.contains(a.id);
                       final labels = <String>[];
-                      if (a['company'] == 'y') labels.add('Company');
-                      if (a['branch'] == 'y') labels.add('Branch');
-                      if (a['section'] == 'y') labels.add('Section');
-                      if (a['sub_section'] == 'y') labels.add('Sub-section');
+                      if (a.isForCompany == true) labels.add('Company');
+                      if (a.isForBranch == true) labels.add('Branch');
+                      // if (a['section'] == 'y') labels.add('Section');
+                      // if (a['sub_section'] == 'y') labels.add('Sub-section');
 
                       return GestureDetector(
                         onLongPress: () {
                           setState(() {
                             isMultiSelectMode = true;
-                            selectedIds.add(a['id']);
+                            selectedIds.add(a.id);
                           });
                         },
                         onTap: () {
                           if (isMultiSelectMode) {
                             setState(() {
                               if (isSelected) {
-                                selectedIds.remove(a['id']);
+                                selectedIds.remove(a.id);
                                 if (selectedIds.isEmpty) {
                                   isMultiSelectMode = false; // auto-exit
                                 }
                               } else {
-                                selectedIds.add(a['id']);
+                                selectedIds.add(a.id);
                               }
                             });
                           } else {
                             showDialog(
                               context: context,
                               builder: (_) => ViewActivityDialog(
-                                activity:
-                                    a, // <- this is correct, 'a' from your list item
+                                activity: a,
                                 onEdit: () => showDialog(
                                   context: context,
                                   builder: (_) => EditActivityDialog(
@@ -450,7 +435,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        a['business_activity_name'] ?? '',
+                                        a.activityName,
                                         style: TextStyle(
                                           color: _textPrimary,
                                           fontSize: 16,
@@ -458,6 +443,23 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                         ),
                                       ),
                                       const SizedBox(height: 6),
+                                      // if (labels.isNotEmpty)
+                                      //   Wrap(
+                                      //     spacing: 6,
+                                      //     children: labels
+                                      //         .map(
+                                      //           (t) => Chip(
+                                      //             label: Text(t),
+                                      //             backgroundColor: _chipColor,
+                                      //             labelStyle: TextStyle(
+                                      //               color: _textSecondary,
+                                      //             ),
+                                      //             visualDensity:
+                                      //                 VisualDensity.compact,
+                                      //           ),
+                                      //         )
+                                      //         .toList(),
+                                      //   ),
                                     ],
                                   ),
                                 ),
@@ -469,7 +471,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                       Transform.scale(
                                         scale: 0.60,
                                         child: Switch(
-                                          value: a['status'] == 'active',
+                                          value: a.status,
                                           activeColor: Colors.green,
                                           onChanged: (val) async {
                                             final confirm = await showDialog<bool>(
@@ -501,18 +503,23 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                             if (confirm == true) {
                                               final success =
                                                   await _updateStatusOnServer(
-                                                    a['id'],
+                                                    a.id,
                                                     val,
                                                   );
                                               if (success) {
-                                                setState(() {
-                                                  a['status'] = val
-                                                      ? 'active'
-                                                      : 'inactive';
-                                                });
+                                                // simplest: refetch so both lists stay in sync
+                                                await fetchBusinessActivities();
                                                 SnackbarHelper.showSuccess(
                                                   'Status Updated',
                                                 );
+                                                // setState(() {
+                                                //   a['status'] = val
+                                                //       ? 'active'
+                                                //       : 'inactive';
+                                                // });
+                                                // SnackbarHelper.showSuccess(
+                                                //   'Status Updated',
+                                                // );
                                               } else {
                                                 SnackbarHelper.showError(
                                                   'Failed to update Status',
@@ -557,15 +564,16 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
 
                                       if (confirm == true) {
                                         final success = await deleteactivities([
-                                          a['id'],
+                                          a.id,
                                         ]);
                                         if (success) {
-                                          setState(() {
-                                            activities.removeWhere(
-                                              (x) => x['id'] == a['id'],
-                                            );
-                                            fetchBusinessActivities(); // optional
-                                          });
+                                          // setState(() {
+                                          //   activities.removeWhere(
+                                          //     (x) => x['id'] == a['id'],
+                                          //   );
+                                          //   fetchBusinessActivities(); // optional
+                                          // });
+                                          await fetchBusinessActivities();
                                           SnackbarHelper.showSuccess(
                                             'Activity Deleted',
                                           );
@@ -583,9 +591,9 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                     onChanged: (val) {
                                       setState(() {
                                         if (val == true) {
-                                          selectedIds.add(a['id']);
+                                          selectedIds.add(a.id);
                                         } else {
-                                          selectedIds.remove(a['id']);
+                                          selectedIds.remove(a.id);
                                           if (selectedIds.isEmpty) {
                                             isMultiSelectMode = false;
                                           }
@@ -617,22 +625,15 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
           showDialog(
             context: context,
             builder: (_) => AddBusinessActivityDialog(
-              onSubmit:
-                  ({
-                    required String name,
-                    required bool company,
-                    required bool branch,
-                    required bool section,
-                    required bool subSection,
-                  }) async {
-                    await _submitActivityToApi(
-                      name: name,
-                      company: company,
-                      branch: branch,
-                      section: section,
-                      subSection: subSection,
-                    );
-                  },
+              onSubmit: (activity) async {
+                await _submitActivityToApi(
+                  name: activity.activityName,
+                  isForCompany: activity.isForCompany,
+                  isForBranch: activity.isForBranch,
+                  // section: section,
+                  // subSection: subSection,
+                );
+              },
             ),
           );
         },
