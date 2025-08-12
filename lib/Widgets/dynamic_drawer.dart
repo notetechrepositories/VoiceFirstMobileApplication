@@ -5,7 +5,9 @@ import 'package:voicefirst/Views/LoginPage/login_page.dart';
 class CustomDrawer extends StatelessWidget {
   final List<MenuItem> items;
 
-  Map<String, IconData> iconMap = {
+  CustomDrawer({super.key, required this.items});
+
+  final Map<String, IconData> iconMap = {
     'dashboard': Icons.dashboard,
     'settings': Icons.settings,
     'lock': Icons.lock,
@@ -23,7 +25,7 @@ class CustomDrawer extends StatelessWidget {
     'book-open': Icons.book,
     'compass': Icons.explore,
     'company': Icons.business,
-    'Users': Icons.person,
+    'users': Icons.person,
     'branch': Icons.location_city,
     'section': Icons.view_list,
     'sub section': Icons.category,
@@ -35,11 +37,11 @@ class CustomDrawer extends StatelessWidget {
     'roles': Icons.admin_panel_settings,
     'issue define': Icons.assignment,
   };
-  IconData _mapIcon(String iconName) {
-    return iconMap[iconName.trim().toLowerCase()] ?? Icons.menu;
-  }
 
-  CustomDrawer({super.key, required this.items});
+  IconData _mapIcon(String? iconName) {
+    final key = (iconName ?? '').trim().toLowerCase();
+    return iconMap[key] ?? Icons.menu;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,20 +50,18 @@ class CustomDrawer extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // Custom Header to match SplashScreen
+            // Header
             Container(
               padding: const EdgeInsets.symmetric(vertical: 30),
               width: double.infinity,
               decoration: const BoxDecoration(color: Colors.black),
               child: Column(
                 children: [
-                  // Logo Image (same as splash1.png)
                   Image.asset(
                     'assets/SplashScreenImage/splash1.png',
                     height: 80,
                   ),
                   const SizedBox(height: 12),
-                  // App Name Image (same as splash2.png)
                   Image.asset(
                     'assets/SplashScreenImage/splash2.png',
                     height: 30,
@@ -70,7 +70,9 @@ class CustomDrawer extends StatelessWidget {
                 ],
               ),
             ),
+
             const Divider(color: Colors.white24, thickness: 1),
+
             // Menu List
             Expanded(
               child: ListView(
@@ -80,19 +82,20 @@ class CustomDrawer extends StatelessWidget {
                     .toList(),
               ),
             ),
+
             Divider(color: Colors.white24),
+
+            // Logout
             ListTile(
-              leading: Icon(Icons.logout, color: const Color(0xFFFCC737)),
-              title: Text(
+              leading: const Icon(Icons.logout, color: Color(0xFFFCC737)),
+              title: const Text(
                 'Logout',
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white),
               ),
               onTap: () {
-                // 1. Close the drawer:
-                Navigator.of(context).pop();
-                // 2. Replace the current stack with the login route:
+                Navigator.of(context).pop(); // close drawer
                 Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
                 );
               },
             ),
@@ -112,13 +115,15 @@ class CustomDrawer extends StatelessWidget {
   }
 
   Widget _buildTile(MenuItem item, BuildContext context) {
+    final hasValidRoute = item.route != null && item.route!.trim().isNotEmpty;
+
     if (item.children.isEmpty) {
       return ListTile(
         leading: Icon(_mapIcon(item.icon), color: const Color(0xFFFCC737)),
         title: Text(item.name, style: const TextStyle(color: Colors.white)),
         onTap: () {
-          if (item.route != null && item.route!.isNotEmpty) {
-            Navigator.pushNamed(context, item.route!);
+          if (hasValidRoute) {
+            Navigator.pushNamed(context, item.route!.trim());
           }
         },
       );

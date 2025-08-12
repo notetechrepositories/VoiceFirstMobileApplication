@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Views/AdminSide/AdminHome/admin_home.dart';
 import 'package:voicefirst/Views/CompanySide/CompanyHome/company_home.dart';
 import 'package:voicefirst/Views/Dashboard/bottom_bar.dart';
 import 'package:voicefirst/Views/Registration/user_register_page1.dart';
@@ -19,9 +19,34 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  /// Secure storage keys
+  static const _kUserTokenKey = 'user_access_token';
+  static const _kCompanyTokenKey = 'company_access_token';
+  static const _kActiveTokenKey = 'active_access_token';
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   String _errorMessage = '';
+
+  Future<void> _saveTokens({String? userToken, String? companyToken}) async {
+    // Clear old tokens first (prevents stale values)
+    await _secureStorage.delete(key: _kUserTokenKey);
+    await _secureStorage.delete(key: _kCompanyTokenKey);
+    await _secureStorage.delete(key: _kActiveTokenKey);
+
+    if (userToken != null && userToken.isNotEmpty) {
+      await _secureStorage.write(key: _kUserTokenKey, value: userToken);
+    }
+    if (companyToken != null && companyToken.isNotEmpty) {
+      await _secureStorage.write(key: _kCompanyTokenKey, value: companyToken);
+    }
+  }
+
+  Future<void> _setActiveToken(String token) async {
+    await _secureStorage.write(key: _kActiveTokenKey, value: token);
+  }
 
   Future<void> _login() async {
     setState(() {
@@ -45,31 +70,53 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (response.statusCode == 200 && responseBody['isSuccess'] == true) {
-        final data = responseBody['data'];
-        final accessToken = data['accessToken'];
-        final isUser = data['user'] == true;
-        final isCompany = data['company'] == true;
+        final data = responseBody['data'] ?? {};
+        final String? userAccessToken = data['userAccessToken'];
+        final String? companyAccessToken = data['companyAccessToken'];
 
-        // Store the accessToken if needed using SharedPreferences, etc.
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', accessToken);
+        // Save both tokens if present
+        await _saveTokens(
+          userToken: userAccessToken,
+          companyToken: companyAccessToken,
+        );
 
-        if (isUser && isCompany) {
-          // Show popup to choose between User or Company
-          _showUserRoleSelectionDialog();
-        } else if (isUser) {
+        // Route & set active token based on what we received
+        if (userAccessToken != null && companyAccessToken != null) {
+          _showRoleChoiceDialog(
+            onUser: () async {
+              await _setActiveToken(userAccessToken);
+              if (!mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const Bottomnavbar()),
+              );
+            },
+            onCompany: () async {
+              await _setActiveToken(companyAccessToken);
+              if (!mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const CompanyHome()),
+              );
+            },
+          );
+        } else if (userAccessToken != null) {
+          await _setActiveToken(userAccessToken);
+          if (!mounted) return;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const Bottomnavbar()),
           );
-        } else if (isCompany) {
+        } else if (companyAccessToken != null) {
+          await _setActiveToken(companyAccessToken);
+          if (!mounted) return;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const CompanyHome()),
           );
         } else {
           setState(() {
-            _errorMessage = 'No valid role assigned to this account.';
+            _errorMessage = 'No valid access token returned.';
           });
         }
       } else {
@@ -85,30 +132,27 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showUserRoleSelectionDialog() {
+  void _showRoleChoiceDialog({
+    required Future<void> Function() onUser,
+    required Future<void> Function() onCompany,
+  }) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Select Role'),
-        content: const Text('You have access to both User and Company roles.'),
+        content: const Text('You can continue as User or Company.'),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(ctx); // Close dialog
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const Bottomnavbar()),
-              );
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await onUser();
             },
             child: const Text('User'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(ctx); // Close dialog
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const CompanyHome()),
-              );
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await onCompany();
             },
             child: const Text('Company'),
           ),
@@ -239,14 +283,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ],
                                   const SizedBox(height: 10),
                                   Row(
-                                    children: [
-                                      const Icon(
+                                    children: const [
+                                      Icon(
                                         Icons.check_circle,
                                         color: Colors.green,
                                         size: 20,
                                       ),
-                                      const SizedBox(width: 5),
-                                      const Text('Save Password'),
+                                      SizedBox(width: 5),
+                                      Text('Save Password'),
                                     ],
                                   ),
                                   const SizedBox(height: 30),
@@ -306,7 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
-                              'Dont have an account? Register Here',
+                              'Don\'t have an account? Register Here',
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: screenWidth * 0.045,
