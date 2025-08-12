@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Views/CompanySide/AnswerType/company_answer_type.dart';
 import 'package:voicefirst/Views/CompanySide/BusinessActivity/business_activity_comp.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       navigatorKey: SnackbarHelper.navigatorKey,
       home: SplashScreen(),
+
       routes: {
         'system-roles': (context) => RoleListScreen(),
         "system-business-activity": (context) => AddBusinessactivity(),
@@ -54,6 +56,7 @@ class MyApp extends StatelessWidget {
         "country": (context) => CountryView(),
         "system-answer-type": (context) => ManageAnswerTypePage(),
         "system-issue-type": (context) => ManageIssueTypeScreen(),
+        "answer-type": (context) => CompanyAnswerType(),
       },
     );
   }

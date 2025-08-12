@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Models/business_activity.dart';
 
 class AddBusinessActivityDialog extends StatefulWidget {
   //for single add
-  final Function({
-    required String name,
-    required bool company,
-    required bool branch,
-    required bool section,
-    required bool subSection,
-  })
-  onSubmit;
+  // final Function({
+  //   required String activityName,
+  //   required bool isForCompany,
+  //   required bool isForBranch,
+  //   // required bool section,
+  //   // required bool subSection,
+  // })
+  // onSubmit;
+
+  final Function(BusinessActivity) onSubmit;
 
   const AddBusinessActivityDialog({super.key, required this.onSubmit});
 
@@ -20,10 +23,10 @@ class AddBusinessActivityDialog extends StatefulWidget {
 
 class _AddBusinessActivityDialogState extends State<AddBusinessActivityDialog> {
   final TextEditingController _nameController = TextEditingController();
-  bool _company = false;
-  bool _branch = false;
-  bool _section = false;
-  bool _subSection = false;
+  bool _isForCompany = false;
+  bool _isForBranch = false;
+  // bool _section = false;
+  // bool _subSection = false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,23 +48,13 @@ class _AddBusinessActivityDialogState extends State<AddBusinessActivityDialog> {
             const SizedBox(height: 16),
             _buildCheckbox(
               'Company',
-              _company,
-              (v) => setState(() => _company = v),
+              _isForCompany,
+              (v) => setState(() => _isForCompany = v),
             ),
             _buildCheckbox(
               'Branch',
-              _branch,
-              (v) => setState(() => _branch = v),
-            ),
-            _buildCheckbox(
-              'Section',
-              _section,
-              (v) => setState(() => _section = v),
-            ),
-            _buildCheckbox(
-              'Sub-section',
-              _subSection,
-              (v) => setState(() => _subSection = v),
+              _isForBranch,
+              (v) => setState(() => _isForBranch = v),
             ),
           ],
         ),
@@ -74,13 +67,16 @@ class _AddBusinessActivityDialogState extends State<AddBusinessActivityDialog> {
         TextButton(
           onPressed: () {
             if (_nameController.text.trim().isEmpty) return;
-            widget.onSubmit(
-              name: _nameController.text.trim(),
-              company: _company,
-              branch: _branch,
-              section: _section,
-              subSection: _subSection,
+            final newActivity = BusinessActivity(
+              id: '',
+              activityName: _nameController.text.trim(),
+              isForCompany: _isForCompany,
+              isForBranch: _isForBranch,
+              status: true,
+              // section: _section,
+              // subSection: _subSection,
             );
+            widget.onSubmit(newActivity);
             Navigator.of(context).pop();
           },
           child: Text('Add', style: TextStyle(color: Color(0xFFFCC737))),

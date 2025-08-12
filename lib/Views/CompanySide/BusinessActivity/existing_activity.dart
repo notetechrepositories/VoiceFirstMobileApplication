@@ -41,10 +41,10 @@ class _ExistingActivityState extends State<ExistingActivity> {
             return {
               'id': activity.id,
               'business_activity_name': activity.activityName,
-              'company': activity.company ? 'y' : 'n',
-              'branch': activity.branch ? 'y' : 'n',
-              'section': activity.section ? 'y' : 'n',
-              'sub_section': activity.subSection ? 'y' : 'n',
+              // 'company': activity.company ? 'y' : 'n',
+              // 'branch': activity.branch ? 'y' : 'n',
+              // 'section': activity.section ? 'y' : 'n',
+              // 'sub_section': activity.subSection ? 'y' : 'n',
               'status': activity.status == true ? 'active' : 'inactive',
 
               // 'status': activity.status,

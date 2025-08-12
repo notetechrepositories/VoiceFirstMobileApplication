@@ -27,7 +27,7 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: widget.bgColor,
+      backgroundColor: const Color.fromARGB(255, 54, 52, 52),
       title: Text('Add Activity', style: TextStyle(color: widget.accentColor)),
       content: SingleChildScrollView(
         child: Column(
@@ -41,10 +41,10 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
                 labelStyle: TextStyle(color: widget.textSecondary),
               ),
             ),
-            _buildCheckbox('Company', _company, (v) => _company = v),
-            _buildCheckbox('Branch', _branch, (v) => _branch = v),
-            _buildCheckbox('Section', _section, (v) => _section = v),
-            _buildCheckbox('Sub-section', _subSection, (v) => _subSection = v),
+            // _buildCheckbox('Company', _company, (v) => _company = v),
+            // _buildCheckbox('Branch', _branch, (v) => _branch = v),
+            // _buildCheckbox('Section', _section, (v) => _section = v),
+            // _buildCheckbox('Sub-section', _subSection, (v) => _subSection = v),
           ],
         ),
       ),
