@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import '../../Core/Services/api_client.dart';
-import '../../Models/issue_type_model.dart';
+import '../../../Core/Services/api_client.dart';
+import '../../../Models/issue_type_model.dart';
 import 'add_issue_type.dart';
 
 class ManageIssueTypeScreen extends StatefulWidget {

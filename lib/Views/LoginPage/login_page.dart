@@ -1,4 +1,3 @@
-// lib/Views/LoginPage/login_page.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -32,10 +31,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _saveAllTokens({String? userToken, String? companyToken}) async {
-    if (userToken != null) {
+    if (userToken != null && userToken.isNotEmpty) {
       await _secureStorage.write(key: 'user_access_token', value: userToken);
     }
-    if (companyToken != null) {
+    if (companyToken != null && companyToken.isNotEmpty) {
       await _secureStorage.write(
         key: 'company_access_token',
         value: companyToken,
@@ -55,36 +54,40 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final res = await _dio.post(
         '/Auth/login',
-        data: jsonEncode({'username': username, 'password': password}),
+        // Let Dio JSON-encode a Map; no need to jsonEncode.
+        data: {'username': username, 'password': password},
       );
 
       setState(() => _isLoading = false);
 
-      // expected shape:
-      // { isSuccess, message, data: { userAccessToken, companyAccessToken } }
       final body = res.data is Map ? res.data as Map : jsonDecode(res.data);
       if (body['isSuccess'] == true && body['data'] != null) {
-        final data = body['data'] as Map;
-        final String? userToken = data['userAccessToken'];
-        final String? companyToken = data['companyAccessToken'];
+        final data = body['data'] as Map<String, dynamic>;
+        final String? userToken = data['userAccessToken'] as String?;
+        final String? companyToken = data['companyAccessToken'] as String?;
 
-        // Save everything
+        // Save both tokens
         await _saveAllTokens(userToken: userToken, companyToken: companyToken);
 
-        // Pick path
+        // Default the active token to COMPANY to avoid 401 on company-scoped pages prefetching data.
+        // The role picker below will override this if the user chooses "User".
+        if ((companyToken?.isNotEmpty ?? false)) {
+          await _setActiveToken(companyToken);
+        } else if ((userToken?.isNotEmpty ?? false)) {
+          await _setActiveToken(userToken);
+        }
+
+        // Route logic
         if ((userToken?.isNotEmpty ?? false) &&
             (companyToken?.isNotEmpty ?? false)) {
-          // let them pick which role to run with now
           _showRolePicker(userToken: userToken!, companyToken: companyToken!);
         } else if (userToken != null && userToken.isNotEmpty) {
-          await _setActiveToken(userToken);
           if (!mounted) return;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const Bottomnavbar()),
           );
         } else if (companyToken != null && companyToken.isNotEmpty) {
-          await _setActiveToken(companyToken);
           if (!mounted) return;
           Navigator.pushReplacement(
             context,
@@ -128,6 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
+              // Switch active token to USER when they pick User
               await _setActiveToken(userToken);
               if (!mounted) return;
               Navigator.pushReplacement(
@@ -140,6 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
+              // Switch active token to COMPANY when they pick Company
               await _setActiveToken(companyToken);
               if (!mounted) return;
               Navigator.pushReplacement(

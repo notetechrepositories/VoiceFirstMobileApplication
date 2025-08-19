@@ -1,3 +1,4 @@
+// lib/Core/Services/menu_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../Models/menu_item_model.dart';
@@ -10,9 +11,22 @@ Future<List<MenuItem>> fetchMenu() async {
     final res = await http.get(url);
     if (res.statusCode == 200) {
       final jsonData = jsonDecode(res.body);
-      final items = (jsonData['data'] as List)
-          .map((e) => MenuItem.fromJson(e))
+      final raw = (jsonData['data'] as List? ?? []);
+
+      // Parse with safe defaults
+      final allItems = raw
+          .map((e) => MenuItem.fromJson(e as Map<String, dynamic>))
           .toList();
+
+      // IMPORTANT: Only exclude items explicitly marked as deleted.
+      // Do NOT exclude inactive/null-active items—let backend decide visibility.
+      final items = allItems
+          .where((m) => !m.deleted && m.position.isNotEmpty)
+          .toList();
+      print('Parsed items: ${allItems.length}, kept: ${items.length}');
+      for (final i in items) {
+        print('> ${i.position} | ${i.name} | route=${i.route}');
+      }
 
       return buildMenuTree(items);
     } else {
@@ -34,36 +48,32 @@ List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
     for (var item in flatList) item.position: item,
   };
 
-  // Set to track positions that should be ignored because parent has a route
-  final Set<String> disabledPrefixes = {};
+  // Collect positions that have a non-empty route.
+  // Any descendant of those positions is hidden (parent remains).
+  final Set<String> disabledPrefixes = {
+    for (var item in flatList)
+      if ((item.route ?? '').isNotEmpty) item.position,
+  };
 
-  // Step 1: Identify parent positions with non-empty routes
-  for (var item in flatList) {
-    if (item.route != null && item.route!.isNotEmpty) {
-      disabledPrefixes.add(item.position);
-    }
-  }
-
-  // Step 2: Build the tree
-  List<MenuItem> roots = [];
+  final List<MenuItem> roots = [];
 
   for (var item in flatList) {
-    // Skip if this item's position starts with a disabled prefix (e.g., "F", "FA", "FAB")
-    if (disabledPrefixes.any(
+    // Hide descendants under a routed parent; keep the parent itself.
+    final underDisabledParent = disabledPrefixes.any(
       (prefix) => item.position != prefix && item.position.startsWith(prefix),
-    )) {
-      continue;
-    }
+    );
+    if (underDisabledParent) continue;
 
     if (item.position.length == 1) {
       roots.add(item);
     } else {
       final parentPos = item.position.substring(0, item.position.length - 1);
-      if (positionMap.containsKey(parentPos)) {
-        positionMap[parentPos]!.children = [
-          ...positionMap[parentPos]!.children,
-          item,
-        ];
+      final parent = positionMap[parentPos];
+      if (parent != null) {
+        parent.children = [...parent.children, item];
+      } else {
+        // If parent is missing (bad data), treat as root so it still shows
+        roots.add(item);
       }
     }
   }
