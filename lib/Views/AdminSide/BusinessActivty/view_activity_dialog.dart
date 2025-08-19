@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicefirst/Models/business_activity.dart';
+import 'package:voicefirst/Models/business_activity_model1.dart';
 
 class ViewActivityDialog extends StatelessWidget {
   final BusinessActivity activity;

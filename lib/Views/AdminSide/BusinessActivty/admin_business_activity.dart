@@ -1,16 +1,13 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Services/api_client.dart';
-import 'package:voicefirst/Models/business_activity.dart';
+import 'package:voicefirst/Models/business_activity_model1.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Models/menu_item_model.dart';
 import 'package:voicefirst/Models/business_activity_model.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/add_activity_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/edit_activity_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/view_activity_dialog.dart';
-import '../../../Core/Constants/api_endpoins.dart';
 
 class AddBusinessactivity extends StatefulWidget {
   const AddBusinessactivity({super.key});
@@ -22,23 +19,26 @@ class AddBusinessactivity extends StatefulWidget {
 class _AddBusinessactivityState extends State<AddBusinessactivity> {
   final Dio _dio = ApiClient().dio;
 
-  Future<bool> deleteactivities(List<String> id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
+  Future<bool> deleteactivities(List<String> ids) async {
+    // final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
 
     try {
-      final response = await http.delete(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(id),
-      );
+      final response = await _dio.delete('/business-activities', data: ids);
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['isSuccess'] == true;
+      if (response.statusCode == 200 &&
+          response.data is Map<String, dynamic> &&
+          response.data['isSuccess'] == true) {
+        // final json = jsonDecode(response.body);
+        return true;
       } else {
-        debugPrint('delete failed with status:${response.statusCode}');
+        debugPrint(
+          'delete failed with status:${response.statusCode} ${response.data}',
+        );
         return false;
       }
+    } on DioException catch (e) {
+      debugPrint('Error deleting activity: ${e.response?.data ?? e.message}');
+      return false;
     } catch (e) {
       debugPrint('Error deleting activity: $e');
       return false;
@@ -49,165 +49,190 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
     required String name,
     required bool isForCompany,
     required bool isForBranch,
-    // required bool section,
-    // required bool subSection,
   }) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
     final body = {
       "activityName": name,
       "isForCompany": isForCompany,
       "isForBranch": isForBranch,
-      // "section": section,
-      // "subSection": subSection,
     };
 
     try {
-      debugPrint('Sending: ${jsonEncode(body)}');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+      final res = await _dio.post('/business-activities', data: body);
 
-      final json = jsonDecode(response.body);
-      if (json['isSuccess'] == true) {
-        fetchBusinessActivities();
+      if (res.statusCode == 200 &&
+          res.data is Map<String, dynamic> &&
+          res.data['isSuccess'] == true) {
+        final data = res.data['data']; // NEW
+        if (data is Map<String, dynamic>) {
+          // NEW
+          final created = BusinessActivity.fromJson(data); // NEW
+          setState(() {
+            // NEW
+            final idx = activities.indexWhere((x) => x.id == created.id);
+            if (idx >= 0) {
+              activities[idx] = created; // replace if somehow existed
+            } else {
+              activities.add(created); // append new item
+            }
+            _filterActivities(); // keep filtered list in sync
+          });
+        }
+        // fetchBusinessActivities();
         SnackbarHelper.showSuccess('Activity added successfully');
+      } else if (res.statusCode == 409 ||
+          (res.data is Map &&
+              ((res.data['errorType']?.toString().toLowerCase() ==
+                      'duplicate') ||
+                  (res.data['message']?.toString().toLowerCase().contains(
+                        'exist',
+                      ) ??
+                      false)))) {
+        final msg = (res.data is Map && res.data['message'] != null)
+            ? res.data['message'].toString()
+            : 'Activity already exists.';
+        SnackbarHelper.showError(msg);
       } else {
-        final errorMessage = json['message'] ?? 'Failed to add activity';
-        SnackbarHelper.showError(errorMessage);
+        final msg = (res.data is Map && res.data['message'] != null)
+            ? res.data['message'].toString()
+            : 'failed to add activity';
+        SnackbarHelper.showError(msg);
       }
+    } on DioException catch (e) {
+      // NEW: catch 409 from error path too
+      if (e.response?.statusCode == 409) {
+        final msg = e.response?.data is Map<String, dynamic>
+            ? (e.response!.data['message']?.toString() ??
+                  'Activity already exists.')
+            : 'Activity already exists.';
+        SnackbarHelper.showError(msg);
+        return;
+      }
+
+      final msg = e.response?.data is Map<String, dynamic>
+          ? (e.response!.data['message']?.toString() ?? e.message)
+          : e.message;
+      SnackbarHelper.showError('Failed to add activity: $msg');
     } catch (e) {
-      debugPrint('Error: $e');
       SnackbarHelper.showError('Something went wrong. Please try again.');
     }
   }
 
-  // Future<void> _addActivity({
-  //   required String name,
-  //   required bool isForCompany,
-  //   required bool isForBranch,
-  // }) async {
-  //   final body = {
-  //     "activityName": name,
-  //     "isForCompany": isForCompany,
-  //     "isForBranch": isForBranch,
-  //   };
-
-  //   try {
-  //     final res = await _dio.post('/business-activities', data: body);
-
-  //     if (res.statusCode == 200 &&
-  //         res.data is Map<String, dynamic> &&
-  //         res.data['isSuccess'] == true) {
-  //       fetchBusinessActivities();
-  //       SnackbarHelper.showSuccess('Activity added successfully');
-  //     } else {
-  //       final msg = (res.data is Map && res.data['message'] != null)
-  //           ? res.data['message'].toString()
-  //           : 'failed to add activity';
-  //       SnackbarHelper.showError(msg);
-  //     }
-  //   } on DioException catch (e) {
-  //     final msg = e.response?.data is Map<String, dynamic>
-  //         ? (e.response!.data['message']?.toString() ?? e.message)
-  //         : e.message;
-  //     SnackbarHelper.showError('Failed to add activity: $msg');
-  //   } catch (e) {
-  //     SnackbarHelper.showError('Something went wrong. Please try again.');
-  //   }
-  // }
-
-  Future<Map<String, dynamic>?> _updateActivityOnServer(
-    Map<String, dynamic> body,
-  ) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
-
+  //status update
+  Future<bool> _updateStatus(String id, bool status) async {
     try {
-      final response = await http.put(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
+      final res = await _dio.patch(
+        '/business-activities',
+        data: {'id': id, 'status': status},
       );
-
-      final json = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        debugPrint('Activity updated successfully.');
-        SnackbarHelper.showSuccess('Activity updated successfully.');
-        return json['data'];
-      } else if (response.statusCode == 409) {
-        // Handle "already exists" conflict
-        SnackbarHelper.showError('Activity already exists.');
-      } else {
-        // Handle other API errors
-        SnackbarHelper.showError('Failed to update activity.');
-        debugPrint('Failed to update activity: ${response.statusCode}');
-      }
-
-      return null;
-    } catch (e) {
-      debugPrint('Error updating activity: $e');
-      SnackbarHelper.showError('An unexpected error occurred.');
-      return null;
-    }
-  }
-
-  //update status
-  Future<bool> _updateStatusOnServer(String id, bool status) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
-
-    final body = {'id': id, 'status': status};
-
-    try {
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 200) {
-        debugPrint('Status updated to $status');
+      if (res.statusCode == 200 &&
+          res.data is Map<String, dynamic> &&
+          res.data['isSuccess'] == true) {
+        debugPrint('Status Updated Successfully');
+        SnackbarHelper.showSuccess('Status Updated');
         return true;
-        // return data['isSuccess'] == true;
-      } else if (response.statusCode == 409) {
-        // Conflict: activity already exists or similar business rule violation
-        _showConflictDialog(); // <-- Call custom dialog
+      } else if (res.statusCode == 409) {
+        _showConflictDialog();
         return false;
       } else {
-        debugPrint('Failed to update status: ${response.statusCode}');
+        debugPrint('Failed to update status : ${res.statusCode} ${res.data}');
         return false;
       }
+    } on DioException catch (e) {
+      debugPrint('Error updating status : ${e.response?.data ?? e.message}');
+      return false;
     } catch (e) {
       debugPrint('Error updating status: $e');
       return false;
     }
   }
 
-  //get all activities list from db
+  //append to list from response
 
-  Future<void> fetchBusinessActivities() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities/all');
-
+  Future<Map<String, dynamic>?> _updateActivity(
+    Map<String, dynamic> body,
+  ) async {
     try {
-      final response = await http.get(url);
+      final res = await _dio.put(
+        '/business-activities',
+        data: body,
+      ); // still sending only changed fields + id
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final model = BusinessActivityModel.fromJson(json);
+      if (res.statusCode == 200 &&
+          res.data is Map<String, dynamic> &&
+          res.data['isSuccess'] == true) {
+        final data = res.data['data'];
+
+        //  update local lists (replace by id or append)
+        if (data is Map<String, dynamic>) {
+          final updated = BusinessActivity.fromJson(data);
+          setState(() {
+            final idx = activities.indexWhere((x) => x.id == updated.id);
+            if (idx >= 0) {
+              activities[idx] = updated;
+            } else {
+              activities.add(updated);
+            }
+            _filterActivities(); // keep filteredActivities in sync
+          });
+        }
+
+        SnackbarHelper.showSuccess('Activity updated successfully.');
+        return (data is Map<String, dynamic>) ? data : null;
+      } else if (res.statusCode == 409) {
+        SnackbarHelper.showError('Activity already exists.');
+        return null;
+      } else {
+        final msg = (res.data is Map && res.data['message'] != null)
+            ? res.data['message'].toString()
+            : 'Failed to update activity.';
+        SnackbarHelper.showError(msg);
+        return null;
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map<String, dynamic>
+          ? (e.response!.data['message']?.toString() ?? e.message)
+          : e.message;
+      SnackbarHelper.showError('failed to update activity: $msg');
+      return null;
+    } catch (e) {
+      SnackbarHelper.showError('An unexpected error occurred.');
+      return null;
+    }
+  }
+
+  //update status
+  //get all activities list from db
+  //using dio and activity model
+  Future<void> fetchBusinessActivities() async {
+    try {
+      // baseUrl already set in ApiClient; token added by interceptor
+      final res = await _dio.get('/business-activities/all');
+
+      if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
+        final model = BusinessActivityModel.fromJson(
+          res.data as Map<String, dynamic>,
+        );
 
         if (model.isSuccess) {
           setState(() {
-            activities = model.data;
-            filteredActivities = List.from(activities);
+            activities = model.data; // List<BusinessActivity>
+            filteredActivities = List.from(model.data);
             isdataLoaded = true;
           });
         } else {
-          debugPrint('Error: ${model.message}');
+          debugPrint('Error from API: ${model.message}');
         }
       } else {
-        debugPrint('Failed to fetch activities: ${response.statusCode}');
+        final msg = (res.data is Map && res.data['message'] != null)
+            ? res.data['message'].toString()
+            : 'Invalid API response';
+        debugPrint('Failed to fetch activities: $msg');
       }
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map<String, dynamic>
+          ? (e.response!.data['message']?.toString() ?? e.message)
+          : e.message;
+      debugPrint('Failed to fetch activities: $msg');
     } catch (e) {
       debugPrint('Exception occurred: $e');
     }
@@ -435,7 +460,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                     textPrimary: _textPrimary,
                                     textSecondary: _textSecondary,
                                     accentColor: _accentColor,
-                                    onUpdate: _updateActivityOnServer,
+                                    onUpdate: _updateActivity,
                                     onUpdated: () => setState(() {
                                       _filterActivities();
                                     }),
@@ -525,7 +550,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                                     onPressed: () =>
                                                         Navigator.of(
                                                           context,
-                                                        ).pop(false),
+                                                        ).pop(),
                                                     child: Text('Cancel'),
                                                   ),
                                                   TextButton(
@@ -541,7 +566,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
 
                                             if (confirm == true) {
                                               final success =
-                                                  await _updateStatusOnServer(
+                                                  await _updateStatus(
                                                     a.id,
                                                     val,
                                                   );

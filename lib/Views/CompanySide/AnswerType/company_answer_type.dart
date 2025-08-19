@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicefirst/Core/Constants/api_endpoins.dart';
+import 'package:voicefirst/Core/Services/api_client.dart';
 import 'package:voicefirst/Models/company_answer_type_model.dart';
 import 'package:voicefirst/Views/CompanySide/AnswerType/existing_answertype.dart';
+import 'package:voicefirst/Widgets/snack_bar.dart';
 
 class CompanyAnswerType extends StatefulWidget {
   const CompanyAnswerType({super.key});
@@ -20,13 +23,15 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
   final _searchController = TextEditingController();
   String _statusFilter = "All";
 
+  final Dio _dio = ApiClient().dio;
+
   // Page-specific colour palette
-  final Color _bgColor = Colors.black; // page background
+  // final Color _bgColor = Colors.black; // page background
   final Color _cardColor = Color(0xFF262626); // dark grey card
-  final Color _chipColor = Color(0xFF212121); // chip background
+  // final Color _chipColor = Color(0xFF212121); // chip background
   final Color _accentColor = Color(0xFFFCC737); // gold accent
   final Color _textPrimary = Colors.white; // main text
-  final Color _textSecondary = Colors.white60; // secondary text
+  // final Color _textSecondary = Colors.white60; // secondary text
 
   @override
   void initState() {
@@ -34,35 +39,34 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
     _fetchCompanyAnswerTypes();
   }
 
-  // Future<void> _fetchAnswerTypes() async {
-  //   final res = await http.get(
-  //     Uri.parse('${ApiEndpoints.baseUrl}/company-answer-type/all'),
-  //   );
-  //   if (res.statusCode == 200) {
-  //     final data = jsonDecode(res.body);
-  //     final List list = data['data'];
-  //     setState(() {
-  //       _answerTypes = list.map((e) => CompanyAnswerTypeModel.fromJson(e)).toList();
-  //       _applyFilters();
-  //     });
-  //   }
-  // }
   Future<void> _fetchCompanyAnswerTypes() async {
-    final res = await http.get(
-      Uri.parse('${ApiEndpoints.baseUrl}/company-answer-type/all'),
-    );
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      final List list =
-          data['data']; // Fetching the data array from the response
+    try {
+      final res = await _dio.get('/company-answer-type/all');
+      if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
+        // final data = jsonDecode(res.body);
+        final List list =
+            (res.data['data'] as List?) ??
+            []; // Fetching the data array from the response
 
-      setState(() {
-        // Convert each item in the list to a CompanyCompanyAnswerTypeModel instance
-        _companyAnswerTypes = list
-            .map((e) => CompanyAnswerTypeModel.fromJson(e))
-            .toList();
-        _applyFilters(); // <-- add this
-      });
+        // setState(() {
+        //   // Convert each item in the list to a CompanyCompanyAnswerTypeModel instance
+        //   _companyAnswerTypes = list
+        //       .map((e) => CompanyAnswerTypeModel.fromJson(e as Map).cast<String,dynamic>(),)            .toList();
+        //   _applyFilters(); // <-- add this
+        // });
+        setState(() {
+          _companyAnswerTypes = list
+              .map(
+                (e) => CompanyAnswerTypeModel.fromJson(
+                  (e as Map).cast<String, dynamic>(),
+                ),
+              )
+              .toList();
+          _applyFilters();
+        });
+      }
+    } on DioException catch (e) {
+      debugPrint('failed to fetch company answewr types : ${e.message}');
     }
   }
 
@@ -126,34 +130,56 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
                 final name = controller.text.trim();
                 if (name.isEmpty) return;
 
-                final url = Uri.parse(
-                  '${ApiEndpoints.baseUrl}/company-answer-type',
-                );
+                try {
+                  const path = '/company-answer-type';
 
-                final res = isEditing
-                    ? await http.put(
-                        url,
-                        headers: {'Content-Type': 'application/json'},
-                        body: jsonEncode({
-                          'id': existing.id,
-                          'companyAnswerTypeName': name, //  correct key
-                          // 'status': existing.status,
-                          // keep existing.answerTypeId if your API needs it:
-                          // 'answerTypeId': existing.answerTypeId,
-                        }),
-                      )
-                    : await http.post(
-                        url,
-                        headers: {'Content-Type': 'application/json'},
-                        body: jsonEncode({
-                          'companyAnswerTypeName':
-                              name, // custom add: only name
-                        }),
-                      );
+                  final res = isEditing
+                      ? await _dio.put(
+                          path,
+                          data: {
+                            'id': existing!.id, // was 'Id'
+                            'companyAnswerTypeName': name, // correct key
+                          },
+                        )
+                      : await _dio.post(
+                          path,
+                          data: {
+                            'companyAnswerTypeName': name, // correct key
+                          },
+                        );
 
-                if (res.statusCode == 200 || res.statusCode == 201) {
-                  if (context.mounted) Navigator.pop(ctx);
-                  await _fetchCompanyAnswerTypes();
+                  if ((res.statusCode ?? 0) == 200 ||
+                      (res.statusCode ?? 0) == 201) {
+                    if (res.data is Map && res.data['isSuccess'] == true) {
+                      if (context.mounted) Navigator.pop(ctx);
+                      await _fetchCompanyAnswerTypes();
+                    } else {
+                      // show backend message
+                      final msg =
+                          (res.data is Map && res.data['message'] is String)
+                          ? res.data['message'] as String
+                          : 'Operation failed.';
+                      Navigator.of(context).pop();
+                      SnackbarHelper.showError(msg);
+                    }
+                  } else {
+                    // non-200 → show backend message if present
+                    final msg =
+                        (res.data is Map && res.data['message'] is String)
+                        ? res.data['message'] as String
+                        : 'Request failed.';
+                    Navigator.of(context).pop();
+                    SnackbarHelper.showError(msg);
+                  }
+                } on DioException catch (e) {
+                  // show backend message from error response if present
+                  final msg =
+                      (e.response?.data is Map &&
+                          e.response!.data['message'] is String)
+                      ? e.response!.data['message'] as String
+                      : (e.message ?? 'Request failed');
+                  Navigator.of(context).pop();
+                  SnackbarHelper.showError(msg);
                 }
               },
               child: Text(isEditing ? 'Save Changes' : 'Add'),
@@ -166,26 +192,36 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
 
   Future<void> _toggleAnswerStatus(CompanyAnswerTypeModel answer) async {
     final newStatus = !answer.status;
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/company-answer-type');
-    final body = jsonEncode({"id": answer.id, "status": newStatus});
+    try {
+      final url = '/company-answer-type';
+      // final body = jsonEncode({"id": answer.id, "status": newStatus});
 
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    );
+      final response = await _dio.patch(
+        url,
+        data: {'Id': answer.id, 'Status': newStatus},
+      );
 
-    if (response.statusCode == 200) {
-      final result = jsonDecode(response.body);
-      if (result['isSuccess']) {
+      if (response.statusCode == 200 &&
+          response.data is Map<String, dynamic> &&
+          response.data['isSuccess'] == true) {
+        // final result = jsonDecode(response.data);
+
         setState(() {
           answer.status = newStatus;
           _applyFilters();
         });
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Status updated")));
+        ).showSnackBar(const SnackBar(content: Text("Status updated")));
+      } else {
+        debugPrint('update failed : ${response.data}');
+        SnackbarHelper.showError('Failed to update status');
       }
+    } on DioException catch (e) {
+      debugPrint(
+        'Toggle error: ${e.response?.statusCode} ${e.response?.data ?? e.message}',
+      );
+      SnackbarHelper.showError('failed to update status ');
     }
   }
 
@@ -195,7 +231,7 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Confirm Bulk Delete"),
+        title: Text("Confirm Delete"),
         content: Text("Are you sure you want to delete selected items?"),
         actions: [
           TextButton(
@@ -211,22 +247,37 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
     );
 
     if (confirm != true) return;
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/company-answer-type');
-    final res = await http.delete(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(_selectedIds.toList()),
-    );
+    try {
+      final url = '/company-answer-type';
+      final res = await _dio.delete(
+        url,
+        data: jsonEncode(_selectedIds.toList()),
+      );
 
-    if (res.statusCode == 200) {
-      setState(() {
-        _companyAnswerTypes.removeWhere((e) => _selectedIds.contains(e.id));
-        _selectedIds.clear();
-        _applyFilters();
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Items deleted")));
+      if (res.statusCode == 200 &&
+          res.data is Map<String, dynamic> &&
+          res.data['isSuccess'] == true) {
+        setState(() {
+          _companyAnswerTypes.removeWhere((e) => _selectedIds.contains(e.id));
+          _selectedIds.clear();
+          _applyFilters();
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Items deleted")));
+      } else {
+        final msg = (res.data is Map && res.data['message'] is String)
+            ? res.data['message'] as String
+            : 'Failed to delete items';
+        SnackbarHelper.showError(msg);
+      }
+    } on DioException catch (e) {
+      // Keep error simple; token/headers handled by ApiClient
+      final msg =
+          (e.response?.data is Map && (e.response!.data['message'] is String))
+          ? e.response!.data['message'] as String
+          : (e.message ?? 'Request failed');
+      SnackbarHelper.showError('Failed to delete items: $msg');
     }
   }
 
