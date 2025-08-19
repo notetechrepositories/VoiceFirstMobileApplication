@@ -3,11 +3,11 @@ import 'package:voicefirst/Views/CompanySide/AnswerType/company_answer_type.dart
 import 'package:voicefirst/Views/CompanySide/BusinessActivity/business_activity_comp.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
-import 'package:voicefirst/Views/IssueType/issue_type.dart';
-import 'package:voicefirst/Views/Roles/role_screen.dart';
+import 'package:voicefirst/Views/AdminSide/IssueType/issue_type.dart';
+import 'package:voicefirst/Views/AdminSide/Roles/role_screen.dart';
 import 'package:voicefirst/Views/Splash/splash_screen.dart';
+import 'Views/AdminSide/AnswerType/answer_type.dart';
 import 'Views/AdminSide/BusinessActivty/admin_business_activity.dart';
-import 'Views/AnswerType/answer_type.dart';
 import 'Views/Dashboard/user_home_screen.dart';
 
 void main() {
