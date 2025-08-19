@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicefirst/Models/business_activity.dart';
+import 'package:voicefirst/Models/business_activity_model1.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 
 class EditActivityDialog extends StatefulWidget {
@@ -23,6 +23,7 @@ class EditActivityDialog extends StatefulWidget {
     required this.onUpdated,
     required this.onCancel,
   });
+
 
   @override
   State<EditActivityDialog> createState() => _EditActivityDialogState();
@@ -52,39 +53,26 @@ class _EditActivityDialogState extends State<EditActivityDialog> {
     final newName = _nameController.text.trim();
     if (newName.isEmpty) return;
 
-    final updatedData = <String, dynamic>{"id": widget.activity.id};
+    // final updatedData = <String, dynamic>{"id": widget.activity.id};
 
-    if (widget.activity.activityName != newName) {
-      updatedData['activityName'] = newName;
-    }
-    if (_isForCompany != widget.activity.isForCompany) {
-      updatedData['isForCompany'] = _isForCompany;
-    }
-    if (_isForBranch != widget.activity.isForBranch) {
-      updatedData['isForBranch'] = _isForBranch;
-    }
+    final updatedData = widget.activity.copyWith(
+      activityName: newName,
+      isForCompany: _isForCompany,
+      isForBranch: _isForBranch,
+    );
 
-    if (updatedData.length == 1) {
+    final patch = updatedData.patchFrom(widget.activity);
+
+    if (patch.length == 1) {
+      //only id is present. ie no changes
       Navigator.of(context).pop();
       SnackbarHelper.showSuccess('No changes to update');
       return;
     }
 
-    final updatedActivity = await widget.onUpdate(updatedData);
+    final updatedActivity = await widget.onUpdate(patch);
 
     if (updatedActivity != null) {
-      // widget.activity['business_activity_name'] =
-      //     updatedActivity['activityName'];
-      // widget.activity['company'] = updatedActivity['company'] ? 'y' : 'n';
-      // widget.activity['branch'] = updatedActivity['branch'] ? 'y' : 'n';
-      // widget.activity['section'] = updatedActivity['section'] ? 'y' : 'n';
-      // widget.activity['sub_section'] = updatedActivity['subSection']
-      //     ? 'y'
-      //     : 'n';
-      // widget.activity['status'] = updatedActivity['status']
-      //     ? 'active'
-      //     : 'inactive';
-
       widget.onUpdated();
       if (mounted) {
         Navigator.of(context).pop();
