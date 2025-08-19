@@ -1,48 +1,68 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
+// lib/Core/Services/role_service.dart
+import 'package:dio/dio.dart';
+import '../Services/api_client.dart';
 import '../../Models/role_model.dart';
-import '../Constants/api_endpoins.dart';
+import '../../Models/permission_model.dart';
 
+// GET /roles  (company-scoped)
 Future<List<RoleModel>> fetchRoles() async {
-  final url = Uri.parse('${ApiEndpoints.baseUrl}/roles/all');
+  final dio = ApiClient().dio;
 
-  try {
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['isSuccess'] == true && body['data'] != null) {
-        final List rolesJson = body['data'];
-        return rolesJson.map((json) => RoleModel.fromJson(json, {})).toList();
-      }
-    } else {
-      print('Failed to load roles: ${response.statusCode}');
-    }
-  } catch (e) {
-    print('Error fetching roles: $e');
+  final res = await dio.get(
+    '/roles',
+    options: Options(extra: {'auth': 'company'}), // important
+  );
+
+  if (res.statusCode == null || res.statusCode! ~/ 100 != 2) {
+    throw Exception('Failed to fetch roles');
   }
-  return [];
+
+  final List data = (res.data['data'] as List?) ?? const [];
+  return data.map<RoleModel>((e) {
+    // Map API -> app model
+    final List<dynamic> rp = e['rolePrograms'] as List<dynamic>? ?? const [];
+    final perms = rp.map((p) {
+      return ProgramPermissionModel(
+        id: p['id'] as String?,
+        programId: (p['programId'] as String?) ?? '',
+        // label often not present in rolePrograms; can be enriched later
+        label: p['label'] as String?,
+        create: p['create'] == true,
+        update: p['update'] == true,
+        view: p['view'] == true,
+        delete: p['delete'] == true,
+        download: p['download'] == true,
+        email: p['email'] == true,
+      );
+    }).toList();
+
+    return RoleModel(
+      id: e['id'] as String?,
+      name: (e['roleName'] as String?) ?? '',
+      allLocationAccess: e['allLocationAccess'] == true,
+      allIssueAccess: e['allIssuesAccess'] == true, // plural in API
+      status: e['status'] != false,
+      permissions: perms,
+    );
+  }).toList();
 }
 
-Future<bool> deleteRoles(List<String> roleIds) async {
-  final url = Uri.parse("${ApiEndpoints.baseUrl}/roles");
+// DELETE /roles/{id} (loop simple version)
+Future<bool> deleteRoles(List<String> ids) async {
+  final dio = ApiClient().dio;
 
-  try {
-    final response = await http.delete(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(roleIds),
+  for (final raw in ids) {
+    final id = raw.trim();
+    if (id.isEmpty) continue;
+
+    final res = await dio.delete(
+      '/roles/$id',
+      options: Options(extra: {'auth': 'company'}),
     );
 
-    if (response.statusCode == 200) {
-      print("Role(s) deleted successfully");
-      return true;
-    } else {
-      print("Failed to delete roles: ${response.statusCode}");
+    if (res.statusCode == null || res.statusCode! ~/ 100 != 2) {
       return false;
     }
-  } catch (e) {
-    print("Error deleting roles: $e");
-    return false;
   }
+  return true;
 }
