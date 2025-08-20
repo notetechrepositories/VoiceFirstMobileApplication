@@ -8,6 +8,7 @@ import 'package:voicefirst/Views/AdminSide/Roles/role_screen.dart';
 import 'package:voicefirst/Views/Splash/splash_screen.dart';
 import 'Views/AdminSide/AnswerType/answer_type.dart';
 import 'Views/AdminSide/BusinessActivty/admin_business_activity.dart';
+import 'Views/AdminSide/MediaType/add_media_type.dart';
 import 'Views/Dashboard/user_home_screen.dart';
 
 void main() {
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
         "system-answer-type": (context) => ManageAnswerTypePage(),
         "system-issue-type": (context) => ManageIssueTypeScreen(),
         "answer-type": (context) => CompanyAnswerType(),
+        "system-media-type": (context) => ManageMediaTypePage(),
       },
     );
   }

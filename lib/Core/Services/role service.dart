@@ -10,7 +10,7 @@ Future<List<RoleModel>> fetchRoles() async {
 
   final res = await dio.get(
     '/roles',
-    options: Options(extra: {'auth': 'company'}), // important
+    options: Options(extra: {'auth': 'company'}),
   );
 
   if (res.statusCode == null || res.statusCode! ~/ 100 != 2) {
@@ -19,13 +19,11 @@ Future<List<RoleModel>> fetchRoles() async {
 
   final List data = (res.data['data'] as List?) ?? const [];
   return data.map<RoleModel>((e) {
-    // Map API -> app model
     final List<dynamic> rp = e['rolePrograms'] as List<dynamic>? ?? const [];
     final perms = rp.map((p) {
       return ProgramPermissionModel(
         id: p['id'] as String?,
         programId: (p['programId'] as String?) ?? '',
-        // label often not present in rolePrograms; can be enriched later
         label: p['label'] as String?,
         create: p['create'] == true,
         update: p['update'] == true,
@@ -40,29 +38,32 @@ Future<List<RoleModel>> fetchRoles() async {
       id: e['id'] as String?,
       name: (e['roleName'] as String?) ?? '',
       allLocationAccess: e['allLocationAccess'] == true,
-      allIssueAccess: e['allIssuesAccess'] == true, // plural in API
+      allIssueAccess: e['allIssuesAccess'] == true,
       status: e['status'] != false,
       permissions: perms,
     );
   }).toList();
 }
 
-// DELETE /roles/{id} (loop simple version)
+/// Delete roles by IDs with a JSON array body.
+/// Contract: DELETE /roles
+/// Body: ["id1","id2", ...]
 Future<bool> deleteRoles(List<String> ids) async {
   final dio = ApiClient().dio;
 
-  for (final raw in ids) {
-    final id = raw.trim();
-    if (id.isEmpty) continue;
+  final body = ids.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  if (body.isEmpty) return false;
 
-    final res = await dio.delete(
-      '/roles/$id',
-      options: Options(extra: {'auth': 'company'}),
-    );
+  final res = await dio.delete(
+    '/roles',
+    data: body, // JSON array
+    options: Options(
+      extra: {'auth': 'company'},
+      // Don't throw on 404; we'll return false instead
+      validateStatus: (code) => true,
+    ),
+  );
 
-    if (res.statusCode == null || res.statusCode! ~/ 100 != 2) {
-      return false;
-    }
-  }
-  return true;
+  // Treat any 2xx (incl. 204) as success
+  return res.statusCode != null && res.statusCode! ~/ 100 == 2;
 }

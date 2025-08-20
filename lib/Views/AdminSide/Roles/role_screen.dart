@@ -58,6 +58,13 @@ class _RoleListScreenState extends State<RoleListScreen> {
   }
 
   Future<void> _deleteRole(RoleModel role) async {
+    if (role.id == null || role.id!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Missing role id; cannot delete.")),
+      );
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -80,7 +87,7 @@ class _RoleListScreenState extends State<RoleListScreen> {
 
     if (confirm != true) return;
 
-    final ok = await deleteRoles([role.id ?? ""]);
+    final ok = await deleteRoles([role.id!]);
     if (ok) {
       await loadRoles();
       if (!mounted) return;
