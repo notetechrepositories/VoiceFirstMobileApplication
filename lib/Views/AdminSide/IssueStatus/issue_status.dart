@@ -2,20 +2,19 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:voicefirst/Core/Services/api_client.dart';
-import 'package:voicefirst/Models/company_answer_type_model.dart';
-import 'package:voicefirst/Views/CompanySide/AnswerType/existing_answertype.dart';
+import 'package:voicefirst/Models/issue_status_model.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 
-class CompanyAnswerType extends StatefulWidget {
-  const CompanyAnswerType({super.key});
+class IssueStatus extends StatefulWidget {
+  const IssueStatus({super.key});
 
   @override
-  State<CompanyAnswerType> createState() => _CompanyAnswerTypeState();
+  State<IssueStatus> createState() => _IssueStatusState();
 }
 
-class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
-  List<CompanyAnswerTypeModel> _companyAnswerTypes = [];
-  List<CompanyAnswerTypeModel> _filtered = [];
+class _IssueStatusState extends State<IssueStatus> {
+  List<IssueStatusModel> _companyAnswerTypes = [];
+  List<IssueStatusModel> _filtered = [];
   final Set<String> _selectedIds = {};
 
   final _searchController = TextEditingController();
@@ -23,39 +22,28 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
 
   final Dio _dio = ApiClient().dio;
 
-  // Page-specific colour palette
-  // final Color _bgColor = Colors.black; // page background
-  final Color _cardColor = Color(0xFF262626); // dark grey card
-  // final Color _chipColor = Color(0xFF212121); // chip background
-  final Color _accentColor = Color(0xFFFCC737); // gold accent
-  final Color _textPrimary = Colors.white; // main text
-  // final Color _textSecondary = Colors.white60; // secondary text
+  
 
   @override
   void initState() {
     super.initState();
-    _fetchCompanyAnswerTypes();
+    _fetchIssueStatuss();
   }
 
-  Future<void> _fetchCompanyAnswerTypes() async {
+  Future<void> _fetchIssueStatuss() async {
     try {
-      final res = await _dio.get('/company-answer-type/all');
+      final res = await _dio.get('/issue-status/all');
       if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
         // final data = jsonDecode(res.body);
         final List list =
             (res.data['data'] as List?) ??
             []; // Fetching the data array from the response
 
-        // setState(() {
-        //   // Convert each item in the list to a CompanyCompanyAnswerTypeModel instance
-        //   _companyAnswerTypes = list
-        //       .map((e) => CompanyAnswerTypeModel.fromJson(e as Map).cast<String,dynamic>(),)            .toList();
-        //   _applyFilters(); // <-- add this
-        // });
+        
         setState(() {
           _companyAnswerTypes = list
               .map(
-                (e) => CompanyAnswerTypeModel.fromJson(
+                (e) => IssueStatusModel.fromJson(
                   (e as Map).cast<String, dynamic>(),
                 ),
               )
@@ -64,14 +52,14 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
         });
       }
     } on DioException catch (e) {
-      debugPrint('failed to fetch company answewr types : ${e.message}');
+      debugPrint('failed to fetch company issue status : ${e.message}');
     }
   }
 
   void _applyFilters() {
     setState(() {
       _filtered = _companyAnswerTypes.where((item) {
-        final matchesText = item.companyAnswerTypeName.toLowerCase().contains(
+        final matchesText = item.issueStatus.toLowerCase().contains(
           _searchController.text.toLowerCase(),
         );
         final matchesStatus =
@@ -83,10 +71,8 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
     });
   }
 
-  Future<void> _showAddEditDialog({CompanyAnswerTypeModel? existing}) async {
-    final controller = TextEditingController(
-      text: existing?.companyAnswerTypeName ?? '',
-    );
+  Future<void> _showAddEditDialog({IssueStatusModel? existing}) async {
+    final controller = TextEditingController(text: existing?.issueStatus ?? '');
     final isEditing = existing != null;
 
     await showDialog(
@@ -95,14 +81,14 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
         return AlertDialog(
           backgroundColor: Colors.grey[900],
           title: Text(
-            isEditing ? 'Edit Answer Type' : 'Add Answer Type',
+            isEditing ? 'Edit Issue Status' : 'Add Issue Status',
             style: const TextStyle(color: Colors.white),
           ),
           content: TextField(
             controller: controller,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: "Enter Answer Type Name",
+              hintText: "Enter Issue Status Name",
               hintStyle: const TextStyle(color: Colors.white70),
               filled: true,
               fillColor: Colors.grey[850],
@@ -129,20 +115,20 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
                 if (name.isEmpty) return;
 
                 try {
-                  const path = '/company-answer-type';
+                  const path = '/issue-status';
 
                   final res = isEditing
                       ? await _dio.put(
                           path,
                           data: {
                             'id': existing.id, // was 'Id'
-                            'companyAnswerTypeName': name, // correct key
+                            'issueStatus': name, // correct key
                           },
                         )
                       : await _dio.post(
                           path,
                           data: {
-                            'companyAnswerTypeName': name, // correct key
+                            'issueStatus': name, // correct key
                           },
                         );
 
@@ -150,7 +136,7 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
                       (res.statusCode ?? 0) == 201) {
                     if (res.data is Map && res.data['isSuccess'] == true) {
                       if (context.mounted) Navigator.pop(ctx);
-                      await _fetchCompanyAnswerTypes();
+                      await _fetchIssueStatuss();
                     } else {
                       // show backend message
                       final msg =
@@ -188,15 +174,15 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
     );
   }
 
-  Future<void> _toggleAnswerStatus(CompanyAnswerTypeModel answer) async {
-    final newStatus = !answer.status;
+  Future<void> _toggleAnswerStatus(IssueStatusModel issueStatus) async {
+    final newStatus = !issueStatus.status;
     try {
-      final url = '/company-answer-type';
-      // final body = jsonEncode({"id": answer.id, "status": newStatus});
+      final url = '/issue-status';
+      // final body = jsonEncode({"id": issueStatus.id, "status": newStatus});
 
       final response = await _dio.patch(
         url,
-        data: {'Id': answer.id, 'Status': newStatus},
+        data: {'Id': issueStatus.id, 'Status': newStatus},
       );
 
       if (response.statusCode == 200 &&
@@ -205,7 +191,7 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
         // final result = jsonDecode(response.data);
 
         setState(() {
-          answer.status = newStatus;
+          issueStatus.status = newStatus;
           _applyFilters();
         });
         ScaffoldMessenger.of(
@@ -246,7 +232,7 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
 
     if (confirm != true) return;
     try {
-      final url = '/company-answer-type';
+      final url = '/issue-status';
       final res = await _dio.delete(
         url,
         data: jsonEncode(_selectedIds.toList()),
@@ -284,7 +270,7 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text('Manage Answer Type'),
+        title: Text('Manage Issue Status'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
@@ -296,7 +282,7 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showChoiceDialog(context),
+        onPressed: () => _showAddEditDialog(),
         backgroundColor: Color(0xFFFCC737),
         foregroundColor: Colors.black,
         child: Icon(Icons.add),
@@ -345,15 +331,17 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
               child: _filtered.isEmpty
                   ? Center(
                       child: Text(
-                        'No Answer Types Found',
+                        'No Issue Statuss Found',
                         style: TextStyle(color: Colors.white70),
                       ),
                     )
                   : ListView.builder(
                       itemCount: _filtered.length,
                       itemBuilder: (ctx, i) {
-                        final answer = _filtered[i];
-                        final isSelected = _selectedIds.contains(answer.id);
+                        final issueStatus = _filtered[i];
+                        final isSelected = _selectedIds.contains(
+                          issueStatus.id,
+                        );
                         return Card(
                           color: Colors.grey[900],
                           child: ListTile(
@@ -362,30 +350,61 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
                               onChanged: (val) {
                                 setState(() {
                                   if (val == true) {
-                                    _selectedIds.add(answer.id);
+                                    _selectedIds.add(issueStatus.id);
                                   } else {
-                                    _selectedIds.remove(answer.id);
+                                    _selectedIds.remove(issueStatus.id);
                                   }
                                 });
                               },
                             ),
                             title: Text(
-                              answer.companyAnswerTypeName,
+                              issueStatus.issueStatus,
                               style: TextStyle(color: Colors.white),
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Switch(
-                                  value: answer.status,
-                                  onChanged: (_) => _toggleAnswerStatus(answer),
-                                  activeColor: Colors.greenAccent,
-                                  inactiveThumbColor: Colors.redAccent,
+                                Transform.scale(
+                                  scale: 0.7,
+                                  child: Switch(
+                                    value: issueStatus.status,
+                                    activeColor: Colors.green,
+                                    inactiveThumbColor: Colors.redAccent,
+                                    onChanged: (val) async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Confirm'),
+                                          content: Text(
+                                            'Are you sure want to ${val ? 'activate' : 'deactivate'} this issue status?',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(false),
+                                              child: const Text('cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(true),
+                                              child: const Text('Yes'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        await _toggleAnswerStatus(issueStatus);
+                                      }
+                                    },
+                                  ),
                                 ),
+                                
                                 IconButton(
                                   icon: Icon(Icons.edit, color: Colors.amber),
                                   onPressed: () =>
-                                      _showAddEditDialog(existing: answer),
+                                      _showAddEditDialog(existing: issueStatus),
                                 ),
                               ],
                             ),
@@ -393,54 +412,6 @@ class _CompanyAnswerTypeState extends State<CompanyAnswerType> {
                         );
                       },
                     ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showChoiceDialog(BuildContext ctx) {
-    showDialog(
-      context: ctx,
-      builder: (_) => AlertDialog(
-        backgroundColor: _cardColor,
-        title: Text(
-          'Add Custom AnswerType',
-          style: TextStyle(color: _accentColor),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.list, color: _textPrimary),
-              title: Text(
-                'Select from existing',
-                style: TextStyle(color: _textPrimary),
-              ),
-              onTap: () async {
-                Navigator.of(ctx).pop();
-                // // _showSelectExistingDialog(ctx);
-                final added = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ExistingAnswertype()),
-                );
-                if (added == true) {
-                  // Navigator.of(context).pop();
-                  await _fetchCompanyAnswerTypes();
-                }
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.create, color: _textPrimary),
-              title: Text(
-                'Create your own',
-                style: TextStyle(color: _textPrimary),
-              ),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                _showAddEditDialog();
-              },
             ),
           ],
         ),

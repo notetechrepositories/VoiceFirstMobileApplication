@@ -32,7 +32,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _birthYearController = TextEditingController();
-  CountryModel? selectedCountryCode; //for phn code
+  CountryModel? selectedCountryCode; //for phn
+  // CountryModel? selectedIsoCode;
   List<CountryModel> _countries = [];
 
   List<CountryModel> countries = [];
@@ -65,9 +66,24 @@ class _RegistrationPageState extends State<RegistrationPage> {
           countries = fetched;
           selectedCountryCode = countries.firstWhere(
             (c) => c.id == registrationData.countryCode,
-            orElse: () => CountryModel(id: '', country: '', countryCode: ''),
+            orElse: () => CountryModel(
+              id: '',
+              country: '',
+              countryCode: '',
+              countryIsoCode: '',
+            ),
           );
+          // selectedIsoCode = countries.firstWhere(
+          //   (c) => c.id == registrationData.countryIsoCode,
+          //   orElse: () => CountryModel(
+          //     id: '',
+          //     country: '',
+          //     countryCode: '',
+          //     countryIsoCode: '',
+          //   ),
+          // );
           if (selectedCountryCode?.id == '') selectedCountryCode = null;
+          // if (selectedIsoCode?.id == '') selectedIsoCode = null;
 
           // filteredCountries = List.from(fetched);
           // filteredCountries = countries
@@ -100,6 +116,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     countryId: '',
     countryLabel: '',
     countryCode: '',
+    countryIsoCode: '',
     countryCodeLabel: '',
     divisionOneId: '',
     divisionOneLabel: '',
@@ -166,6 +183,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
           countryLabel: '',
           countryCode: '',
           countryCodeLabel: '',
+          countryIsoCode: '',
           divisionOneId: '',
           divisionOneLabel: '',
           divisionTwoId: '',
@@ -188,7 +206,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
       id: registrationData.countryCode,
       countryCode: registrationData.countryCodeLabel,
       country: '', // optional
+      countryIsoCode: '',
     );
+    
     print(selectedCountryCode);
 
     // if (registrationData.birthYear != 0) {
@@ -331,86 +351,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                         // Mobile number row
                                         Row(
                                           children: [
-                                            // Dropdown for country code
-                                            // SizedBox(
-                                            //   width: 100,
-                                            //   child: Container(
-                                            //     padding: EdgeInsets.symmetric(
-                                            //       horizontal: 8,
-                                            //     ),
-                                            //     decoration: BoxDecoration(
-                                            //       border: Border.all(
-                                            //         color: Colors.grey,
-                                            //       ),
-                                            //       borderRadius:
-                                            //           BorderRadius.circular(10),
-                                            //     ),
-                                            //     child: DropdownButtonHideUnderline(
-                                            //       //for unique couyntry list
-
-                                            //       // child: DropdownButton<CountryModel>(
-                                            //       //   value: selectedCountryCode,
-                                            //       //   hint: Text('Code'),
-                                            //       //   items: uniqueCountryList.map(
-                                            //       //     (country) {
-                                            //       //       return DropdownMenuItem<
-                                            //       //         CountryModel
-                                            //       //       >(
-                                            //       //         value: country,
-                                            //       //         child: Text(
-                                            //       //           country.countryCode,
-                                            //       //         ),
-                                            //       //       );
-                                            //       //     },
-                                            //       //   ).toList(),
-                                            //       //   onChanged: (value) {
-                                            //       //     setState(() {
-                                            //       //       selectedCountryCode =
-                                            //       //           value; //now selectedCountry holds both code & ID
-                                            //       //     });
-                                            //       //   },
-                                            //       // ),
-
-                                            //       //for all list
-
-                                            //       child: DropdownButtonFormField<CountryModel>(
-                                            //         isExpanded: true,
-                                            //         decoration: InputDecoration(
-                                            //           border: OutlineInputBorder(
-                                            //             borderRadius:
-                                            //                 BorderRadius.circular(
-                                            //                   10,
-                                            //                 ),
-                                            //           ),
-                                            //         ),
-                                            //         value:
-                                            //             countries.contains(
-                                            //               selectedCountryCode,
-                                            //             )
-                                            //             ? selectedCountryCode
-                                            //             : null,
-                                            //         hint: Text('Code'),
-                                            //         items: countries.map((
-                                            //           country,
-                                            //         ) {
-                                            //           return DropdownMenuItem(
-                                            //             value: country,
-                                            //             child: Text(
-                                            //               country.countryCode,
-                                            //             ),
-                                            //           );
-                                            //         }).toList(),
-                                            //         onChanged: (value) {
-                                            //           setState(
-                                            //             () =>
-                                            //                 selectedCountryCode =
-                                            //                     value,
-                                            //           );
-                                            //         },
-                                            //       ),
-                                            //     ),
-                                            //   ),
-                                            // ),
+                                            
                                             SizedBox(
                                               width: 100,
                                               child:
@@ -444,7 +385,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                                       return DropdownMenuItem(
                                                         value: country,
                                                         child: Text(
-                                                          country.countryCode,
+                                                          '${country.countryCode}-${country.countryIsoCode}',
                                                         ),
                                                       );
                                                     }).toList(),
@@ -607,15 +548,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                                     countryCodeLabel:
                                                         selectedCountryCode
                                                             ?.countryCode ??
-                                                        '', // This is the visible code like +91
+                                                        '',
+                                                        countryIsoCode: selectedCountryCode?.countryIsoCode ?? '', // This is the visible code like +91
                                                   );
 
-                                              // if (_selectedGender.isEmpty) {
-                                              //   SnackbarHelper.showError(
-                                              //     'select a gender',
-                                              //   );
-                                              //   return; // Prevent navigation
-                                              // }
+                                              
 
                                               final result =
                                                   await Navigator.push(

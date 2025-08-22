@@ -15,6 +15,7 @@ class RegistrationData {
 
   final String countryCode;
   final String countryCodeLabel;
+  final String countryIsoCode;
 
   final String divisionOneId;
   final String divisionOneLabel;
@@ -43,6 +44,7 @@ class RegistrationData {
     required this.countryLabel,
     required this.countryCode,
     required this.countryCodeLabel,
+    required this.countryIsoCode,
     required this.divisionOneId,
     required this.divisionOneLabel,
     required this.divisionTwoId,
@@ -68,6 +70,7 @@ class RegistrationData {
     String? countryLabel,
     String? countryCode,
     String? countryCodeLabel,
+    String? countryIsoCode,
     String? divisionOneId,
     String? divisionOneLabel,
     String? divisionTwoId,
@@ -92,6 +95,7 @@ class RegistrationData {
       countryLabel: countryLabel ?? this.countryLabel,
       countryCode: countryCode ?? this.countryCode,
       countryCodeLabel: countryCodeLabel ?? this.countryCodeLabel,
+      countryIsoCode: countryIsoCode ?? this.countryIsoCode,
       divisionOneId: divisionOneId ?? this.divisionOneId,
       divisionOneLabel: divisionOneLabel ?? this.divisionOneLabel,
       divisionTwoId: divisionTwoId ?? this.divisionTwoId,
@@ -117,6 +121,7 @@ class RegistrationData {
       'gender': gender,
       'country': countryId,
       'countryCode': countryCode,
+      'countryIsoCode':countryIsoCode,
       'divisionOne': divisionOneId,
       'divisionTwo': divisionTwoId,
       'divisionThree': divisionThreeId,
@@ -126,7 +131,6 @@ class RegistrationData {
     };
   }
 
-  
   factory RegistrationData.fromJson(Map<String, dynamic> json) {
     return RegistrationData(
       firstName: json['firstName'] ?? '',
@@ -142,6 +146,7 @@ class RegistrationData {
       countryLabel: '',
       countryCode: json['countryCode'] ?? '',
       countryCodeLabel: '',
+      countryIsoCode: json['countryIsoCode'] ?? '',
       divisionOneId: json['divisionOne'] ?? '',
       divisionOneLabel: '',
       divisionTwoId: json['divisionTwo'] ?? '',
@@ -153,6 +158,4 @@ class RegistrationData {
       confirmPassword: json['confirmPassword'] ?? '',
     );
   }
-
-  
 }
