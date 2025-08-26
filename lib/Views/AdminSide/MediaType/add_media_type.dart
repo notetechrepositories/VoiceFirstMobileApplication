@@ -26,7 +26,10 @@ class _ManageMediaTypePageState extends State<ManageMediaTypePage> {
 
   Future<void> _fetchMediaTypes() async {
     try {
-      final res = await _dio.get('http://59.94.176.2:8022/api/media-type');
+      final res = await _dio.get(
+        '/media-type',
+        options: Options(extra: {'auth': 'company'}),
+      );
       if (res.statusCode == 200) {
         final List list = res.data['data'] as List? ?? [];
         setState(() {
