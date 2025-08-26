@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:voicefirst/Views/AdminSide/IssueStatus/issue_status.dart';
 import 'package:voicefirst/Views/CompanySide/AnswerType/company_answer_type.dart';
 import 'package:voicefirst/Views/CompanySide/BusinessActivity/business_activity_comp.dart';
+import 'package:voicefirst/Views/CompanySide/CompanyIssueStatus/company_issue_status.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_view.dart';
 import 'package:voicefirst/Views/AdminSide/IssueType/issue_type.dart';
@@ -59,6 +61,8 @@ class MyApp extends StatelessWidget {
         "system-issue-type": (context) => ManageIssueTypeScreen(),
         "answer-type": (context) => CompanyAnswerType(),
         "system-media-type": (context) => ManageMediaTypePage(),
+        "system-issue-status": (context) => IssueStatus(),
+        "issue-status": (context) => CompanyIssueStatus(),
       },
     );
   }

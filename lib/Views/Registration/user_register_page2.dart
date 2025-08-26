@@ -150,7 +150,7 @@ class _RegPageState extends State<RegPage> {
             prefill: prefill,
             divisionOneId: selectedDiv1!.id,
           );
-        }
+        } 
       } else {
         debugPrint('Failed to fetch Division One: ${response.statusCode}');
       }
@@ -169,6 +169,7 @@ class _RegPageState extends State<RegPage> {
     );
 
     try {
+      
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -280,6 +281,7 @@ class _RegPageState extends State<RegPage> {
         id: registrationData.countryId,
         country: registrationData.countryLabel,
         countryCode: registrationData.countryCodeLabel,
+        countryIsoCode: registrationData.countryIsoCode,
         divisionOneLabel: registrationData.divisionOneLabel,
         divisionTwoLabel: registrationData.divisionTwoLabel,
         divisionThreeLabel: registrationData.divisionThreeLabel,

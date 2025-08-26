@@ -2,6 +2,7 @@ class CountryModel {
   final String id;
   final String country;
   final String countryCode;
+  final String? countryIsoCode;
   final String? divisionOneLabel;
   final String? divisionTwoLabel;
   final String? divisionThreeLabel;
@@ -11,6 +12,7 @@ class CountryModel {
     required this.id,
     required this.country,
     required this.countryCode,
+    this.countryIsoCode,
     this.divisionOneLabel,
     this.divisionTwoLabel,
     this.divisionThreeLabel,
@@ -22,6 +24,7 @@ class CountryModel {
       id: json['id'],
       country: json['country'],
       countryCode: json['countryCode'],
+      countryIsoCode: json['countryIsoCode'],
       divisionOneLabel: json['divisionOneLabel'],
       divisionTwoLabel: json['divisionTwoLabel'],
       divisionThreeLabel: json['divisionThreeLabel'],

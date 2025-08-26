@@ -1,12 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:voicefirst/Core/Services/menu_service.dart';
 
 // 1. import your model & drawer
 import 'package:voicefirst/Models/menu_item_model.dart';
 import 'package:voicefirst/Widgets/dynamic_drawer.dart';
 
-import '../../../Core/Constants/api_endpoins.dart';
 
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
@@ -24,54 +22,17 @@ class _AdminHomeState extends State<AdminHome> {
     loadMenu();
   }
 
+  
   Future<void> loadMenu() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/menus/app');
     try {
-      final res = await http.get(url);
-      if (res.statusCode == 200) {
-        final jsonData = jsonDecode(res.body);
-        // final items = (jsonData['data']['Items'] as List)
-        //     .map((e) => MenuItem.fromJson(e))
-        //     .toList();
-
-        final items = (jsonData['data'] as List)
-            .map((e) => MenuItem.fromJson(e))
-            .toList();
-
-        setState(() {
-          menuItems = buildMenuTree(items);
-        });
-      } else {
-        debugPrint('Menu fetch failed: ${res.statusCode}');
-      }
+      final items = await fetchMenu(); // Dio + parsed + tree built
+      if (!mounted) return;
+      setState(() => menuItems = items);
     } catch (e) {
       debugPrint('Menu load error: $e');
+      if (!mounted) return;
+      setState(() => menuItems = []);
     }
-  }
-
-  List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
-    flatList.sort((a, b) => a.position.compareTo(b.position));
-    Map<String, MenuItem> positionMap = {
-      for (var item in flatList) item.position: item,
-    };
-
-    List<MenuItem> roots = [];
-
-    for (var item in flatList) {
-      if (item.position.length == 1) {
-        roots.add(item);
-      } else {
-        final parentPos = item.position.substring(0, item.position.length - 1);
-        if (positionMap.containsKey(parentPos)) {
-          positionMap[parentPos]!.children = [
-            ...positionMap[parentPos]!.children,
-            item,
-          ];
-        }
-      }
-    }
-
-    return roots;
   }
 
   @override
