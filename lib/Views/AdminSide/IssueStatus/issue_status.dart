@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:voicefirst/Core/Services/api_client.dart';
@@ -15,14 +14,17 @@ class IssueStatus extends StatefulWidget {
 class _IssueStatusState extends State<IssueStatus> {
   List<IssueStatusModel> _companyAnswerTypes = [];
   List<IssueStatusModel> _filtered = [];
+  bool isMultiSelectMode = false;
   final Set<String> _selectedIds = {};
+
+  // final Set<String> _selectedIds = {};
 
   final _searchController = TextEditingController();
   String _statusFilter = "All";
 
   final Dio _dio = ApiClient().dio;
 
-  
+  final Color _accentColor = Color(0xFFFCC737); // gold accent
 
   @override
   void initState() {
@@ -39,7 +41,6 @@ class _IssueStatusState extends State<IssueStatus> {
             (res.data['data'] as List?) ??
             []; // Fetching the data array from the response
 
-        
         setState(() {
           _companyAnswerTypes = list
               .map(
@@ -113,24 +114,14 @@ class _IssueStatusState extends State<IssueStatus> {
               onPressed: () async {
                 final name = controller.text.trim();
                 if (name.isEmpty) return;
-
                 try {
                   const path = '/issue-status';
-
                   final res = isEditing
                       ? await _dio.put(
                           path,
-                          data: {
-                            'id': existing.id, // was 'Id'
-                            'issueStatus': name, // correct key
-                          },
+                          data: {'id': existing.id, 'issueStatus': name},
                         )
-                      : await _dio.post(
-                          path,
-                          data: {
-                            'issueStatus': name, // correct key
-                          },
-                        );
+                      : await _dio.post(path, data: {'issueStatus': name});
 
                   if ((res.statusCode ?? 0) == 200 ||
                       (res.statusCode ?? 0) == 201) {
@@ -147,7 +138,7 @@ class _IssueStatusState extends State<IssueStatus> {
                       SnackbarHelper.showError(msg);
                     }
                   } else {
-                    // non-200 → show backend message if present
+                    // non-200 - show backend message if present
                     final msg =
                         (res.data is Map && res.data['message'] is String)
                         ? res.data['message'] as String
@@ -194,9 +185,7 @@ class _IssueStatusState extends State<IssueStatus> {
           issueStatus.status = newStatus;
           _applyFilters();
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Status updated")));
+        SnackbarHelper.showSuccess("Status updated");
       } else {
         debugPrint('update failed : ${response.data}');
         SnackbarHelper.showError('Failed to update status');
@@ -209,61 +198,158 @@ class _IssueStatusState extends State<IssueStatus> {
     }
   }
 
-  Future<void> _deleteSelected() async {
-    if (_selectedIds.isEmpty) return;
+  // Future<void> _deleteSelected() async {
+  //   if (_selectedIds.isEmpty) return;
 
-    final confirm = await showDialog<bool>(
+  //   final confirm = await showDialog<bool>(
+  //     context: context,
+  //     builder: (ctx) => AlertDialog(
+  //       title: Text("Confirm Delete"),
+  //       content: Text("Are you sure you want to delete selected items?"),
+  //       actions: [
+  //         TextButton(
+  //           child: Text("Cancel"),
+  //           onPressed: () => Navigator.pop(ctx, false),
+  //         ),
+  //         ElevatedButton(
+  //           child: Text("Delete"),
+  //           onPressed: () => Navigator.pop(ctx, true),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+
+  //   if (confirm != true) return;
+  //   try {
+  //     final url = '/issue-status';
+  //     final res = await _dio.delete(
+  //       url,
+  //       data: jsonEncode(_selectedIds.toList()),
+  //     );
+
+  //     if (res.statusCode == 200 &&
+  //         res.data is Map<String, dynamic> &&
+  //         res.data['isSuccess'] == true) {
+  //       setState(() {
+  //         _companyAnswerTypes.removeWhere((e) => _selectedIds.contains(e.id));
+  //         _selectedIds.clear();
+  //         _applyFilters();
+  //       });
+  //       SnackbarHelper.showSuccess("Items deleted");
+  //     } else {
+  //       final msg = (res.data is Map && res.data['message'] is String)
+  //           ? res.data['message'] as String
+  //           : 'Failed to delete items';
+  //       SnackbarHelper.showError(msg);
+  //     }
+  //   } on DioException catch (e) {
+  //     final msg =
+  //         (e.response?.data is Map && (e.response!.data['message'] is String))
+  //         ? e.response!.data['message'] as String
+  //         : (e.message ?? 'Request failed');
+  //     SnackbarHelper.showError('Failed to delete items: $msg');
+  //   }
+  // }
+
+  // Future<bool> _deleteIssueStatuses(List<String> ids) async {
+  //   try {
+  //     final res = await _dio.delete('/issue-status', data: ids);
+  //     return res.statusCode == 200 &&
+  //         res.data is Map<String, dynamic> &&
+  //         res.data['isSuccess'] == true;
+  //   } on DioException catch (e) {
+  //     debugPrint('Delete failed: ${e.response?.data ?? e.message}');
+  //     return false;
+  //   } catch (e) {
+  //     debugPrint('Delete failed: $e');
+  //     return false;
+  //   }
+  // }
+
+  Future<void> _deleteIssueStatuses(
+    List<String> ids, {
+    String? labelForSingle,
+  }) async {
+    if (ids.isEmpty) return;
+    final isBulk = ids.length > 1;
+
+    final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text("Confirm Delete"),
-        content: Text("Are you sure you want to delete selected items?"),
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm'),
+        content: Text(
+          isBulk
+              ? 'Delete ${ids.length} selected items?'
+              : 'Delete "${labelForSingle ?? 'this item'}"?',
+        ),
         actions: [
           TextButton(
-            child: Text("Cancel"),
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            child: Text("Delete"),
-            onPressed: () => Navigator.pop(ctx, true),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
           ),
         ],
       ),
     );
+    if (ok != true) return;
 
-    if (confirm != true) return;
     try {
-      final url = '/issue-status';
-      final res = await _dio.delete(
-        url,
-        data: jsonEncode(_selectedIds.toList()),
-      );
-
-      if (res.statusCode == 200 &&
+      final res = await _dio.delete('/issue-status', data: ids);
+      final success =
+          res.statusCode == 200 &&
           res.data is Map<String, dynamic> &&
-          res.data['isSuccess'] == true) {
+          res.data['isSuccess'] == true;
+
+      if (success) {
         setState(() {
-          _companyAnswerTypes.removeWhere((e) => _selectedIds.contains(e.id));
-          _selectedIds.clear();
-          _applyFilters();
+          _companyAnswerTypes.removeWhere((e) => ids.contains(e.id));
+          _filtered.removeWhere((e) => ids.contains(e.id));
+          _selectedIds.removeAll(ids);
+          if (_selectedIds.isEmpty) isMultiSelectMode = false;
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Items deleted")));
+        SnackbarHelper.showSuccess(
+          isBulk ? 'Items deleted' : 'Issue status deleted',
+        );
       } else {
         final msg = (res.data is Map && res.data['message'] is String)
             ? res.data['message'] as String
-            : 'Failed to delete items';
+            : 'Failed to delete ${isBulk ? 'items' : 'item'}';
         SnackbarHelper.showError(msg);
       }
     } on DioException catch (e) {
-      // Keep error simple; token/headers handled by ApiClient
       final msg =
-          (e.response?.data is Map && (e.response!.data['message'] is String))
+          e.response?.data is Map && e.response!.data['message'] is String
           ? e.response!.data['message'] as String
           : (e.message ?? 'Request failed');
-      SnackbarHelper.showError('Failed to delete items: $msg');
+      SnackbarHelper.showError('Failed to delete: $msg');
+    } catch (e) {
+      SnackbarHelper.showError('Failed to delete: $e');
     }
   }
+
+  void _enterSelectionMode({bool selectAll = false}) {
+    setState(() {
+      isMultiSelectMode = true;
+      _selectedIds.clear();
+      if (selectAll) {
+        _selectedIds.addAll(_filtered.map((e) => e.id));
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      isMultiSelectMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  /// Are *all visible* items currently selected?
+  bool get _allVisibleSelected =>
+      _filtered.isNotEmpty && _selectedIds.length == _filtered.length;
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +363,7 @@ class _IssueStatusState extends State<IssueStatus> {
           if (_selectedIds.isNotEmpty)
             IconButton(
               icon: Icon(Icons.delete_forever),
-              onPressed: _deleteSelected,
+              onPressed: () => _deleteIssueStatuses(_selectedIds.toList()),
             ),
         ],
       ),
@@ -326,6 +412,41 @@ class _IssueStatusState extends State<IssueStatus> {
                 ),
               ],
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: isMultiSelectMode
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(
+                            onPressed: () => _enterSelectionMode(
+                              selectAll: !_allVisibleSelected,
+                            ),
+                            child: Text(
+                              _allVisibleSelected ? 'Clear All' : 'Select All',
+                              style: TextStyle(color: _accentColor),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _exitSelectionMode,
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(color: _accentColor),
+                            ),
+                          ),
+                        ],
+                      )
+                    : TextButton(
+                        onPressed: () => _enterSelectionMode(),
+                        child: Text(
+                          'Select',
+                          style: TextStyle(color: _accentColor),
+                        ),
+                      ),
+              ),
+            ),
             const SizedBox(height: 12),
             Expanded(
               child: _filtered.isEmpty
@@ -342,72 +463,193 @@ class _IssueStatusState extends State<IssueStatus> {
                         final isSelected = _selectedIds.contains(
                           issueStatus.id,
                         );
+
                         return Card(
                           color: Colors.grey[900],
                           child: ListTile(
-                            leading: Checkbox(
-                              value: isSelected,
-                              onChanged: (val) {
+                            // leading: Checkbox(
+                            //   value: isSelected,
+                            //   onChanged: (val) {
+                            //     setState(() {
+                            //       if (val == true) {
+                            //         _selectedIds.add(issueStatus.id);
+                            //       } else {
+                            //         _selectedIds.remove(issueStatus.id);
+                            //       }
+                            //     });
+                            //   },
+                            // ),
+                            //enter multiselectmode
+                            onLongPress: () {
+                              setState(() {
+                                isMultiSelectMode = true;
+                                _selectedIds.add(issueStatus.id);
+                              });
+                            },
+                            onTap: () {
+                              if (isMultiSelectMode) {
                                 setState(() {
-                                  if (val == true) {
-                                    _selectedIds.add(issueStatus.id);
-                                  } else {
+                                  if (isSelected) {
                                     _selectedIds.remove(issueStatus.id);
+                                    if (_selectedIds.isEmpty) {
+                                      isMultiSelectMode = false;
+                                    }
+                                  } else {
+                                    _selectedIds.add(issueStatus.id);
                                   }
                                 });
-                              },
-                            ),
+                              } else {
+                                debugPrint('taped');
+                              }
+                            },
+
+                            //showcheck ox for selection
+                            leading: isMultiSelectMode
+                                ? Checkbox(
+                                    value: isSelected,
+                                    onChanged: (v) {
+                                      setState(() {
+                                        if (v == true) {
+                                          _selectedIds.add(issueStatus.id);
+                                        } else {
+                                          _selectedIds.remove(issueStatus.id);
+                                          if (_selectedIds.isEmpty) {
+                                            isMultiSelectMode = false;
+                                          }
+                                        }
+                                      });
+                                    },
+                                  )
+                                : null,
+
                             title: Text(
                               issueStatus.issueStatus,
                               style: TextStyle(color: Colors.white),
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Transform.scale(
-                                  scale: 0.7,
-                                  child: Switch(
-                                    value: issueStatus.status,
-                                    activeColor: Colors.green,
-                                    inactiveThumbColor: Colors.redAccent,
-                                    onChanged: (val) async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Confirm'),
-                                          content: Text(
-                                            'Are you sure want to ${val ? 'activate' : 'deactivate'} this issue status?',
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(false),
-                                              child: const Text('cancel'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(true),
-                                              child: const Text('Yes'),
-                                            ),
-                                          ],
+                            trailing: !isMultiSelectMode
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Transform.scale(
+                                        scale: 0.7,
+                                        child: Switch(
+                                          value: issueStatus.status,
+                                          activeColor: Colors.green,
+                                          inactiveThumbColor: Colors.redAccent,
+                                          onChanged: (val) async {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Confirm'),
+                                                content: Text(
+                                                  'Are you sure want to ${val ? 'activate' : 'deactivate'} this issue status?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop(false),
+                                                    child: const Text('cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop(true),
+                                                    child: const Text('Yes'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              await _toggleAnswerStatus(
+                                                issueStatus,
+                                              );
+                                            }
+                                          },
                                         ),
-                                      );
-                                      if (confirm == true) {
-                                        await _toggleAnswerStatus(issueStatus);
-                                      }
-                                    },
-                                  ),
-                                ),
-                                
-                                IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.amber),
-                                  onPressed: () =>
-                                      _showAddEditDialog(existing: issueStatus),
-                                ),
-                              ],
-                            ),
+                                      ),
+
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.edit,
+                                          color: Colors.amber,
+                                        ),
+                                        onPressed: () => _showAddEditDialog(
+                                          existing: issueStatus,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () => _deleteIssueStatuses(
+                                          [issueStatus.id],
+                                          labelForSingle:
+                                              issueStatus.issueStatus,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.delete_outlined,
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
+
+                                      //single delete
+                                      // IconButton(
+                                      //   onPressed: () async {
+                                      //     final ok = await showDialog(
+                                      //       context: context,
+                                      //       builder: (context) => AlertDialog(
+                                      //         title: const Text('Confirm'),
+                                      //         content: Text(
+                                      //           'Are you sure want to delete "${issueStatus.issueStatus}"?',
+                                      //         ),
+                                      //         actions: [
+                                      //           TextButton(
+                                      //             onPressed: () => Navigator.of(
+                                      //               context,
+                                      //             ).pop(false),
+                                      //             child: const Text('Cancel'),
+                                      //           ),
+                                      //           TextButton(
+                                      //             onPressed: () => Navigator.of(
+                                      //               context,
+                                      //             ).pop(true),
+                                      //             child: const Text('Yes'),
+                                      //           ),
+                                      //         ],
+                                      //       ),
+                                      //     );
+                                      //     if (ok != true) return;
+
+                                      //     final success =
+                                      //         await _deleteIssueStatuses([
+                                      //           issueStatus.id,
+                                      //         ]);
+                                      //     if (success) {
+                                      //       setState(() {
+                                      //         _companyAnswerTypes.removeWhere(
+                                      //           (e) => e.id == issueStatus.id,
+                                      //         );
+                                      //         _filtered.removeWhere(
+                                      //           (e) => e.id == issueStatus.id,
+                                      //         );
+                                      //       });
+                                      //       SnackbarHelper.showSuccess(
+                                      //         'Issue Status deleted',
+                                      //       );
+                                      //     } else {
+                                      //       SnackbarHelper.showError(
+                                      //         'Failed to delete issue status',
+                                      //       );
+                                      //     }
+                                      //   },
+                                      //   icon: const Icon(
+                                      //     Icons.delete_outlined,
+                                      //     color: Colors.redAccent,
+                                      //   ),
+                                      // ),
+                                    ],
+                                  )
+                                : null,
                           ),
                         );
                       },

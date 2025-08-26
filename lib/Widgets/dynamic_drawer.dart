@@ -123,6 +123,7 @@ class CustomDrawer extends StatelessWidget {
         title: Text(item.name, style: const TextStyle(color: Colors.white)),
         onTap: () {
           if (hasValidRoute) {
+            Navigator.of(context).pop();
             Navigator.pushNamed(context, item.route!.trim());
           }
         },

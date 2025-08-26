@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:voicefirst/Core/Services/api_client.dart';
 import 'package:voicefirst/Models/company_issue_status_model.dart';
-import 'package:voicefirst/Models/issue_status_model.dart';
 import 'package:voicefirst/Views/CompanySide/CompanyIssueStatus/existing_status.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 

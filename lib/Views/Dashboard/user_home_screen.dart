@@ -1,20 +1,17 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:voicefirst/Widgets/dynamic_drawer.dart';
-
 import '../../Core/Services/menu_service.dart';
 import '../../Models/menu_item_model.dart';
 import '../../Widgets/feedback_form.dart';
 
 class Userhomescreen extends StatefulWidget {
+  const Userhomescreen({super.key});
+
   @override
   State<Userhomescreen> createState() => _UserhomescreenState();
 }
 
 class _UserhomescreenState extends State<Userhomescreen> {
-  int _currentIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> filteredPlaces = [];
   List<MenuItem> menuItems = [];
@@ -257,35 +254,15 @@ class _UserhomescreenState extends State<Userhomescreen> {
   }
 
   Future<void> loadMenu() async {
-    final result = await fetchMenu();
-    setState(() {
-      menuItems = result;
-    });
-  }
-
-  List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
-    flatList.sort((a, b) => a.position.compareTo(b.position));
-    Map<String, MenuItem> positionMap = {
-      for (var item in flatList) item.position: item,
-    };
-
-    List<MenuItem> roots = [];
-
-    for (var item in flatList) {
-      if (item.position.length == 1) {
-        roots.add(item);
-      } else {
-        final parentPos = item.position.substring(0, item.position.length - 1);
-        if (positionMap.containsKey(parentPos)) {
-          positionMap[parentPos]!.children = [
-            ...positionMap[parentPos]!.children,
-            item,
-          ];
-        }
-      }
+    try {
+      final items = await fetchMenu(); // Dio + parsed + tree built
+      if (!mounted) return;
+      setState(() => menuItems = items);
+    } catch (e) {
+      debugPrint('Menu load error: $e');
+      if (!mounted) return;
+      setState(() => menuItems = []);
     }
-
-    return roots;
   }
 
   void _filterPlaces() {

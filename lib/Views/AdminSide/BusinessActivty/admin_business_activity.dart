@@ -287,7 +287,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
   }
 
   void _filterActivities() {
-    if (!isdataLoaded) return; //Don't filter until data is ready
+    if (!isdataLoaded) return; //Don't filter until data is loaded
 
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -352,39 +352,20 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                         activities.removeWhere(
                           (x) => selectedIds.contains(x.id),
                         );
-                        // fetchBusinessActivities(); // ← remove unnecessary refetch
+                        // fetchBusinessActivities(); 
                         selectedIds.clear();
                         isMultiSelectMode = false;
                         _filterActivities(); // keep filtered list in sync
                       });
-                      SnackbarHelper.showSuccess('Activities deleted'); // ← add
+                      SnackbarHelper.showSuccess('Activities deleted'); 
                     } else {
                       SnackbarHelper.showError(
                         'Failed to delete activities',
-                      ); // ← add
+                      ); 
                     }
                   },
                 ),
               ]
-            // ? [
-            //     IconButton(
-            //       icon: Icon(Icons.delete, color: Colors.redAccent),
-            //       onPressed: () async {
-            //         final confirmed = await deleteactivities(
-            //           selectedIds.toList(),
-            //         );
-            //         if (confirmed) {
-            //           setState(() {
-            //             activities.removeWhere(
-            //               (x) => selectedIds.contains(x.id),
-            //             );
-            //             selectedIds.clear();
-            //             isMultiSelectMode = false;
-            //           });
-            //         }
-            //       },
-            //     ),
-            //   ]
             : [],
       ),
       body: Column(
