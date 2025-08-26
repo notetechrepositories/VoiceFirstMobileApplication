@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:voicefirst/Core/Services/api_client.dart';
 import 'package:voicefirst/Models/business_activity_model1.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
-import 'package:voicefirst/Models/menu_item_model.dart';
 import 'package:voicefirst/Models/business_activity_model.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/add_activity_dialog.dart';
 import 'package:voicefirst/Views/AdminSide/BusinessActivty/edit_activity_dialog.dart';
@@ -18,10 +17,29 @@ class AddBusinessactivity extends StatefulWidget {
 
 class _AddBusinessactivityState extends State<AddBusinessactivity> {
   final Dio _dio = ApiClient().dio;
+  // ──────────────────────────────────────
+  final Color _bgColor = Colors.black; // page background
+  final Color _cardColor = Color(0xFF262626); // dark grey card
+  final Color _chipColor = Color(0xFF212121); // chip background
+  final Color _accentColor = Color(0xFFFCC737); // gold accent
+  final Color _textPrimary = Colors.white; // main text
+  final Color _textSecondary = Colors.white60; // secondary text
+  // ──────────────────────────────────────
+
+  final TextEditingController _searchController = TextEditingController();
+  List<BusinessActivity> filteredActivities = [];
+  List<BusinessActivity> activities = [];
+
+  // List<MenuItem> menuItems = [];
+
+  //for deletion
+
+  bool isMultiSelectMode = false;
+  Set<String> selectedIds = {};
+
+  bool isdataLoaded = false;
 
   Future<bool> deleteactivities(List<String> ids) async {
-    // final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
-
     try {
       final response = await _dio.delete('/business-activities', data: ids);
 
@@ -62,23 +80,20 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
       if (res.statusCode == 200 &&
           res.data is Map<String, dynamic> &&
           res.data['isSuccess'] == true) {
-        final data = res.data['data']; // NEW
+        final data = res.data['data'];
         if (data is Map<String, dynamic>) {
-          // NEW
-          final created = BusinessActivity.fromJson(data); // NEW
+          final created = BusinessActivity.fromJson(data);
           setState(() {
-            // NEW
             final idx = activities.indexWhere((x) => x.id == created.id);
             if (idx >= 0) {
-              activities[idx] = created; // replace if somehow existed
+              activities[idx] = created;
             } else {
               activities.add(created); // append new item
             }
-            _filterActivities(); // keep filtered list in sync
+            _filterActivities();
           });
         }
-        // fetchBusinessActivities();
-        SnackbarHelper.showSuccess('Activity added successfully');
+        // SnackbarHelper.showSuccess('Activity added successfully');
       } else if (res.statusCode == 409 ||
           (res.data is Map &&
               ((res.data['errorType']?.toString().toLowerCase() ==
@@ -90,21 +105,24 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
         final msg = (res.data is Map && res.data['message'] != null)
             ? res.data['message'].toString()
             : 'Activity already exists.';
-        SnackbarHelper.showError(msg);
+        // SnackbarHelper.showError(msg);
+        debugPrint(msg);
       } else {
         final msg = (res.data is Map && res.data['message'] != null)
             ? res.data['message'].toString()
             : 'failed to add activity';
-        SnackbarHelper.showError(msg);
+        debugPrint(msg);
+        // SnackbarHelper.showError(msg);
       }
     } on DioException catch (e) {
-      // NEW: catch 409 from error path too
+      //  409  error
       if (e.response?.statusCode == 409) {
         final msg = e.response?.data is Map<String, dynamic>
             ? (e.response!.data['message']?.toString() ??
                   'Activity already exists.')
             : 'Activity already exists.';
-        SnackbarHelper.showError(msg);
+        // SnackbarHelper.showError(msg);
+        debugPrint(msg);
         return;
       }
 
@@ -128,7 +146,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
           res.data is Map<String, dynamic> &&
           res.data['isSuccess'] == true) {
         debugPrint('Status Updated Successfully');
-        SnackbarHelper.showSuccess('Status Updated');
+        // SnackbarHelper.showSuccess('Status Updated');
         return true;
       } else if (res.statusCode == 409) {
         _showConflictDialog();
@@ -176,7 +194,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
           });
         }
 
-        SnackbarHelper.showSuccess('Activity updated successfully.');
+        // SnackbarHelper.showSuccess('Activity updated successfully.');
         return (data is Map<String, dynamic>) ? data : null;
       } else if (res.statusCode == 409) {
         SnackbarHelper.showError('Activity already exists.');
@@ -243,7 +261,6 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
       isMultiSelectMode = true;
       selectedIds.clear();
       if (selectAll) {
-        // Select only the currently *visible* (filtered) items.
         selectedIds.addAll(filteredActivities.map((e) => e.id));
       }
     });
@@ -261,41 +278,16 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
       filteredActivities.isNotEmpty &&
       selectedIds.length == filteredActivities.length;
 
-  // ──────────────────────────────────────
-  // Page-specific colour palette
-  final Color _bgColor = Colors.black; // page background
-  final Color _cardColor = Color(0xFF262626); // dark grey card
-  final Color _chipColor = Color(0xFF212121); // chip background
-  final Color _accentColor = Color(0xFFFCC737); // gold accent
-  final Color _textPrimary = Colors.white; // main text
-  final Color _textSecondary = Colors.white60; // secondary text
-  // ──────────────────────────────────────
-
-  final TextEditingController _searchController = TextEditingController();
-  List<BusinessActivity> filteredActivities = [];
-  List<BusinessActivity> activities = [];
-
-  List<MenuItem> menuItems = [];
-
-  //for deletion
-
-  bool isMultiSelectMode = false;
-  Set<String> selectedIds = {};
-
-  bool isdataLoaded = false;
-
   @override
   void initState() {
     super.initState();
 
-    // filteredActivities = List.from(activities);
     _searchController.addListener(_filterActivities);
     fetchBusinessActivities(); // fetch from API
-    // loadActivities();
   }
 
   void _filterActivities() {
-    if (!isdataLoaded) return; //Don't filter until data is ready
+    if (!isdataLoaded) return; //Don't filter until data is loaded
 
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -331,6 +323,27 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                 IconButton(
                   icon: Icon(Icons.delete, color: Colors.redAccent),
                   onPressed: () async {
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Confirm'),
+                        content: Text(
+                          'Delete ${selectedIds.length} selected activities?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Yes'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok != true) return;
+
                     final confirmed = await deleteactivities(
                       selectedIds.toList(),
                     );
@@ -339,11 +352,16 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                         activities.removeWhere(
                           (x) => selectedIds.contains(x.id),
                         );
-                        // _filterActivities();
-                        fetchBusinessActivities();
+                        // fetchBusinessActivities(); 
                         selectedIds.clear();
                         isMultiSelectMode = false;
+                        _filterActivities(); // keep filtered list in sync
                       });
+                      SnackbarHelper.showSuccess('Activities deleted'); 
+                    } else {
+                      SnackbarHelper.showError(
+                        'Failed to delete activities',
+                      ); 
                     }
                   },
                 ),
@@ -507,23 +525,6 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                         ),
                                       ),
                                       const SizedBox(height: 6),
-                                      // if (labels.isNotEmpty)
-                                      //   Wrap(
-                                      //     spacing: 6,
-                                      //     children: labels
-                                      //         .map(
-                                      //           (t) => Chip(
-                                      //             label: Text(t),
-                                      //             backgroundColor: _chipColor,
-                                      //             labelStyle: TextStyle(
-                                      //               color: _textSecondary,
-                                      //             ),
-                                      //             visualDensity:
-                                      //                 VisualDensity.compact,
-                                      //           ),
-                                      //         )
-                                      //         .toList(),
-                                      //   ),
                                     ],
                                   ),
                                 ),
@@ -571,19 +572,25 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                                     val,
                                                   );
                                               if (success) {
+                                                setState(() {
+                                                  final updated = a.copyWith(
+                                                    status: val,
+                                                  );
+
+                                                  //update list
+                                                  final idx = activities
+                                                      .indexWhere(
+                                                        (x) => x.id == a.id,
+                                                      );
+                                                  if (idx != -1) {
+                                                    activities[idx] = updated;
+                                                    _filterActivities();
+                                                  }
+                                                });
                                                 // simplest: refetch so both lists stay in sync
-                                                await fetchBusinessActivities();
                                                 SnackbarHelper.showSuccess(
                                                   'Status Updated',
                                                 );
-                                                // setState(() {
-                                                //   a['status'] = val
-                                                //       ? 'active'
-                                                //       : 'inactive';
-                                                // });
-                                                // SnackbarHelper.showSuccess(
-                                                //   'Status Updated',
-                                                // );
                                               } else {
                                                 SnackbarHelper.showError(
                                                   'Failed to update Status',
@@ -631,13 +638,12 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
                                           a.id,
                                         ]);
                                         if (success) {
-                                          // setState(() {
-                                          //   activities.removeWhere(
-                                          //     (x) => x['id'] == a['id'],
-                                          //   );
-                                          //   fetchBusinessActivities(); // optional
-                                          // });
-                                          await fetchBusinessActivities();
+                                          setState(() {
+                                            activities.removeWhere(
+                                              (x) => x.id == a.id,
+                                            );
+                                            _filterActivities();
+                                          });
                                           SnackbarHelper.showSuccess(
                                             'Activity Deleted',
                                           );
@@ -681,9 +687,7 @@ class _AddBusinessactivityState extends State<AddBusinessactivity> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: _accentColor,
         child: Icon(Icons.add, color: _bgColor),
-
-        // onPressed: () => _showAddDialog(context),// when within the same page
-
+        // onPr essed: () => _showAddDialog(context),// when within the same page
         //when dialog is in different page
         onPressed: () {
           showDialog(

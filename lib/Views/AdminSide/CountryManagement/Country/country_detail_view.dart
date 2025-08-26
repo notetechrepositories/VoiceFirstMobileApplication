@@ -32,6 +32,11 @@ class CountryDetailDialog extends StatelessWidget {
         children: [
           _infoText("Country Code: ", country.countryCode, textPrimary),
           _infoText(
+            'Country ISO Code : ',
+            country.countryIsoCode ?? '',
+            textPrimary,
+          ),
+          _infoText(
             "Division One Label: ",
             country.divisionOneLabel ?? '',
             textPrimary,

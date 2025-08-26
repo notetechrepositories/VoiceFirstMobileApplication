@@ -20,6 +20,14 @@ class SnackbarHelper {
     );
   }
 
+  static void showInfo(String message) {
+    _show(
+      message,
+      backgroundColor: const Color(0xFFFCC737).withAlpha(200),
+      icon: Icons.error,
+    );
+  }
+
   static void _show(
     String message, {
     required Color backgroundColor,

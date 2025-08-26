@@ -1,7 +1,7 @@
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:voicefirst/Core/Constants/api_endpoins.dart';
+import 'package:flutter/services.dart';
+import 'package:voicefirst/Core/Services/api_client.dart';
 import 'package:voicefirst/Widgets/snack_bar.dart';
 import 'package:voicefirst/Models/country_model.dart';
 import 'package:voicefirst/Views/AdminSide/CountryManagement/Country/country_add.dart';
@@ -49,6 +49,8 @@ class _CountryViewState extends State<CountryView> {
   List<CountryModel> countries = [];
   List<CountryModel> filteredCountries = [];
 
+  final Dio _dio = ApiClient().dio;
+
   final query = "";
   final TextEditingController _searchController = TextEditingController();
 
@@ -64,70 +66,109 @@ class _CountryViewState extends State<CountryView> {
   bool isDataLoaded = false;
 
   Future<void> getallCountries() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/country/all');
-
     try {
-      final response = await http.get(url);
+      // use leading slash so it joins with ApiClient.baseUrl
+      final res = await _dio.get('/country/all');
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final List<dynamic> dataList = json['data'];
+      if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
+        final List<dynamic> dataList = (res.data['data'] as List?) ?? [];
 
-        //using model
         final fetched = dataList
-            .map((countryJson) => CountryModel.fromJson(countryJson))
+            .map(
+              (e) => CountryModel.fromJson((e as Map).cast<String, dynamic>()),
+            )
             .toList();
 
         setState(() {
           countries = fetched;
-          // filteredCountries = List.from(fetched);
+          // keep your existing filter behavior
           filteredCountries = countries
               .where((c) => c.country.toLowerCase().contains(query))
               .toList();
-
           isDataLoaded = true;
-          print(countries);
         });
       } else {
-        debugPrint('failed to fetch countries: ${response.statusCode}');
+        final msg = (res.data is Map && res.data['message'] is String)
+            ? res.data['message'] as String
+            : 'Failed to fetch countries';
+        debugPrint(msg);
+        // Optional: SnackbarHelper.showError(msg);
       }
+    } on DioException catch (e) {
+      final msg =
+          (e.response?.data is Map && e.response!.data['message'] is String)
+          ? e.response!.data['message'] as String
+          : (e.message ?? 'Request failed');
+      debugPrint('Countries fetch failed: $msg');
+      // Optional: SnackbarHelper.showError(msg);
     } catch (e) {
-      debugPrint('Exception Occured : $e');
+      debugPrint('Exception occurred: $e');
     }
   }
 
   Future<void> _addCountry({
     required String country,
     required String countryCode,
+    required String countryIsoCode,
     required String divisionOne,
     required String divisionTwo,
     required String divisionThree,
   }) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
-    final body = {
-      "country": country,
-      "countryCode": countryCode,
-      "divisionOneLabel": divisionOne,
-      "divisionTwoLabel": divisionTwo,
-      "divisionThreeLabel": divisionThree,
-    };
-
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
+      final response = await _dio.post(
+        '/country',
+        data: {
+          "country": country.trim(),
+          "countryCode": countryCode.trim(),
+          "countryIsoCode": countryIsoCode.trim().toUpperCase(),
+          "divisionOneLabel": divisionOne.trim(),
+          "divisionTwoLabel": divisionTwo.trim(),
+          "divisionThreeLabel": divisionThree.trim(),
+        },
+        options: Options(validateStatus: (s) => s != null && s < 500),
       );
 
+      // options:
+      // Options(validateStatus: (status) => status != null && status < 500);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('Country added successfully');
-        SnackbarHelper.showSuccess('Country added successfully');
-        await getallCountries(); // refresh list
+        if (response.data is Map && response.data['isSuccess'] == true) {
+          debugPrint('Country added successfully');
+          final data = response.data['data'] as Map<String, dynamic>;
+          final added = CountryModel.fromJson(data);
+
+          setState(() {
+            countries.removeWhere((c) => c.id == added.id);
+            countries.insert(0, added);
+            filteredCountries = countries
+                .where((c) => c.country.toLowerCase().contains(query))
+                .toList();
+          });
+
+          SnackbarHelper.showSuccess('Country added successfully');
+          // await getallCountries(); // refresh list
+        } else {
+          final msg =
+              (response.data is Map && response.data['message'] is String)
+              ? response.data['message'] as String
+              : 'failed to add country';
+          SnackbarHelper.showError(msg);
+        }
       } else {
+        final msg = (response.data is Map && response.data['message'] is String)
+            ? response.data['message'] as String
+            : 'failed to add country';
         debugPrint('Failed to add country: ${response.statusCode}');
         _showConflictDialog();
-        SnackbarHelper.showError('Failed to add country');
+        SnackbarHelper.showError(msg);
       }
+    } on DioException catch (e) {
+      final msg =
+          (e.response?.data is Map && e.response!.data['message'] is String)
+          ? e.response?.data['message'] as String
+          : (e.message ?? 'Request failed');
+      _showConflictDialog();
+      SnackbarHelper.showError(msg);
     } catch (e) {
       debugPrint('Error: $e');
       _showConflictDialog();
@@ -135,23 +176,30 @@ class _CountryViewState extends State<CountryView> {
     }
   }
 
-  Future<bool> deleteCountries(List<String> id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
+  Future<bool> deleteCountries(List<String> ids) async {
+    final url = '/country';
 
     try {
-      final response = await http.delete(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(id),
-      );
+      final response = await _dio.delete(url, data: ids);
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['isSuccess'] == true;
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        // final json = jsonDecode(response.data);
+        return response.data['isSuccess'] == true;
       } else {
+        final msg = (response.data is Map && response.data['message'] is String)
+            ? response.data['message'] as String
+            : 'Delete failed';
+        SnackbarHelper.showError(msg);
         debugPrint('delete failed with status:${response.statusCode}');
         return false;
       }
+    } on DioException catch (e) {
+      final msg =
+          (e.response?.data is Map && e.response!.data['message'] is String)
+          ? e.response!.data['message'] as String
+          : (e.message ?? 'Request failed');
+      SnackbarHelper.showError(msg);
+      return false;
     } catch (e) {
       debugPrint('Error deleting country: $e');
       return false;
@@ -160,28 +208,45 @@ class _CountryViewState extends State<CountryView> {
 
   //update status
   Future<bool> _updateCountryStatus(String id, bool status) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
-
-    final body = {'id': id, 'status': status};
+    // final url = ;
 
     try {
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
+      final response = await _dio.patch(
+        '/country',
+        data: {'id': id, 'status': status},
       );
 
-      if (response.statusCode == 200) {
-        debugPrint('Status updated to $status');
-        return true;
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        if (response.data['isSuccess'] == true) {
+          debugPrint('Status updated to $status');
+          return true;
+        } else {
+          final msg = (response.data['message'] is String)
+              ? response.data['message'] as String
+              : 'Failed to update status';
+          SnackbarHelper.showError(msg);
+          return false;
+        }
       } else if (response.statusCode == 409) {
         _showConflictDialog(); // <-- Call custom dialog
         return false;
       } else {
+        final msg = (response.data is Map && response.data['message'] is String)
+            ? response.data['message'] as String
+            : 'Failed to update status';
+        SnackbarHelper.showError(msg);
         debugPrint('Failed to update status: ${response.statusCode}');
         return false;
       }
+    } on DioException catch (e) {
+      final msg =
+          (e.response?.data is Map && e.response!.data['message'] is String)
+          ? e.response!.data['message'] as String
+          : (e.message ?? 'Request failed');
+      SnackbarHelper.showError(msg);
+      return false;
     } catch (e) {
+      SnackbarHelper.showError('Error updating status');
       debugPrint('Error updating status: $e');
       return false;
     }
@@ -191,17 +256,21 @@ class _CountryViewState extends State<CountryView> {
     required String id,
     String? country,
     String? countryCode,
+    String? countryIsoCode,
     String? divisionOneLabel,
     String? divisionTwoLabel,
     String? divisionThreeLabel,
   }) async {
-    final Map<String, dynamic> body = {'id': id};
+    final body = <String, dynamic>{'id': id};
 
     if (country != null && country.isNotEmpty) {
       body['country'] = country;
     }
     if (countryCode != null && countryCode.isEmpty) {
       body['countryCode'] = countryCode;
+    }
+    if (countryIsoCode != null && countryIsoCode.isEmpty) {
+      body['countryIsoCode'] = countryIsoCode;
     }
     if (divisionOneLabel != null && divisionOneLabel.isNotEmpty) {
       body['divisionOneLabel'] = divisionOneLabel;
@@ -213,25 +282,42 @@ class _CountryViewState extends State<CountryView> {
       body['divisionThreeLabel'] = divisionThreeLabel;
     }
 
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/country');
+    final url = '/country';
 
     try {
-      final response = await http.put(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+      final response = await _dio.put(url, data: body);
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['data'];
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        // final json = jsonDecode(response.body);
+        if (response.data['isSuccess'] == true) {
+          final data = response.data['data'];
+          return (data is Map<String, dynamic>) ? data : null;
+        } else {
+          final msg = (response.data['message'] is String)
+              ? response.data['message'] as String
+              : 'Update failed';
+          SnackbarHelper.showError(msg);
+          return null;
+        }
       } else {
+        final msg = (response.data is Map && response.data['message'] is String)
+            ? response.data['message'] as String
+            : 'Update failed';
+        SnackbarHelper.showError(msg);
         debugPrint(
-          ' Failed with status ${response.statusCode}: ${response.body}',
+          ' Failed with status ${response.statusCode}: ${response.data}',
         );
         return null;
       }
+    } on DioException catch (e) {
+      final msg =
+          (e.response?.data is Map && e.response!.data['message'] is String)
+          ? e.response!.data['message'] as String
+          : (e.message ?? 'Request failed');
+      SnackbarHelper.showError(msg);
+      return null;
     } catch (e) {
+      SnackbarHelper.showError('Unexpected error');
       debugPrint(' Exception: $e');
       return null;
     }
@@ -280,19 +366,49 @@ class _CountryViewState extends State<CountryView> {
             ? [
                 IconButton(
                   icon: Icon(Icons.delete, color: Colors.redAccent),
+
                   onPressed: () async {
-                    final confirmed = await deleteCountries(
-                      selectedIds.toList(),
+                    if (selectedIds.isEmpty) return;
+
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Confirm Delete'),
+                        content: Text(
+                          'Are you sure want to delete the selected Countries?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Yes'),
+                          ),
+                        ],
+                      ),
                     );
-                    if (confirmed) {
+
+                    if (confirm != true) return;
+
+                    final ok = await deleteCountries(selectedIds.toList());
+                    if (ok) {
                       setState(() {
                         countries.removeWhere(
                           (x) => selectedIds.contains(x.id),
                         );
-                        getallCountries();
+                        filteredCountries.removeWhere(
+                          (x) => selectedIds.contains(x.id),
+                        );
                         selectedIds.clear();
                         isMultiSelectMode = false;
                       });
+                      SnackbarHelper.showSuccess('Selected countries deleted');
+                    } else {
+                      SnackbarHelper.showError(
+                        'Failed to delete selected countries',
+                      );
                     }
                   },
                 ),
@@ -371,6 +487,21 @@ class _CountryViewState extends State<CountryView> {
                           itemCount: filteredCountries.length,
                           itemBuilder: (context, index) {
                             final c = filteredCountries[index];
+                            // build divisions string (simple string ops)
+                            final d1 = (c.divisionOneLabel ?? '').trim();
+                            final d2 = (c.divisionTwoLabel ?? '').trim();
+                            final d3 = (c.divisionThreeLabel ?? '').trim();
+
+                            String divisions = '';
+                            if (d1.isNotEmpty) divisions = d1;
+                            if (d2.isNotEmpty) {
+                              divisions +=
+                                  (divisions.isEmpty ? '' : ' > ') + d2;
+                            }
+                            if (d3.isNotEmpty) {
+                              divisions +=
+                                  (divisions.isEmpty ? '' : ' > ') + d3;
+                            }
                             final isSelected = selectedIds.contains(c.id);
 
                             return GestureDetector(
@@ -392,16 +523,24 @@ class _CountryViewState extends State<CountryView> {
                                       selectedIds.add(c.id);
                                     }
                                   });
-                                } else {
+                                } else if ((c.divisionOneLabel ?? '')
+                                    .trim()
+                                    .isNotEmpty) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => Division1View(
                                         // countryId: c.id,
                                         country: c,
+
                                         // divisionLabel: c.divisionOneLabel,
                                       ),
                                     ),
+                                  );
+                                } else {
+                                  HapticFeedback.lightImpact();
+                                  SnackbarHelper.showInfo(
+                                    'No further divisions configured for ${c.country}.',
                                   );
                                 }
                               },
@@ -437,12 +576,15 @@ class _CountryViewState extends State<CountryView> {
                                               ),
                                             ),
                                             const SizedBox(height: 6),
-                                            Text(
-                                              '${c.divisionOneLabel} > ${c.divisionTwoLabel} > ${c.divisionThreeLabel}',
-                                              style: TextStyle(
-                                                color: _textSecondary,
-                                              ),
-                                            ),
+
+                                            divisions.isNotEmpty
+                                                ? Text(
+                                                    divisions,
+                                                    style: TextStyle(
+                                                      color: _textSecondary,
+                                                    ),
+                                                  )
+                                                : const SizedBox.shrink(),
                                           ],
                                         ),
                                       ),
@@ -482,22 +624,51 @@ class _CountryViewState extends State<CountryView> {
                                                               _textSecondary,
                                                           accentColor:
                                                               _accentColor,
-                                                          onUpdate: (updatedData) => updateCountry(
-                                                            id: updatedData['id'],
-                                                            country:
-                                                                updatedData['country'],
-                                                            countryCode:
-                                                                updatedData['countryCode'],
-                                                            divisionOneLabel:
-                                                                updatedData['divisionOneLabel'],
-                                                            divisionTwoLabel:
-                                                                updatedData['divisionTwoLabel'],
-                                                            divisionThreeLabel:
-                                                                updatedData['divisionThreeLabel'],
-                                                          ),
-                                                          onUpdated: () {
-                                                            getallCountries();
+                                                          onUpdate: (updatedData) async {
+                                                            final data = await updateCountry(
+                                                              id: updatedData['id'],
+                                                              country:
+                                                                  updatedData['country'],
+                                                              countryCode:
+                                                                  updatedData['countryCode'],
+                                                              countryIsoCode:
+                                                                  updatedData['countryIsoCode'],
+                                                              divisionOneLabel:
+                                                                  updatedData['divisionOneLabel'],
+                                                              divisionTwoLabel:
+                                                                  updatedData['divisionTwoLabel'],
+                                                              divisionThreeLabel:
+                                                                  updatedData['divisionThreeLabel'],
+                                                            );
+                                                            if (data != null) {
+                                                              final updated =
+                                                                  CountryModel.fromJson(
+                                                                    data,
+                                                                  );
+                                                              setState(() {
+                                                                final idx = countries
+                                                                    .indexWhere(
+                                                                      (e) =>
+                                                                          e.id ==
+                                                                          updated
+                                                                              .id,
+                                                                    );
+                                                                if (idx != -1) {
+                                                                  countries[idx] =
+                                                                      updated;
+                                                                } else {
+                                                                  countries
+                                                                      .insert(
+                                                                        0,
+                                                                        updated,
+                                                                      );
+                                                                }
+                                                                _filterCountries();
+                                                              });
+                                                            }
+                                                            return data;
                                                           },
+                                                          onUpdated: () {},
                                                           onCancel: () =>
                                                               Navigator.pop(
                                                                 context,
@@ -686,6 +857,7 @@ class _CountryViewState extends State<CountryView> {
                   ({
                     required String country,
                     required String countryCode,
+                    required String countryIsoCode,
                     required String divisionOne,
                     required String divisionTwo,
                     required String divisionThree,
@@ -693,6 +865,7 @@ class _CountryViewState extends State<CountryView> {
                     await _addCountry(
                       country: country,
                       countryCode: countryCode,
+                      countryIsoCode: countryIsoCode,
                       divisionOne: divisionOne,
                       divisionTwo: divisionTwo,
                       divisionThree: divisionThree,
