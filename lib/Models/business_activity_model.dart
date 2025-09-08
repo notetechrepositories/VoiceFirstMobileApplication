@@ -6,6 +6,7 @@ class BusinessActivityModel {
   final String? errorType;
   final List<BusinessActivity> data;
 
+
   BusinessActivityModel({
     required this.isSuccess,
     required this.message,
@@ -15,7 +16,7 @@ class BusinessActivityModel {
 
   // factory BusinessActivityModel.fromJson(Map<String, dynamic> json) {
   //   return BusinessActivityModel(
-  //     isSuccess: json['isSuccess'],
+  //     isSuccess: json['isSuccess'], 
   //     message: json['message'],
   //     errorType: json['errorType'],
   //     data: List<BusinessActivity>.from(

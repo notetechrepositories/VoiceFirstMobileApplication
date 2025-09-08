@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
       routes: {
         'system-roles': (context) => RoleListScreen(),
         "system-business-activity": (context) => AddBusinessactivity(),
-        "business-activity": (context) => AddBusiness(),
+        "business-activity": (context) => CompanyBusinessActivity(),
         "/admin/admin-dashboard": (context) => Userhomescreen(),
         "country": (context) => CountryView(),
         "system-answer-type": (context) => ManageAnswerTypePage(),
