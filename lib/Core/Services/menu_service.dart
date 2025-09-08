@@ -51,52 +51,6 @@ Future<List<MenuItem>> fetchMenu() async {
   }
 }
 
-// List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
-//   // Sort by position for predictable order
-//   flatList.sort((a, b) => a.position.compareTo(b.position));
-
-//   //reset children to avoid repeat calls
-//   for(final item in flatList){
-//     item.children.clear();
-//   }
-
-//   // Map each item's position for fast lookup
-//   final Map<String, MenuItem> positionMap = {
-//     for (var item in flatList) item.position: item,
-//   };
-
-//   // Collect positions that have a non-empty route.
-//   // Any descendant of those positions is hidden (parent remains).
-//   final Set<String> disabledPrefixes = {
-//     for (var item in flatList)
-//       if ((item.route ?? '').isNotEmpty) item.position,
-//   };
-
-//   final List<MenuItem> roots = [];
-
-//   for (var item in flatList) {
-//     // Hide descendants under a routed parent; keep the parent itself.
-//     final underDisabledParent = disabledPrefixes.any(
-//       (prefix) => item.position != prefix && item.position.startsWith(prefix),
-//     );
-//     if (underDisabledParent) continue;
-
-//     if (item.position.length == 1) {
-//       roots.add(item);
-//     } else {
-//       final parentPos = item.position.substring(0, item.position.length - 1);
-//       final parent = positionMap[parentPos];
-//       if (parent != null) {
-//         parent.children = [...parent.children, item];
-//       } else {
-//         // If parent is missing (bad data), treat as root so it still shows
-//         roots.add(item);
-//       }
-//     }
-//   }
-
-//   return roots;
-// }
 List<MenuItem> buildMenuTree(List<MenuItem> flatList) {
   flatList.sort((a, b) => a.position.compareTo(b.position));
 

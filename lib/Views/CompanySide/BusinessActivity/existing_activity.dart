@@ -1,334 +1,185 @@
-//get all activities list from db
-
-import 'dart:convert';
-
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:voicefirst/Core/Constants/api_endpoins.dart';
-import 'package:voicefirst/Models/business_activity_model.dart';
+import 'package:voicefirst/Core/Services/api_client.dart';
+import 'package:voicefirst/Models/business_activity_model1.dart';
+import 'package:voicefirst/Widgets/snack_bar.dart';
 
-class ExistingActivity extends StatefulWidget {
-  const ExistingActivity({super.key});
+class ExistingActivityScreen extends StatefulWidget {
+  const ExistingActivityScreen({super.key});
 
   @override
-  State<ExistingActivity> createState() => _ExistingActivityState();
+  State<ExistingActivityScreen> createState() => _ExistingActivityScreenState();
 }
 
-class _ExistingActivityState extends State<ExistingActivity> {
-  bool isMultiSelectMode = false;
-  Set<String> selectedIds = {};
+class _ExistingActivityScreenState extends State<ExistingActivityScreen> {
+  final Dio _dio = ApiClient().dio;
 
-  bool isdataLoaded = false;
+  final _searchController = TextEditingController();
+  List<BusinessActivity> _all = [];
+  List<BusinessActivity> _filtered = [];
+  final Set<String> _alreadyAdded = {};
 
-  final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> filteredActivities = [];
-  List<Map<String, dynamic>> activities = [];
-
-  //get existing activities
-
-  Future<void> fetchBusinessActivities() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activities');
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final model = BusinessActivityModel.fromJson(json);
-
-        if (model.isSuccess) {
-          final fetched = model.data.map((activity) {
-            return {
-              'id': activity.id,
-              'business_activity_name': activity.activityName,
-              // 'company': activity.company ? 'y' : 'n',
-              // 'branch': activity.branch ? 'y' : 'n',
-              // 'section': activity.section ? 'y' : 'n',
-              // 'sub_section': activity.subSection ? 'y' : 'n',
-              'status': activity.status == true ? 'active' : 'inactive',
-
-              // 'status': activity.status,
-            };
-          }).toList();
-
-          setState(() {
-            activities = fetched;
-            filteredActivities = List.from(fetched);
-            isdataLoaded = true;
-          });
-        } else {
-          debugPrint('Error: ${model.message}');
-        }
-      } else {
-        debugPrint('Failed to fetch activities: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Exception occurred: $e');
-    }
-  }
-
-  void _enterSelectionMode({bool selectAll = false}) {
-    setState(() {
-      isMultiSelectMode = true;
-      selectedIds.clear();
-      if (selectAll) {
-        // Select only the currently *visible* (filtered) items.
-        selectedIds.addAll(filteredActivities.map((e) => e['id'] as String));
-      }
-    });
-  }
-
-  void _exitSelectionMode() {
-    setState(() {
-      isMultiSelectMode = false;
-      selectedIds.clear();
-    });
-  }
-
-  /// Are *all visible* items currently selected?
-  bool get _allVisibleSelected =>
-      filteredActivities.isNotEmpty &&
-      selectedIds.length == filteredActivities.length;
-
-  // ──────────────────────────────────────
-  // Page-specific colour palette
-  final Color _bgColor = Colors.black; // page background
-  final Color _cardColor = Color(0xFF262626); // dark grey card
-  final Color _chipColor = Color(0xFF212121); // chip background
-  final Color _accentColor = Color(0xFFFCC737); // gold accent
-  final Color _textPrimary = Colors.white; // main text
-  final Color _textSecondary = Colors.white60; // secondary text
-  // ──────────────────────────────────────
   @override
   void initState() {
     super.initState();
-
-    // filteredActivities = List.from(activities);
-    _searchController.addListener(_filterActivities);
-    fetchBusinessActivities(); // fetch from API
-    // loadActivities();
+    _fetchExisting();
+    _loadAlreadyAddedIds();
   }
 
-  void _filterActivities() {
-    if (!isdataLoaded) return; //Don't filter until data is ready
-
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        filteredActivities = List.from(activities);
+  Future<void> _fetchExisting() async {
+    try {
+      final res = await _dio.get('/business-activities/all/active');
+      if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
+        final List list = (res.data['data'] as List?) ?? [];
+        final parsed = list
+            .map(
+              (e) =>
+                  BusinessActivity.fromJson((e as Map).cast<String, dynamic>()),
+            )
+            .where((e) => e.status == true) // active only
+            .toList();
+        setState(() {
+          _all = parsed;
+          _applyFilters();
+        });
       } else {
-        filteredActivities = activities.where((activity) {
-          final name = (activity['business_activity_name'] ?? '').toLowerCase();
-          return name.contains(query);
-        }).toList();
+        SnackbarHelper.showError(
+          _messageFrom(res.data) ?? 'Failed to load existing activities',
+        );
       }
-      debugPrint("Searching in ${activities.length} items");
+    } on DioException catch (e) {
+      SnackbarHelper.showError(_dioErr(e));
+    }
+  }
+
+  Future<void> _loadAlreadyAddedIds() async {
+    try {
+      final res = await _dio.get('/company-business-activity/all');
+      if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
+        final List list = (res.data['data'] as List?) ?? [];
+        setState(() {
+          _alreadyAdded
+            ..clear()
+            ..addAll(list.map((e) => ((e as Map)['id']).toString()));
+          _applyFilters();
+        });
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  Future<void> _addExistingToCompany(BusinessActivity item) async {
+    try {
+      final res = await _dio.post(
+        '/company-business-activities',
+        data: {'existingActivityId': item.id},
+      );
+      if (_ok(res)) {
+        setState(() {
+          _alreadyAdded.add(item.id);
+          _applyFilters();
+        });
+        SnackbarHelper.showSuccess('Added to company activities');
+      } else {
+        SnackbarHelper.showError(_messageFrom(res.data) ?? 'Failed to add');
+      }
+    } on DioException catch (e) {
+      SnackbarHelper.showError(_dioErr(e));
+    }
+  }
+
+  void _applyFilters() {
+    final q = _searchController.text.toLowerCase();
+    setState(() {
+      _filtered = _all
+          .where((a) => a.activityName.toLowerCase().contains(q))
+          .toList();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgColor,
-      // drawer: CustomDrawer(items: menuItems),
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: _bgColor,
-        iconTheme: IconThemeData(color: _accentColor),
-        elevation: 0,
-        title: Text(
-          isMultiSelectMode
-              ? '${selectedIds.length} selected'
-              : 'Business Activities',
-          style: TextStyle(color: _textSecondary),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        leading: BackButton(
+          onPressed: () => Navigator.pop(context, _alreadyAdded.isNotEmpty),
         ),
-        actions: isMultiSelectMode
-            ? [
-                IconButton(
-                  icon: Icon(Icons.delete, color: Colors.redAccent),
-                  onPressed: () async {
-                    // final confirmed = await deleteactivities(
-                    //   selectedIds.toList(),
-                    // );
-                    // if (confirmed) {
-                    //   setState(() {
-                    //     activities.removeWhere(
-                    //       (x) => selectedIds.contains(x['id']),
-                    //     );
-                    //     // _filterActivities();
-                    //     fetchBusinessActivities();
-                    //     selectedIds.clear();
-                    //     isMultiSelectMode = false;
-                    //   });
-                    // }
-                  },
-                ),
-              ]
-            : [],
-      ),
-      body: Column(
-        children: [
-          // ─── Search bar ─────────────────────────────
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+        title: const Text('Select Existing Activity'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
             child: TextField(
               controller: _searchController,
-              style: TextStyle(color: _textPrimary),
+              onChanged: (_) => _applyFilters(),
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Search',
-                hintStyle: TextStyle(color: _textSecondary),
-                prefixIcon: Icon(Icons.search, color: _textSecondary),
+                hintText: 'Search active activities…',
+                hintStyle: const TextStyle(color: Colors.white70),
+                prefixIcon: const Icon(Icons.search, color: Colors.white70),
                 filled: true,
-                fillColor: Color(0xFF1E1E1E),
+                fillColor: Colors.grey[900],
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 12,
                 ),
               ),
             ),
           ),
-          // ─── Selection controls ─────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: isMultiSelectMode
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextButton(
-                          onPressed: () => _enterSelectionMode(
-                            selectAll: !_allVisibleSelected,
-                          ),
-                          child: Text(
-                            _allVisibleSelected ? 'Clear All' : 'Select All',
-                            style: TextStyle(color: _accentColor),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: _exitSelectionMode,
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(color: _accentColor),
-                          ),
-                        ),
-                      ],
-                    )
-                  : TextButton(
-                      onPressed: () => _enterSelectionMode(),
-                      child: Text(
-                        'Select',
-                        style: TextStyle(color: _accentColor),
+        ),
+      ),
+      body: _filtered.isEmpty
+          ? const Center(
+              child: Text(
+                'No active activities',
+                style: TextStyle(color: Colors.white60),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: _filtered.length,
+              itemBuilder: (_, i) {
+                final a = _filtered[i];
+                final isAdded = _alreadyAdded.contains(a.id);
+                return Card(
+                  color: const Color(0xFF1F1F1F),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    title: Text(
+                      a.activityName,
+                      style: TextStyle(
+                        color: isAdded ? Colors.white38 : Colors.white,
                       ),
                     ),
-            ),
-          ),
-
-          // ─── List ────────────────────────────────────
-          Expanded(
-            child: filteredActivities.isEmpty
-                ? Center(
-                    child: Text(
-                      'No activities found',
-                      style: TextStyle(color: _textSecondary),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: filteredActivities.length,
-                    itemBuilder: (ctx, i) {
-                      final a = filteredActivities[i];
-                      final isSelected = selectedIds.contains(a['id']);
-                      final labels = <String>[];
-                      if (a['company'] == 'y') labels.add('Company');
-                      if (a['branch'] == 'y') labels.add('Branch');
-                      if (a['section'] == 'y') labels.add('Section');
-                      if (a['sub_section'] == 'y') labels.add('Sub-section');
-
-                      return GestureDetector(
-                        onLongPress: () {
-                          setState(() {
-                            isMultiSelectMode = true;
-                            selectedIds.add(a['id']);
-                          });
-                        },
-                        onTap: () {
-                          if (isMultiSelectMode) {
-                            setState(() {
-                              if (isSelected) {
-                                selectedIds.remove(a['id']);
-                                if (selectedIds.isEmpty) {
-                                  isMultiSelectMode = false; // auto-exit
-                                }
-                              } else {
-                                selectedIds.add(a['id']);
-                              }
-                            });
-                          } else {
-                        
-                          }
-                        },
-                        child: Card(
-                          color: isMultiSelectMode && isSelected
-                              ? Colors.grey[700]
-                              : _cardColor,
-                          margin: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                // ─ Left: just the name ───────────
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        a['business_activity_name'] ?? '',
-                                        style: TextStyle(
-                                          color: _textPrimary,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                    ],
-                                  ),
-                                ),
-
-                                
-                                // if (!isMultiSelectMode)
-                                Checkbox(
-                                  value: isSelected,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      if (val == true) {
-                                        selectedIds.add(a['id']);
-                                      } else {
-                                        selectedIds.remove(a['id']);
-                                        if (selectedIds.isEmpty) {
-                                          isMultiSelectMode = false;
-                                        }
-                                      }
-                                    });
-                                  },
-                                  activeColor: _accentColor,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                    trailing: isAdded
+                        ? const Icon(Icons.check, color: Colors.greenAccent)
+                        : const Icon(Icons.add, color: Colors.white70),
+                    onTap: isAdded ? null : () => _addExistingToCompany(a),
                   ),
-          ),
-        ],
-      ),
+                );
+              },
+            ),
     );
   }
+
+  bool _ok(Response res) =>
+      (res.statusCode == 200 || res.statusCode == 201) &&
+      (res.data is Map && (res.data['isSuccess'] == true));
+  String? _messageFrom(dynamic data) =>
+      (data is Map && data['message'] is String)
+      ? data['message'] as String
+      : null;
+  String _dioErr(DioException e) =>
+      (e.response?.data is Map && e.response!.data['message'] is String)
+      ? e.response!.data['message'] as String
+      : (e.message ?? 'Request failed');
 }

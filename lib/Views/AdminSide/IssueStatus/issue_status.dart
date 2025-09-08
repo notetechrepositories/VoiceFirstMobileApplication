@@ -12,7 +12,7 @@ class IssueStatus extends StatefulWidget {
 }
 
 class _IssueStatusState extends State<IssueStatus> {
-  List<IssueStatusModel> _companyAnswerTypes = [];
+  List<IssueStatusModel> _IssueStatus = [];
   List<IssueStatusModel> _filtered = [];
   bool isMultiSelectMode = false;
   final Set<String> _selectedIds = {};
@@ -42,7 +42,7 @@ class _IssueStatusState extends State<IssueStatus> {
             []; // Fetching the data array from the response
 
         setState(() {
-          _companyAnswerTypes = list
+          _IssueStatus = list
               .map(
                 (e) => IssueStatusModel.fromJson(
                   (e as Map).cast<String, dynamic>(),
@@ -59,7 +59,7 @@ class _IssueStatusState extends State<IssueStatus> {
 
   void _applyFilters() {
     setState(() {
-      _filtered = _companyAnswerTypes.where((item) {
+      _filtered = _IssueStatus.where((item) {
         final matchesText = item.issueStatus.toLowerCase().contains(
           _searchController.text.toLowerCase(),
         );
@@ -231,7 +231,7 @@ class _IssueStatusState extends State<IssueStatus> {
   //         res.data is Map<String, dynamic> &&
   //         res.data['isSuccess'] == true) {
   //       setState(() {
-  //         _companyAnswerTypes.removeWhere((e) => _selectedIds.contains(e.id));
+  //         _IssueStatus.removeWhere((e) => _selectedIds.contains(e.id));
   //         _selectedIds.clear();
   //         _applyFilters();
   //       });
@@ -305,7 +305,7 @@ class _IssueStatusState extends State<IssueStatus> {
 
       if (success) {
         setState(() {
-          _companyAnswerTypes.removeWhere((e) => ids.contains(e.id));
+          _IssueStatus.removeWhere((e) => ids.contains(e.id));
           _filtered.removeWhere((e) => ids.contains(e.id));
           _selectedIds.removeAll(ids);
           if (_selectedIds.isEmpty) isMultiSelectMode = false;
@@ -626,7 +626,7 @@ class _IssueStatusState extends State<IssueStatus> {
                                       //         ]);
                                       //     if (success) {
                                       //       setState(() {
-                                      //         _companyAnswerTypes.removeWhere(
+                                      //         _IssueStatus.removeWhere(
                                       //           (e) => e.id == issueStatus.id,
                                       //         );
                                       //         _filtered.removeWhere(

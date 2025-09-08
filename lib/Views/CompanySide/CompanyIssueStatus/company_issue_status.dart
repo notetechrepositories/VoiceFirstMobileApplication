@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:voicefirst/Core/Services/api_client.dart';
@@ -16,6 +15,8 @@ class CompanyIssueStatus extends StatefulWidget {
 class _CompanyIssueStatusState extends State<CompanyIssueStatus> {
   List<CompanyIssuestatusModel> _companyIssueStatus = [];
   List<CompanyIssuestatusModel> _filtered = [];
+
+  bool isMultiSelectMode = false;
   final Set<String> _selectedIds = {};
 
   final _searchController = TextEditingController();
@@ -23,13 +24,9 @@ class _CompanyIssueStatusState extends State<CompanyIssueStatus> {
 
   final Dio _dio = ApiClient().dio;
 
-  // Page-specific colour palette
-  // final Color _bgColor = Colors.black; // page background
   final Color _cardColor = Color(0xFF262626); // dark grey card
-  // final Color _chipColor = Color(0xFF212121); // chip background
   final Color _accentColor = Color(0xFFFCC737); // gold accent
   final Color _textPrimary = Colors.white; // main text
-  // final Color _textSecondary = Colors.white60; // secondary text
 
   @override
   void initState() {
@@ -46,12 +43,6 @@ class _CompanyIssueStatusState extends State<CompanyIssueStatus> {
             (res.data['data'] as List?) ??
             []; // Fetching the data array from the response
 
-        // setState(() {
-        //   // Convert each item in the list to a CompanyCompanyIssuestatusModel instance
-        //   _companyIssueStatus = list
-        //       .map((e) => CompanyIssuestatusModel.fromJson(e as Map).cast<String,dynamic>(),)            .toList();
-        //   _applyFilters(); // <-- add this
-        // });
         setState(() {
           _companyIssueStatus = list
               .map(
@@ -82,7 +73,7 @@ class _CompanyIssueStatusState extends State<CompanyIssueStatus> {
       }).toList();
     });
   }
-
+ 
   Future<void> _showAddEditDialog({CompanyIssuestatusModel? existing}) async {
     final controller = TextEditingController(
       text: existing?.companyIssueStatus ?? '',
@@ -225,61 +216,99 @@ class _CompanyIssueStatusState extends State<CompanyIssueStatus> {
     }
   }
 
-  Future<void> _deleteSelected() async {
-    if (_selectedIds.isEmpty) return;
+  Future<void> _deleteSelected({
+    List<String>? ids, // pass for single delete
+    String? labelForSingle, // optional nicer label in dialog
+  }) async {
+    // choose target IDs
+    final targetIds = (ids != null && ids.isNotEmpty)
+        ? ids
+        : _selectedIds.toList();
 
-    final confirm = await showDialog<bool>(
+    if (targetIds.isEmpty) return;
+
+    final isBulk = targetIds.length > 1;
+
+    final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Confirm Delete"),
-        content: Text("Are you sure you want to delete selected items?"),
+        title: const Text('Confirm Delete'),
+        content: Text(
+          isBulk
+              ? 'Are you sure you want to delete ${targetIds.length} items?'
+              : 'Are you sure you want to delete "${labelForSingle ?? 'this item'}"?',
+        ),
         actions: [
           TextButton(
-            child: Text("Cancel"),
             onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
-            child: Text("Delete"),
             onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
           ),
         ],
       ),
     );
+    if (ok != true) return;
 
-    if (confirm != true) return;
     try {
-      final url = '/company-issue-status';
       final res = await _dio.delete(
-        url,
-        data: jsonEncode(_selectedIds.toList()),
+        '/company-issue-status',
+        data: targetIds, // JSON array
+        options: Options(contentType: 'application/json'),
       );
 
-      if (res.statusCode == 200 &&
+      final success =
+          res.statusCode == 200 &&
           res.data is Map<String, dynamic> &&
-          res.data['isSuccess'] == true) {
+          res.data['isSuccess'] == true;
+
+      if (success) {
         setState(() {
-          _companyIssueStatus.removeWhere((e) => _selectedIds.contains(e.id));
-          _selectedIds.clear();
-          _applyFilters();
+          _companyIssueStatus.removeWhere((e) => targetIds.contains(e.id));
+          _filtered.removeWhere((e) => targetIds.contains(e.id));
+          _selectedIds.removeAll(targetIds);
+          if (_selectedIds.isEmpty) isMultiSelectMode = false;
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Items deleted")));
+        SnackbarHelper.showSuccess(isBulk ? 'Items deleted' : 'Item deleted');
       } else {
         final msg = (res.data is Map && res.data['message'] is String)
             ? res.data['message'] as String
-            : 'Failed to delete items';
+            : 'Failed to delete ${isBulk ? 'items' : 'item'}';
         SnackbarHelper.showError(msg);
       }
     } on DioException catch (e) {
-      // Keep error simple; token/headers handled by ApiClient
       final msg =
-          (e.response?.data is Map && (e.response!.data['message'] is String))
+          e.response?.data is Map && e.response!.data['message'] is String
           ? e.response!.data['message'] as String
           : (e.message ?? 'Request failed');
-      SnackbarHelper.showError('Failed to delete items: $msg');
+      SnackbarHelper.showError('Failed to delete: $msg');
+    } catch (e) {
+      SnackbarHelper.showError('Failed to delete: $e');
     }
   }
+
+  void _enterSelectionMode({bool selectAll = false}) {
+    setState(() {
+      isMultiSelectMode = true;
+      _selectedIds.clear();
+      if (selectAll) {
+        _selectedIds.addAll(_filtered.map((e) => e.id));
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      isMultiSelectMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  /// Are *all visible* items currently selected?
+  bool get _allVisibleSelected =>
+      _filtered.isNotEmpty && _selectedIds.length == _filtered.length;
 
   @override
   Widget build(BuildContext context) {
@@ -292,8 +321,8 @@ class _CompanyIssueStatusState extends State<CompanyIssueStatus> {
         actions: [
           if (_selectedIds.isNotEmpty)
             IconButton(
-              icon: Icon(Icons.delete_forever),
-              onPressed: _deleteSelected,
+              icon: const Icon(Icons.delete_forever),
+              onPressed: () => _deleteSelected(), // uses current selection
             ),
         ],
       ),
@@ -342,6 +371,41 @@ class _CompanyIssueStatusState extends State<CompanyIssueStatus> {
                 ),
               ],
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: isMultiSelectMode
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton(
+                            onPressed: () => _enterSelectionMode(
+                              selectAll: !_allVisibleSelected,
+                            ),
+                            child: Text(
+                              _allVisibleSelected ? 'Clear All' : 'Select All',
+                              style: TextStyle(color: _accentColor),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _exitSelectionMode,
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(color: _accentColor),
+                            ),
+                          ),
+                        ],
+                      )
+                    : TextButton(
+                        onPressed: () => _enterSelectionMode(),
+                        child: Text(
+                          'Select',
+                          style: TextStyle(color: _accentColor),
+                        ),
+                      ),
+              ),
+            ),
             const SizedBox(height: 12),
             Expanded(
               child: _filtered.isEmpty
@@ -361,78 +425,143 @@ class _CompanyIssueStatusState extends State<CompanyIssueStatus> {
                         return Card(
                           color: Colors.grey[900],
                           child: ListTile(
-                            leading: Checkbox(
-                              value: isSelected,
-                              onChanged: (val) {
+                            // leading: Checkbox(
+                            //   value: isSelected,
+                            //   onChanged: (val) {
+                            //     setState(() {
+                            //       if (val == true) {
+                            //         _selectedIds.add(companyIssueStatus.id);
+                            //       } else {
+                            //         _selectedIds.remove(companyIssueStatus.id);
+                            //       }
+                            //     });
+                            //   },
+                            // ),
+                            //change
+                            onLongPress: () {
+                              setState(() {
+                                isMultiSelectMode = true;
+                                _selectedIds.add(companyIssueStatus.id);
+                              });
+                            },
+                            onTap: () {
+                              if (isMultiSelectMode) {
                                 setState(() {
-                                  if (val == true) {
-                                    _selectedIds.add(companyIssueStatus.id);
-                                  } else {
+                                  if (isSelected) {
                                     _selectedIds.remove(companyIssueStatus.id);
+                                    if (_selectedIds.isEmpty) {
+                                      isMultiSelectMode = false;
+                                    }
+                                  } else {
+                                    _selectedIds.add(companyIssueStatus.id);
                                   }
                                 });
-                              },
-                            ),
+                              } else {
+                                debugPrint('taped');
+                              }
+                            },
+
+                            //showcheck ox for selection
+                            leading: isMultiSelectMode
+                                ? Checkbox(
+                                    value: isSelected,
+                                    onChanged: (v) {
+                                      setState(() {
+                                        if (v == true) {
+                                          _selectedIds.add(
+                                            companyIssueStatus.id,
+                                          );
+                                        } else {
+                                          _selectedIds.remove(
+                                            companyIssueStatus.id,
+                                          );
+                                          if (_selectedIds.isEmpty) {
+                                            isMultiSelectMode = false;
+                                          }
+                                        }
+                                      });
+                                    },
+                                  )
+                                : null,
+
                             title: Text(
                               companyIssueStatus.companyIssueStatus,
                               style: TextStyle(color: Colors.white),
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Transform.scale(
-                                  scale: 0.7,
-                                  child: Switch(
-                                    value: companyIssueStatus.status,
-                                    activeColor: Colors.green,
-                                    inactiveThumbColor: Colors.redAccent,
-                                    onChanged: (val) async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Confirm'),
-                                          content: Text(
-                                            'Are you sure want to ${val ? 'activate' : 'deactivate'} this issue status?',
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(false),
-                                              child: const Text('cancel'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(true),
-                                              child: const Text('Yes'),
-                                            ),
-                                          ],
+                            trailing: !isMultiSelectMode
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Transform.scale(
+                                        scale: 0.7,
+                                        child: Switch(
+                                          value: companyIssueStatus.status,
+                                          activeColor: Colors.green,
+                                          inactiveThumbColor: Colors.redAccent,
+                                          onChanged: (val) async {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Confirm'),
+                                                content: Text(
+                                                  'Are you sure want to ${val ? 'activate' : 'deactivate'} this issue status?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop(false),
+                                                    child: const Text('cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          context,
+                                                        ).pop(true),
+                                                    child: const Text('Yes'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              await _toggleAnswerStatus(
+                                                companyIssueStatus,
+                                              );
+                                            }
+                                          },
                                         ),
-                                      );
-                                      if (confirm == true) {
-                                        await _toggleAnswerStatus(
-                                          companyIssueStatus,
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                                // Switch(
-                                //   value: companyIssueStatus.status,
-                                //   onChanged: (_) =>
-                                //       _toggleAnswerStatus(companyIssueStatus),
-                                //   activeColor: Colors.greenAccent,
-                                //   inactiveThumbColor: Colors.redAccent,
-                                // ),
-                                IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.amber),
-                                  onPressed: () => _showAddEditDialog(
-                                    existing: companyIssueStatus,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                      ),
+                                      // Switch(
+                                      //   value: companyIssueStatus.status,
+                                      //   onChanged: (_) =>
+                                      //       _toggleAnswerStatus(companyIssueStatus),
+                                      //   activeColor: Colors.greenAccent,
+                                      //   inactiveThumbColor: Colors.redAccent,
+                                      // ),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.edit,
+                                          color: Colors.amber,
+                                        ),
+                                        onPressed: () => _showAddEditDialog(
+                                          existing: companyIssueStatus,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline_outlined,
+                                          color: Colors.redAccent,
+                                        ),
+                                        onPressed: () => _deleteSelected(
+                                          ids: [companyIssueStatus.id],
+                                          labelForSingle: companyIssueStatus
+                                              .companyIssueStatus,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : null,
                           ),
                         );
                       },
